@@ -69,7 +69,7 @@ Multica 是开源的 managed agents 平台。它不是新的代码模型，而�
 
 `人类输入 -> Planner 有限澄清 -> PRD 草案 -> 人工确认 -> to-issues 拆解 -> triage -> Multica assign`
 
-- 适用 Skills：`grill-with-docs`、`to-prd`、`to-issues`、`triage`。
+- 适用 Matt Skills：`grill-with-docs`、`grilling`、`domain-modeling`、`to-spec`、`to-tickets`、`triage`。
 - 关键限制：最多 1-2 轮澄清；未确认前不进入实现。
 - 产出：PRD、小 issue、验收标准、依赖关系、`ready-for-agent` / `needs-info` 状态。
 
@@ -77,7 +77,7 @@ Multica 是开源的 managed agents 平台。它不是新的代码模型，而�
 
 `PRD -> Planner 拆 vertical slice -> 人工确认 issue 粒度 -> Multica 创建 issue -> Builder 逐个实现`
 
-- 适用 Skills：`to-issues`、`triage`。
+- 适用 Matt Skills：`to-spec`、`to-tickets`。
 - 关键限制：每个 issue 必须独立可验证，避免按前端/后端/数据库做横切拆分。
 - 产出：可 AFK 执行的小 issue。
 
@@ -85,7 +85,7 @@ Multica 是开源的 managed agents 平台。它不是新的代码模型，而�
 
 `ready-for-agent issue -> Builder 执行 -> 测试 -> Reviewer 审查 -> 人工验收/合并`
 
-- 适用 Skills：`tdd`、`codebase-design`、`code-reviewer`。
+- 适用 Matt Skills：`tdd`、`codebase-design`。
 - 关键限制：Builder 不做长澄清；缺信息就回写 blocker。
 - 产出：代码变更、测试结果、风险说明。
 
@@ -93,7 +93,7 @@ Multica 是开源的 managed agents 平台。它不是新的代码模型，而�
 
 `bug issue -> Builder 复现 -> diagnosing-bugs 定位 -> 最小修复 -> 回归测试 -> Reviewer 审查`
 
-- 适用 Skills：`diagnosing-bugs`、`tdd`。
+- 适用 Matt Skills：`diagnosing-bugs`、`tdd`。
 - 关键限制：没有复现步骤先进入 `needs-info`，不要直接猜修。
 - 产出：复现结论、根因、修复、回归测试。
 
@@ -101,7 +101,7 @@ Multica 是开源的 managed agents 平台。它不是新的代码模型，而�
 
 `PR/diff -> Planner 派发 Reviewer -> Reviewer 输出结构化结果 -> Planner 决定修复/验收/合并`
 
-- 适用 Skills：`code-reviewer`、`tdd`、`improve-codebase-architecture`。不使用 `matt-skills/in-progress/review`。
+- 适用 Matt Skills：`tdd`。
 - 关键限制：优先找 bug、回归、缺测试；架构建议只在影响较大时提出。
 - 产出：审查意见、必须修复项、可后续处理项。
 
@@ -119,7 +119,7 @@ Multica 是开源的 managed agents 平台。它不是新的代码模型，而�
 `完成 issue/PR -> Inspector(inspection_type: context) 汇总 -> 提议 CONTEXT.md/ADR/Skill diff -> 人工确认 -> 写入 repo`
 
 - 执行者：`Inspector` 的 `context` 类型。
-- 适用 Skills：`grill-with-docs`、`handoff`、`writing-great-skills`。
+- 适用 Matt Skills：`grill-with-docs`、`handoff`、`writing-great-skills`。
 - 关键限制：只建议更新 context，人类确认后才写入长期文档。
 - 产出：领域词汇、架构决策、可复用工作流。
 
@@ -133,7 +133,7 @@ Multica 是开源的 managed agents 平台。它不是新的代码模型，而�
 
 - 职责：需求澄清、PRD、issue 拆解、triage、派发。
 - 推荐模型：高推理模型；优先 `Claude Code` 或 `Cursor Agent` 强模型。
-- Skills：`grill-with-docs`、`to-prd`、`to-issues`、`triage`、`branch-mr-safety`。
+- 已应用 Matt Skills：`domain-modeling`、`grill-with-docs`、`grilling`、`to-spec`、`to-tickets`、`triage`。
 - 并发：`1`。
 - 权限：唯一 dispatcher。只有它可以创建子 issue、分配 agent、推进状态。
 - 规则：最多 2 轮澄清；每轮最多 5 个问题；PRD 和 issue 拆解必须人工确认后再派发。
@@ -142,7 +142,7 @@ Multica 是开源的 managed agents 平台。它不是新的代码模型，而�
 
 - 职责：实现 `ready-for-agent` issue。
 - 推荐模型：中高模型；优先 `Claude Code`、`Codex` 或 `Cursor Agent`。
-- Skills：`tdd`、`diagnosing-bugs`、`codebase-design`、`branch-mr-safety`。
+- 已应用 Matt Skills：`codebase-design`、`diagnosing-bugs`、`implement`、`tdd`。
 - 并发：同一 repo `1`。
 - 权限：只能实现、测试、回写结果。不能派发其他 agent。
 - 规则：不长聊；缺信息就标 blocker，交回 Planner。
@@ -151,7 +151,7 @@ Multica 是开源的 managed agents 平台。它不是新的代码模型，而�
 
 - 职责：审查 Builder 输出。
 - 推荐模型：高推理模型；review 比实现更需要判断力。
-- Skills：`code-reviewer`、`tdd`、`branch-mr-safety`，必要时用 `improve-codebase-architecture`。
+- 已应用 Matt Skills：`tdd`。
 - 并发：`1`。
 - 权限：只能评论风险和结论。不能循环 @Builder。
 - 规则：只查 bug、回归、缺测试、架构风险。
@@ -160,7 +160,7 @@ Multica 是开源的 managed agents 平台。它不是新的代码模型，而�
 
 - 职责：通用巡检。按 `inspection_type` 路由 skill 执行不同巡检任务；支持 Self-Service Bootstrap 自建新巡检类型。
 - 推荐模型：低中模型即可（bootstrap 起草 skill 时偏中高）。
-- 内置示例类型：`todo-scan`（只读，无外部 skill 依赖）。`writing-great-skills` 仅 bootstrap 起草新 skill 时加载。其他类型（`context` 等）经 bootstrap 创建 skill 后注册。
+- 已应用 Matt Skills：`grill-with-docs`、`handoff`、`writing-great-skills`。内置示例类型 `todo-scan` 无外部 skill 依赖。
 - scope：支持 Multica project 级（覆盖内含全部 repo）或单 repo。
 - 并发：`1`。
 - 权限：默认只产出报告/提议。`context` 经人类确认后可写长期文档；只读类型全程只读；危险动作必须人工确认。
@@ -248,7 +248,7 @@ review-approved -> ready-for-builder-mr-merge -> ready-for-acceptance  # 仅策�
 
 ### Agent Instructions 同步
 
-`agents/*.md` 是设计源，Multica server instructions 是运行副本。repo 文件修改后必须手工同步，并在 Multica Agent description 记录相同 `Instruction version`。同步后核对 Agent name、bound Skills、max concurrency、version，再用无副作用 issue 验证 packet 与状态转换。当前版本：Coordinator `2026-07-27.2`；Builder / Reviewer / Inspector `2026-07-27.1`。
+`agents/*.md` 是设计源，Multica server instructions 是运行副本。repo 文件修改后必须手工同步，并在 Multica Agent description 记录相同 `Instruction version`。同步后核对 Agent name、bound Skills、max concurrency、version，再用无副作用 issue 验证 packet 与状态转换。当前版本：Coordinator `2026-07-27.2`；Builder / Reviewer / Inspector `2026-07-27.1`。Matt Skills 已按 2026-07-28 CLI 查询结果同步到草稿；业务自定义、项目专属和第三方 Skills 不跟随记录。
 
 ## 最小试点
 

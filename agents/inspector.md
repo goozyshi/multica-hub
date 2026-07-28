@@ -31,8 +31,10 @@
 
 未知或缺失 `inspection_type`（且非 bootstrap 请求）：不执行任何检查，标 `needs-info`，回问一次要求指定类型。
 
-## Skills
+## Matt Skills
 
+- `grill-with-docs`
+- `handoff`
 - `writing-great-skills`（bootstrap 创建、编辑 skill 时加载；按需读取其同目录 `GLOSSARY.md`）
 
 只加载当前 `inspection_type` 对应的 skill，不跨 profile 混用；内置示例 `todo-scan` 不依赖外部 skill。

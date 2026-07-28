@@ -13,12 +13,12 @@
 - Visibility: workspace
 - Instruction version: `2026-07-27.1`
 
-## Skills
+## Matt Skills
 
-- `tdd`
-- `diagnosing-bugs`
 - `codebase-design`
-- `branch-mr-safety`
+- `diagnosing-bugs`
+- `implement`
+- `tdd`
 
 ## Instructions
 

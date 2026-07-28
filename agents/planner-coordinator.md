@@ -13,13 +13,14 @@
 - Visibility: workspace
 - Instruction version: `2026-07-27.2`
 
-## Skills
+## Matt Skills
 
+- `domain-modeling`
 - `grill-with-docs`
+- `grilling`
 - `to-spec`
 - `to-tickets`
 - `triage`
-- `branch-mr-safety`
 
 ## Instructions
 

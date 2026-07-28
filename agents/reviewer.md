@@ -13,12 +13,9 @@
 - Visibility: workspace
 - Instruction version: `2026-07-27.1`
 
-## Skills
+## Matt Skills
 
-- `code-reviewer`
 - `tdd`
-- `improve-codebase-architecture` only for broad/high-risk changes
-- `branch-mr-safety`
 
 ## Instructions
 

@@ -11,10 +11,12 @@
 
 ## Final Skills
 
-- `Planner / Coordinator`: `grill-with-docs`, `to-spec`, `to-tickets`, `triage`, `branch-mr-safety`
-- `Builder`: `tdd`, `diagnosing-bugs`, `codebase-design`, `branch-mr-safety`
-- `Reviewer`: `code-reviewer`, `tdd`, `improve-codebase-architecture`, `branch-mr-safety`
-- `Inspector`: `writing-great-skills`（bootstrap 起草新 skill 时加载；内置 `todo-scan` 无外部 skill 依赖；其他类型的 skill 经 bootstrap 创建后加载）
+以下只记录 2026-07-28 通过 `multica agent skills list` 确认已应用的 Matt Skills。业务自定义、项目专属和第三方 Skills 不在此跟随：
+
+- `Planner / Coordinator`: `domain-modeling`, `grill-with-docs`, `grilling`, `to-spec`, `to-tickets`, `triage`
+- `Builder`: `codebase-design`, `diagnosing-bugs`, `implement`, `tdd`
+- `Reviewer`: `tdd`
+- `Inspector`: `grill-with-docs`, `handoff`, `writing-great-skills`
 
 ## Dispatch Rule
 
@@ -148,4 +150,4 @@ Agent instructions and handoff packets override loaded Skill workflows。Skill �
 3. 核对 Agent name、bound Skills、max concurrency、instructions version。
 4. 用一个无副作用 smoke issue 验证 handoff packet 和状态转换。
 
-当前版本：Coordinator `2026-07-27.2`；Builder / Reviewer / Inspector `2026-07-27.1`。repo 文件更新不代表 server 已同步。
+当前版本：Coordinator `2026-07-27.2`；Builder / Reviewer / Inspector `2026-07-27.1`。上述 Matt Skills 已按 2026-07-28 server 查询结果同步到草稿；后续 repo 文件更新仍不代表 server 已自动同步。
