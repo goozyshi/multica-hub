@@ -67,18 +67,18 @@ Multica 是开源的 managed agents 平台。它不是新的代码模型，而�
 
 ### 模糊需求
 
-`人类输入 -> Planner 有限澄清 -> PRD 草案 -> 人工确认 -> to-issues 拆解 -> triage -> Multica assign`
+`人类输入 -> Planner 分组澄清 -> PRD 草案 -> 人工确认 -> to-tickets 拆解 -> 人工确认 -> ready-for-agent gate -> Multica assign`
 
-- 适用 Matt Skills：`grill-with-docs`、`grilling`、`domain-modeling`、`to-spec`、`to-tickets`、`triage`。
-- 关键限制：最多 1-2 轮澄清；未确认前不进入实现。
+- 适用 Matt Skills：`batch-grill-me`、`to-spec`、`to-tickets`。`batch-grill-me` 只采用分组 frontier 方法，最多 2 轮；`triage` 仅用于外部原始 issue，不重复处理 `to-tickets` 产物。
+- 关键限制：优先 1 轮、最多 2 轮；每轮问题一次性分组，并给出推荐答案。禁止逐题追问；未确认前不进入实现。
 - 产出：PRD、小 issue、验收标准、依赖关系、`ready-for-agent` / `needs-info` 状态。
 
 ### 明确 PRD 拆解
 
-`PRD -> Planner 拆 vertical slice -> 人工确认 issue 粒度 -> Multica 创建 issue -> Builder 逐个实现`
+`产品文档 -> Planner 读文档/代码并做 gap analysis -> 必要时批量澄清 -> implementation-ready spec -> 人工确认 -> to-tickets 拆 vertical slice -> 人工确认 -> Builder 实现 -> Reviewer 审查`
 
-- 适用 Matt Skills：`to-spec`、`to-tickets`。
-- 关键限制：每个 issue 必须独立可验证，避免按前端/后端/数据库做横切拆分。
+- 适用 Matt Skills：`batch-grill-me`（仅补阻塞缺口）、`to-spec`、`to-tickets`。
+- 关键限制：文档内容不重复询问；没有阻塞缺口就跳过澄清。每条验收标准和子 issue 必须可追溯到原产品文档或明确确认的决策。每个 issue 独立可验证，避免按前端/后端/数据库做横切拆分。
 - 产出：可 AFK 执行的小 issue。
 
 ### 小功能实现
@@ -91,26 +91,27 @@ Multica 是开源的 managed agents 平台。它不是新的代码模型，而�
 
 ### Bug 修复
 
-`bug issue -> Builder 复现 -> diagnosing-bugs 定位 -> 最小修复 -> 回归测试 -> Reviewer 审查`
+`bug issue -> 必要时 Builder(diagnose) 先复现/定位 -> Planner 补齐实现票 -> Builder(implement) 最小修复 -> 回归测试 -> Reviewer 审查`
 
 - 适用 Matt Skills：`diagnosing-bugs`、`tdd`。
-- 关键限制：没有复现步骤先进入 `needs-info`，不要直接猜修。
+- 关键限制：可执行但尚未验证的 bug 先走 `work_type: diagnose`；只返回证据，不修改生产代码。实现票必须先有可读取的 `spec_ref`、确认的 `test_seams` 和明确的 `test_verification_path`。
 - 产出：复现结论、根因、修复、回归测试。
 
 ### 代码审查
 
-`PR/diff -> Planner 派发 Reviewer -> Reviewer 输出结构化结果 -> Planner 决定修复/验收/合并`
+`PR/diff + spec + Builder evidence -> Planner 固定 refs -> Reviewer 执行 Standards + Spec 双轴 -> Planner 决定修复/验收/合并`
 
 - 适用 Matt Skills：`tdd`。
-- 关键限制：优先找 bug、回归、缺测试；架构建议只在影响较大时提出。
-- 产出：审查意见、必须修复项、可后续处理项。
+- 审查方法：`code-reviewer` 只负责 Standards 轴；Reviewer 独立读取完整 `spec_ref` 执行 Spec 轴。
+- 关键限制：两轴分开输出，不混排；不询问用户修哪些项，不实施修复，不输出清理计划，不调用 `improve-codebase-architecture`。
+- 产出：`standards_findings`、`spec_findings`、稳定 finding IDs、必须修复项和可后续处理项。
 
 ### 周期巡检
 
 `Autopilot -> create_issue(inspection_type) -> Inspector 执行 -> 回写报告 -> 人工处理异常`
 
-- 执行者：`Inspector`，由 autopilot/Planner 指定 `inspection_type` 路由 skill。内置极简示例类型 `todo-scan`（只读）；其他类型（如 `context` 上下文沉淀、`branch-health` 分支健康）经 Self-Service Bootstrap 创建 skill 后注册。
-- scope 支持 Multica project 级（覆盖内含全部 repo）或单 repo。
+- 执行者：`Inspector`，由 Autopilot/Planner 指定 `inspection_type` 路由 inline 或 skill-backed profile。新巡检一定创建 Autopilot；简单确定的只读检查使用 inline profile，复杂/复用/外部 API/可执行检查才创建 skill。
+- 巡检定义与 scope 分离。每个 Autopilot instance 绑定一个 Multica project：A 改 B 使用 `replace`；A、B 同时运行则复用定义创建 B 的 sibling instance；移除项目默认 pause 对应 instance。
 - 关键限制：Autopilot 失败不自动 retry，重要巡检要设计成功信号；危险动作必须人工确认。
 - 产出：巡检报告，或生成后续 issue。
 
@@ -133,38 +134,38 @@ Multica 是开源的 managed agents 平台。它不是新的代码模型，而�
 
 - 职责：需求澄清、PRD、issue 拆解、triage、派发。
 - 推荐模型：高推理模型；优先 `Claude Code` 或 `Cursor Agent` 强模型。
-- 已应用 Matt Skills：`domain-modeling`、`grill-with-docs`、`grilling`、`to-spec`、`to-tickets`、`triage`。
+- 推荐 Matt Skills：`batch-grill-me`、`to-spec`、`to-tickets`、`triage`。`batch-grill-me` 强制限制为最多 2 轮；`domain-modeling`、`grill-with-docs`、`grilling` 不适合 Multica + Lark 的短轮次澄清，待从 server 解绑。
 - 并发：`1`。
 - 权限：唯一 dispatcher。只有它可以创建子 issue、分配 agent、推进状态。
-- 规则：最多 2 轮澄清；每轮最多 5 个问题；PRD 和 issue 拆解必须人工确认后再派发。
+- 规则：澄清优先 1 轮、最多 2 轮；每轮最多 5 个分组问题，附推荐答案并允许用户回复“按推荐”。PRD 和 issue 拆解必须人工确认后再派发。
 
 #### Builder
 
-- 职责：实现 `ready-for-agent` issue。
+- 职责：执行 Coordinator 声明的 `work_type: implement | diagnose | review-fix`。
 - 推荐模型：中高模型；优先 `Claude Code`、`Codex` 或 `Cursor Agent`。
-- 已应用 Matt Skills：`codebase-design`、`diagnosing-bugs`、`implement`、`tdd`。
+- 推荐 Matt Skills：`codebase-design`、`diagnosing-bugs`、`tdd`。Multica 已把 `implement` 的 orchestration 拆到 Coordinator、Builder、Reviewer，不再直接绑定 Builder。
 - 并发：同一 repo `1`。
-- 权限：只能实现、测试、回写结果。不能派发其他 agent。
-- 规则：不长聊；缺信息就标 blocker，交回 Planner。
+- 权限：只能执行声明的工作模式、测试、回写证据。不能派发其他 agent。
+- 规则：实现/修复必须读取完整 `spec_ref`、按确认的 `test_seams` 做 red → green、执行准确的 `test_verification_path`；诊断停在修复前；缺信息就标 blocker，交回 Planner。
 
 #### Reviewer
 
-- 职责：审查 Builder 输出。
+- 职责：以 `code-reviewer` 执行 Standards 轴，独立执行 Spec 轴，审查 Builder 输出。
 - 推荐模型：高推理模型；review 比实现更需要判断力。
 - 已应用 Matt Skills：`tdd`。
 - 并发：`1`。
 - 权限：只能评论风险和结论。不能循环 @Builder。
-- 规则：只查 bug、回归、缺测试、架构风险。
+- 规则：固定 commit refs；读取完整 `spec_ref`、Builder evidence 和 standards sources；两轴 findings 不混排；只有两轴均无 blocking finding 才批准。
 
 #### Inspector
 
-- 职责：通用巡检。按 `inspection_type` 路由 skill 执行不同巡检任务；支持 Self-Service Bootstrap 自建新巡检类型。
+- 职责：通用巡检。按 `inspection_type` 路由 inline 或 skill-backed profile；使用 `inspection-autopilot-manager` 创建 Autopilot、判断是否需要 skill、复用定义并修改 project scope。
 - 推荐模型：低中模型即可（bootstrap 起草 skill 时偏中高）。
-- 已应用 Matt Skills：`grill-with-docs`、`handoff`、`writing-great-skills`。内置示例类型 `todo-scan` 无外部 skill 依赖。
-- scope：支持 Multica project 级（覆盖内含全部 repo）或单 repo。
+- 推荐 Matt Skills：`writing-great-skills`，仅创建/编辑 skill 时加载。`grill-with-docs`、`handoff` 等由具体 profile 按需加载。
+- scope：巡检定义可跨项目复用；一个 Autopilot instance 绑定一个 Multica project。
 - 并发：`1`。
 - 权限：默认只产出报告/提议。`context` 经人类确认后可写长期文档；只读类型全程只读；危险动作必须人工确认。
-- 规则：一次 run 只跑一个 `inspection_type`；未知类型标 `needs-info`；不收集一次性实现细节。
+- 规则：一次 run 只跑一个已注册 `inspection_type`；未知类型标 `needs-info`；scope-only 修改不得改变检查逻辑、schedule、subscriber 或 trigger。
 
 ### Planner 自动派发机制
 
@@ -177,10 +178,10 @@ Multica 是开源的 managed agents 平台。它不是新的代码模型，而�
 3. `Planner` 拆 vertical slice 子 issue。
 4. 人类确认 issue 粒度、依赖、验收标准。
 5. `Planner` 按依赖顺序创建子 issue。
-6. `Planner` 补齐 implementation packet，通过 ready-for-agent gate 后再把无阻塞 issue assign 给 `Builder`。
-7. `Builder` 完成后回写 Builder completion packet，并把状态改为 `ready-for-review`。
-8. `Planner` 验证 packet 后，用固定 commit refs 派发 `Reviewer`。
-9. `Reviewer` 输出 Review result packet；通过后标 `review-approved` 并交回 `Planner`。
+6. `Planner` 补齐 Builder packet，声明 `work_type`，通过 mode-specific ready-for-agent gate 后再把无阻塞 issue assign 给 `Builder`。
+7. `Builder` 完成 `implement` / `review-fix` 后回写 Builder completion packet 并标 `ready-for-review`；完成 `diagnose` 后回写 Diagnosis evidence packet 并标 `evidence-ready`，由 Planner 恢复 triage/spec。
+8. `Planner` 验证 packet 后，用固定 commit refs、完整 spec、standards sources 和 Builder evidence 派发 `Reviewer`。
+9. `Reviewer` 输出 Standards + Spec 双轴 Review result packet；两轴均通过后标 `review-approved` 并交回 `Planner`。
 10. `Planner` 合并 Builder MR（策略不允许时等待人工），验证 reviewed head 已进入 `source_branch`。
 11. 进入 `ready-for-acceptance`，人类验收实现结果。
 12. 验收通过后，`Planner` 创建 Final MR 并标 `ready-for-human-merge`。
@@ -208,6 +209,7 @@ needs-clarification
 ```text
 in-progress -> blocked-needs-info -> needs-clarification
 ready-for-review -> changes-requested -> ready-for-agent
+in-progress(diagnose) -> evidence-ready -> Planner resumes triage/spec
 review-approved -> ready-for-builder-mr-merge -> ready-for-acceptance  # 仅策略禁止自动合并 Builder MR 时
 ```
 
@@ -248,14 +250,14 @@ review-approved -> ready-for-builder-mr-merge -> ready-for-acceptance  # 仅策�
 
 ### Agent Instructions 同步
 
-`agents/*.md` 是设计源，Multica server instructions 是运行副本。repo 文件修改后必须手工同步，并在 Multica Agent description 记录相同 `Instruction version`。同步后核对 Agent name、bound Skills、max concurrency、version，再用无副作用 issue 验证 packet 与状态转换。当前版本：Coordinator `2026-07-27.2`；Builder / Reviewer / Inspector `2026-07-27.1`。Matt Skills 已按 2026-07-28 CLI 查询结果同步到草稿；业务自定义、项目专属和第三方 Skills 不跟随记录。
+`agents/*.md` 是设计源，Multica server instructions 是运行副本。repo 文件修改后必须手工同步，并在 Multica Agent description 记录相同 `Instruction version`。同步后核对 Agent name、bound Skills、max concurrency、version，再用无副作用 issue 验证 packet 与状态转换。当前版本：Coordinator `2026-07-28.5`；Builder `2026-07-28.3`；Reviewer `2026-07-28.2`；Inspector `2026-07-28.2`。四个 Agent 新草稿和 Skill 增删尚未同步 server；业务自定义、项目专属和第三方 Skills 不跟随记录。
 
 ## 最小试点
 
 先跑完整但低并发的四条线：
 
 - `Planner`：从模糊需求生成 PRD 和小 issue。
-- `Builder`：实现 `ready-for-agent` issue。
+- `Builder`：执行 `implement`、`diagnose`、`review-fix` issue。
 - `Reviewer`：审查 `ready-for-review` issue。
 - `Inspector`：`context` 类型每周生成 context-update issue；其他巡检类型经 bootstrap 自建。
 

@@ -5,18 +5,18 @@
 ## Agents
 
 - [`Planner / Coordinator`](./planner-coordinator.md)：唯一 dispatcher。澄清、PRD、拆 issue、triage、派发。
-- [`Builder`](./builder.md)：实现 `ready-for-agent` issue。小步开发，测试优先。
-- [`Reviewer`](./reviewer.md)：用 `code-reviewer` 审查实现结果。找 bug、回归、缺测试、风险。
-- [`Inspector`](./inspector.md)：通用巡检 agent。按 `inspection_type` 路由 skill；内置极简示例类型 `todo-scan`（只读扫 `TODO`/`FIXME`/`XXX`）。scope 支持 Multica project 级或单 repo。支持 self-service bootstrap：用户口述新巡检需求 → 起草 skill + 绑定到自身 + 注册类型 + 经确认后自建 autopilot（如 `context` 等类型均经此创建）。
+- [`Builder`](./builder.md)：执行 `implement`、`diagnose`、`review-fix` 工作。小步开发，测试优先。
+- [`Reviewer`](./reviewer.md)：以 `code-reviewer` 执行 Standards 轴，独立执行 Spec 轴；双轴审查实现结果。
+- [`Inspector`](./inspector.md)：通用巡检 agent。按 `inspection_type` 路由 inline 或 skill-backed profile。新巡检一定创建 Autopilot，但仅在逻辑复杂/复用/可执行时创建 skill。巡检定义与 project scope 分离；同一定义可为多个项目创建 sibling Autopilot，或明确替换/暂停 scope。
 
 ## Final Skills
 
-以下只记录 2026-07-28 通过 `multica agent skills list` 确认已应用的 Matt Skills。业务自定义、项目专属和第三方 Skills 不在此跟随：
+以下只记录 Matt Skills。业务自定义、项目专属和第三方 Skills 不在此跟随：
 
-- `Planner / Coordinator`: `domain-modeling`, `grill-with-docs`, `grilling`, `to-spec`, `to-tickets`, `triage`
-- `Builder`: `codebase-design`, `diagnosing-bugs`, `implement`, `tdd`
+- `Planner / Coordinator`: `batch-grill-me`, `to-spec`, `to-tickets`, `triage`（2026-07-28 审查后的推荐；`batch-grill-me` 强制覆盖为最多 2 轮；server 待同步增删）
+- `Builder`: `codebase-design`, `diagnosing-bugs`, `tdd`
 - `Reviewer`: `tdd`
-- `Inspector`: `grill-with-docs`, `handoff`, `writing-great-skills`
+- `Inspector`: `writing-great-skills`（仅创建 skill 时加载；Autopilot 管理使用项目 Skill `inspection-autopilot-manager`）
 
 ## Dispatch Rule
 
@@ -24,7 +24,7 @@
 
 其他 agent 不互相调度：
 
-- `Builder` 完成后标 `ready-for-review`，并把当前 issue 交回 `Planner / Coordinator`。
+- `Builder` 完成 `implement` / `review-fix` 后标 `ready-for-review`；完成 `diagnose` 后标 `evidence-ready`。两种路径都把当前 issue 交回 `Planner / Coordinator`。
 - `Reviewer` 审查后无 blocking findings 则标 `review-approved`；有 blocking findings 标 `changes-requested`。两种结果都只交回 `Planner / Coordinator`，不直接推进验收或 merge。
 - `Inspector` 默认只产出巡检报告/提议；`context` 类型经人类明确确认后可在重新触发时写入 approved context files；只读类型全程只读；危险动作必须人工确认。
 
@@ -34,13 +34,15 @@
 
 飞书群里用户只需要 @ `Planner / Coordinator`。`Planner / Coordinator` 派发时把原请求人、原群/线程和父请求链接作为内部 notification context 传给 `Builder`。
 
-`Builder` 完成或阻塞后，可以在原群/线程通知原请求人一次。通知只包含实现结果、Builder MR link、Preview URL、验证结果、风险或 blocker。`Builder` 不 @ `Reviewer`，不派发其他 agent，不推进 review loop。
+`Builder` 完成或阻塞后，可以在原群/线程通知原请求人一次。实现通知包含实现结果、Builder MR link、Preview URL、验证结果和风险；诊断通知包含复现结论、复现命令、根因状态和证据。`Builder` 不 @ `Reviewer`，不派发其他 agent，不推进 review loop。
 
-`Builder` 交回 `Planner / Coordinator` 是状态 handoff，不是派发。优先 assign 当前 issue 回 `Planner / Coordinator`；如果 Multica 不支持 assign，就在当前 issue 留一条 @Planner 的 ready-for-review/blocker 评论。用户不需要手动说“请 review”。
+`Builder` 交回 `Planner / Coordinator` 是状态 handoff，不是派发。优先 assign 当前 issue 回 `Planner / Coordinator`；如果 Multica 不支持 assign，就在当前 issue 留一条 @Planner 的 `ready-for-review` / `evidence-ready` / blocker 评论。用户不需要手动说“请 review”。
 
 `Reviewer` 不 reassign issue。完成后写一个 Review result packet，并留一条 @Coordinator completion comment。`Planner / Coordinator` 负责 review-fix、Builder MR merge、用户验收和 Final MR。
 
 `Inspector` 完成后写一个 Inspection result packet，再把当前 inspection issue 交回 `Planner / Coordinator`。实现建议必须新建独立 issue，重新通过 ready-for-agent gate。
+
+Inspector Autopilot 把巡检定义与 scope 分开：`inspection_type` + profile 定义检查逻辑；每个 Autopilot instance 绑定一个 Multica project。A 改 B 使用 `replace`；A、B 同时运行使用同一定义创建 B 的 sibling instance；移除项目默认 pause 对应 instance，不删除共享 skill。
 
 权限边界：
 
@@ -51,7 +53,7 @@
 
 ## Review Loop Budget
 
-只有 `Planner / Coordinator` 能触发 `Reviewer`。一次 `code-reviewer` 输出就是一个 review round，里面的 P0/P1/P2 findings 不按条计数。`Builder` 可以分批修复同一轮 findings，但修完全部必修项后只交回 `Planner` 一次。复审时 `Reviewer` 只验证上一轮 findings 是否解决，以及修复是否引入明显新 P0/P1 回归；不要把修复代码当成全新实现重新全量 review。每个 issue 最多 1 次自动 review-fix cycle，第二次 `changes-requested` 后停止自动化，标 `needs-human-decision`。
+只有 `Planner / Coordinator` 能触发 `Reviewer`。一份包含 Standards + Spec 的完整 Review result packet 是一个 review round。`Builder` 可以分批修复同一轮 `assigned_finding_ids`，但修完全部必修项后只交回 `Planner` 一次。复审时 `Reviewer` 验证上一轮 finding IDs、明显新 P0/P1 Standards 回归和 Spec 回归；不要把修复代码当成无关新实现重新全量 review。每个 issue 最多 1 次自动 review-fix cycle，第二次 `changes-requested` 后停止自动化，标 `needs-human-decision`。
 
 ## Human Gates
 
@@ -94,19 +96,28 @@ ready-for-review
 -> ready-for-agent
 ```
 
+Diagnosis return:
+
+```text
+ready-for-agent
+-> in-progress
+-> evidence-ready
+-> Planner resumes triage/spec
+```
+
 ## Branch And MR Safety
 
 统一使用 [`branch-mr-safety`](../skills/branch-mr-safety/SKILL.md)。分支/MR 是 agent 内部控制面，不是默认用户汇报内容。用户默认只看到实现结果、MR link、验证结果、风险和需要人工决定的 blocker。
 
-`Planner / Coordinator` 负责补齐内部 implementation packet：`repo`、`base_branch`、`source_branch`、`source_branch_status`、`issue_key`、`work_branch`、`builder_mr_target`、`final_mr_target`、`acceptance_criteria`、`test_verification_path`、`preview_required`、`notification_channel`、`notification_thread`、`notification_target`、`parent_request_link`。`Builder` 使用它创建工作分支和 Builder MR，并在完成/阻塞时通知原请求上下文；正常完成时不复述分支字段。
+`Planner / Coordinator` 负责补齐内部 Builder packet，并显式设置 `work_type: implement | diagnose | review-fix`。公共字段包括 `repo`、`issue_key` 和 notification context。实现/修复模式还需 branch/MR、`spec_ref`、acceptance criteria、`test_seams`、`test_verification_path` 与 review-cycle 字段；诊断模式改传 immutable `diagnosis_ref`、`problem_ref`、reported symptom、reproduction goal/environment、allowed instrumentation 和 evidence completion criteria。
 
 implementation packet 还必须包含：`spec_ref`、`test_seams`、`review_fix_count`、`previous_review_ref`。`test_seams` 在规划/验收标准阶段确认，Builder 不再重复询问用户。
 
-Builder 完成后输出 Builder completion packet：Builder MR、immutable `review_base_ref` / `review_head_ref`、验收标准证据、changed files、commands、tests、preview、branch safety、risks。
+Builder 完成 `implement` / `review-fix` 后输出 Builder completion packet：Builder MR、immutable `review_base_ref` / `review_head_ref`、验收标准证据、changed files、commands、`test_verification_path` 结果、TDD exceptions、preview、branch safety、risks。完成 `diagnose` 后输出 Diagnosis evidence packet，不修改生产代码、不 commit、不 push、不创建 MR。
 
-Planner 派发 Reviewer 时输出 Reviewer dispatch packet：`issue_key`、`spec_ref`、acceptance criteria、Builder MR、review refs、review round、previous review、tests、risks。
+Planner 派发 Reviewer 时输出 Reviewer dispatch packet：`issue_key`、完整 `spec_ref`、acceptance criteria/evidence、standards sources、Builder completion ref/MR、review refs、round/scope、previous review、assigned finding IDs、tests、`test_verification_path_result`、TDD exceptions、branch safety、risks。
 
-Reviewer 输出 Review result packet：result、round、review refs、blocking findings、non-blocking follow-ups、tests、branch safety、residual risks。每个 finding 必须有稳定 id。
+Reviewer 输出双轴 Review result packet：result、round、review refs、`standards_findings`、`spec_findings`、`blocking_finding_ids`、non-blocking follow-ups、spec coverage、tests、branch safety、residual risks。每个 finding 必须有稳定 `STD-` 或 `SPEC-` ID。
 
 Inspector 输出 Inspection result packet：type、scope、result、action required、human approval、approved scope、findings、evidence、actions、follow-up refs、remaining decisions。
 
@@ -137,8 +148,8 @@ Communication:
 Agent instructions and handoff packets override loaded Skill workflows。Skill 只提供方法和模板，不扩大 Agent 权限，不跳过人工闸门，不改变 dispatcher ownership。
 
 - Coordinator 可使用 `to-spec` / `to-tickets` / `triage` 做范围内只读源码探索；禁止 checkout、编辑、安装依赖、运行项目代码/构建/测试、自动 `ready-for-agent`、自动 `/implement`。
-- Builder 把 packet 中的 `test_seams` 视为已确认；Skill 不得自行触发 review 或 Final MR。
-- Reviewer 固定审查 packet 中的 commit refs；Skill 不得询问用户修哪些项、实施修复或直接触发 Builder。
+- Builder 在 `implement` / `review-fix` 中把 packet 的 `test_seams` 视为已确认；必须读取完整 `spec_ref` 并执行准确的 `test_verification_path`。`diagnose` 只使用 `diagnosing-bugs` 的反馈环、复现、最小化、假设和 instrumentation 阶段，停在修复前。Skill 不得自行触发 review 或 Final MR。
+- Reviewer 固定审查 packet 中的 commit refs；`code-reviewer` 只作为 Standards 轴分析方法，必须另做完整 Spec 轴。Skill 不得询问用户修哪些项、实施修复、输出清理计划或直接触发 Builder。
 - Inspector 只执行当前 `inspection_type` 明确授权的动作。
 
 ## Deployment Sync Rule
@@ -150,4 +161,4 @@ Agent instructions and handoff packets override loaded Skill workflows。Skill �
 3. 核对 Agent name、bound Skills、max concurrency、instructions version。
 4. 用一个无副作用 smoke issue 验证 handoff packet 和状态转换。
 
-当前版本：Coordinator `2026-07-27.2`；Builder / Reviewer / Inspector `2026-07-27.1`。上述 Matt Skills 已按 2026-07-28 server 查询结果同步到草稿；后续 repo 文件更新仍不代表 server 已自动同步。
+当前版本：Coordinator `2026-07-28.5`；Builder `2026-07-28.3`；Reviewer `2026-07-28.2`；Inspector `2026-07-28.2`。四个 Agent 草稿已完成衔接优化；server 尚未同步新 instructions 与 Skill 增删；后续 repo 文件更新仍不代表 server 已自动同步。
