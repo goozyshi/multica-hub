@@ -63,138 +63,58 @@ Multica 是开源的 managed agents 平台。它不是新的代码模型，而�
 - 需要强浏览器自动化、复杂 GUI 操作的任务。
 - 没有验收标准的“帮我优化一下”。
 
-## 不同任务类型链路
+## 五 Agent 工作流
 
-### 模糊需求
+五个角色严格分权：
 
-`人类输入 -> Planner 分组澄清 -> PRD 草案 -> 人工确认 -> to-tickets 拆解 -> 人工确认 -> ready-for-agent gate -> Multica assign`
+- `Coordinator`：Squad leader、飞书唯一入口、唯一 dispatcher。建票、派发、校验 handoff、推进跨 Agent 状态、触发人工闸门。
+- `Planner`：澄清需求、生成 spec、拆 vertical-slice tickets。可只读探索代码；只可写规划文档并创建 docs-only planning MR；不能派发、实现或推进 delivery。
+- `Builder`：执行 Coordinator 声明的 `work_type: implement | diagnose | prototype | review-fix`。
+- `Reviewer`：对固定 refs 做 Standards + Spec 双轴审查。不实现，不直接触发 Builder。
+- `Inspector`：管理 Autopilot、执行 `inspection_type` 巡检、维护 context。默认报告/提议；副作用受 profile 与人工批准约束。
 
-- 适用 Matt Skills：`batch-grill-me`、`to-spec`、`to-tickets`。`batch-grill-me` 只采用分组 frontier 方法，最多 2 轮；`triage` 仅用于外部原始 issue，不重复处理 `to-tickets` 产物。
-- 关键限制：优先 1 轮、最多 2 轮；每轮问题一次性分组，并给出推荐答案。禁止逐题追问；未确认前不进入实现。
-- 产出：PRD、小 issue、验收标准、依赖关系、`ready-for-agent` / `needs-info` 状态。
+所有专员的完成、阻塞、证据和审查结果都交回 `Coordinator`。Agent 之间不直接派发，不形成 @mention 循环。
 
-### 明确 PRD 拆解
+### 规划链路
 
-`产品文档 -> Planner 读文档/代码并做 gap analysis -> 必要时批量澄清 -> implementation-ready spec -> 人工确认 -> to-tickets 拆 vertical slice -> 人工确认 -> Builder 实现 -> Reviewer 审查`
+`飞书/issue -> Coordinator intake -> Planner 澄清与只读 gap analysis -> spec 草案 -> 人工确认 -> Planner 拆票 -> 人工确认 -> docs-only planning MR -> Coordinator 校验 planning handoff -> ready-for-delivery`
 
-- 适用 Matt Skills：`batch-grill-me`（仅补阻塞缺口）、`to-spec`、`to-tickets`。
-- 关键限制：文档内容不重复询问；没有阻塞缺口就跳过澄清。每条验收标准和子 issue 必须可追溯到原产品文档或明确确认的决策。每个 issue 独立可验证，避免按前端/后端/数据库做横切拆分。
-- 产出：可 AFK 执行的小 issue。
+- Planner 优先 1 轮、最多 2 轮分组澄清；每轮附推荐答案，不逐题追问。
+- 每条验收标准和子票必须追溯到原文档或明确确认的决策。
+- Planner 可读源码、测试和文档；不得 checkout 业务分支、修改生产代码、安装依赖、运行项目代码/构建/测试。
+- Planner 的唯一写权限是规划文档与 docs-only planning MR。该 MR 不得混入源码、配置或生成物。
+- Planner 输出 planning handoff 后交回 Coordinator。Planner 不 assign Builder/Reviewer/Inspector，不设置 delivery 状态。
 
-### 小功能实现
+### 交付链路
 
-`ready-for-agent issue -> Builder 执行 -> 测试 -> Reviewer 审查 -> 人工验收/合并`
+`ready-for-delivery -> Coordinator ready-for-agent gate -> Builder -> Coordinator -> Reviewer -> Coordinator -> 人工验收 -> Final MR 人工 merge -> done`
 
-- 适用 Matt Skills：`tdd`、`codebase-design`。
-- 关键限制：Builder 不做长澄清；缺信息就回写 blocker。
-- 产出：代码变更、测试结果、风险说明。
-
-### Bug 修复
-
-`bug issue -> 必要时 Builder(diagnose) 先复现/定位 -> Planner 补齐实现票 -> Builder(implement) 最小修复 -> 回归测试 -> Reviewer 审查`
-
-- 适用 Matt Skills：`diagnosing-bugs`、`tdd`。
-- 关键限制：可执行但尚未验证的 bug 先走 `work_type: diagnose`；只返回证据，不修改生产代码。实现票必须先有可读取的 `spec_ref`、确认的 `test_seams` 和明确的 `test_verification_path`。
-- 产出：复现结论、根因、修复、回归测试。
-
-### 代码审查
-
-`PR/diff + spec + Builder evidence -> Planner 固定 refs -> Reviewer 执行 Standards + Spec 双轴 -> Planner 决定修复/验收/合并`
-
-- 适用 Matt Skills：`tdd`。
-- 审查方法：`code-reviewer` 只负责 Standards 轴；Reviewer 独立读取完整 `spec_ref` 执行 Spec 轴。
-- 关键限制：两轴分开输出，不混排；不询问用户修哪些项，不实施修复，不输出清理计划，不调用 `improve-codebase-architecture`。
-- 产出：`standards_findings`、`spec_findings`、稳定 finding IDs、必须修复项和可后续处理项。
-
-### 周期巡检
-
-`Autopilot -> create_issue(inspection_type) -> Inspector 执行 -> 回写报告 -> 人工处理异常`
-
-- 执行者：`Inspector`，由 Autopilot/Planner 指定 `inspection_type` 路由 inline 或 skill-backed profile。新巡检一定创建 Autopilot；简单确定的只读检查使用 inline profile，复杂/复用/外部 API/可执行检查才创建 skill。
-- 巡检定义与 scope 分离。每个 Autopilot instance 绑定一个 Multica project：A 改 B 使用 `replace`；A、B 同时运行则复用定义创建 B 的 sibling instance；移除项目默认 pause 对应 instance。
-- 关键限制：Autopilot 失败不自动 retry，重要巡检要设计成功信号；危险动作必须人工确认。
-- 产出：巡检报告，或生成后续 issue。
-
-### Context 持续补充
-
-`完成 issue/PR -> Inspector(inspection_type: context) 汇总 -> 提议 CONTEXT.md/ADR/Skill diff -> 人工确认 -> 写入 repo`
-
-- 执行者：`Inspector` 的 `context` 类型。
-- 适用 Matt Skills：`grill-with-docs`、`handoff`、`writing-great-skills`。
-- 关键限制：只建议更新 context，人类确认后才写入长期文档。
-- 产出：领域词汇、架构决策、可复用工作流。
-
-## 完整自动派发工作流
-
-目标：`Planner` 澄清和拆解后，自动把可执行 issue 派发给其他 agent；人类只确认关键闸门。
-
-### Agent 设计
-
-#### Planner / Coordinator
-
-- 职责：需求澄清、PRD、issue 拆解、triage、派发。
-- 推荐模型：高推理模型；优先 `Claude Code` 或 `Cursor Agent` 强模型。
-- 推荐 Matt Skills：`batch-grill-me`、`to-spec`、`to-tickets`、`triage`。`batch-grill-me` 强制限制为最多 2 轮；`domain-modeling`、`grill-with-docs`、`grilling` 不适合 Multica + Lark 的短轮次澄清，待从 server 解绑。
-- 并发：`1`。
-- 权限：唯一 dispatcher。只有它可以创建子 issue、分配 agent、推进状态。
-- 规则：澄清优先 1 轮、最多 2 轮；每轮最多 5 个分组问题，附推荐答案并允许用户回复“按推荐”。PRD 和 issue 拆解必须人工确认后再派发。
-
-#### Builder
-
-- 职责：执行 Coordinator 声明的 `work_type: implement | diagnose | review-fix`。
-- 推荐模型：中高模型；优先 `Claude Code`、`Codex` 或 `Cursor Agent`。
-- 推荐 Matt Skills：`codebase-design`、`diagnosing-bugs`、`tdd`。Multica 已把 `implement` 的 orchestration 拆到 Coordinator、Builder、Reviewer，不再直接绑定 Builder。
-- 并发：同一 repo `1`。
-- 权限：只能执行声明的工作模式、测试、回写证据。不能派发其他 agent。
-- 规则：实现/修复必须读取完整 `spec_ref`、按确认的 `test_seams` 做 red → green、执行准确的 `test_verification_path`；诊断停在修复前；缺信息就标 blocker，交回 Planner。
-
-#### Reviewer
-
-- 职责：以 `code-reviewer` 执行 Standards 轴，独立执行 Spec 轴，审查 Builder 输出。
-- 推荐模型：高推理模型；review 比实现更需要判断力。
-- 已应用 Matt Skills：`tdd`。
-- 并发：`1`。
-- 权限：只能评论风险和结论。不能循环 @Builder。
-- 规则：固定 commit refs；读取完整 `spec_ref`、Builder evidence 和 standards sources；两轴 findings 不混排；只有两轴均无 blocking finding 才批准。
-
-#### Inspector
-
-- 职责：通用巡检。按 `inspection_type` 路由 inline 或 skill-backed profile；使用 `inspection-autopilot-manager` 创建 Autopilot、判断是否需要 skill、复用定义并修改 project scope。
-- 推荐模型：低中模型即可（bootstrap 起草 skill 时偏中高）。
-- 推荐 Matt Skills：`writing-great-skills`，仅创建/编辑 skill 时加载。`grill-with-docs`、`handoff` 等由具体 profile 按需加载。
-- scope：巡检定义可跨项目复用；一个 Autopilot instance 绑定一个 Multica project。
-- 并发：`1`。
-- 权限：默认只产出报告/提议。`context` 经人类确认后可写长期文档；只读类型全程只读；危险动作必须人工确认。
-- 规则：一次 run 只跑一个已注册 `inspection_type`；未知类型标 `needs-info`；scope-only 修改不得改变检查逻辑、schedule、subscriber 或 trigger。
-
-### Planner 自动派发机制
-
-`Planner` 完成澄清和拆解后，用 Multica CLI/API/UI 创建并分配子 issue。
-
-推荐派发方式：
-
-1. `Planner` 创建 parent PRD issue。
-2. 人类确认 PRD。
-3. `Planner` 拆 vertical slice 子 issue。
-4. 人类确认 issue 粒度、依赖、验收标准。
-5. `Planner` 按依赖顺序创建子 issue。
-6. `Planner` 补齐 Builder packet，声明 `work_type`，通过 mode-specific ready-for-agent gate 后再把无阻塞 issue assign 给 `Builder`。
-7. `Builder` 完成 `implement` / `review-fix` 后回写 Builder completion packet 并标 `ready-for-review`；完成 `diagnose` 后回写 Diagnosis evidence packet 并标 `evidence-ready`，由 Planner 恢复 triage/spec。
-8. `Planner` 验证 packet 后，用固定 commit refs、完整 spec、standards sources 和 Builder evidence 派发 `Reviewer`。
-9. `Reviewer` 输出 Standards + Spec 双轴 Review result packet；两轴均通过后标 `review-approved` 并交回 `Planner`。
-10. `Planner` 合并 Builder MR（策略不允许时等待人工），验证 reviewed head 已进入 `source_branch`。
-11. 进入 `ready-for-acceptance`，人类验收实现结果。
-12. 验收通过后，`Planner` 创建 Final MR 并标 `ready-for-human-merge`。
-13. 人类 merge Final MR；验证后标 `done`。
-14. `Inspector`（`context` 类型）周期汇总可沉淀内容，并以 Inspection result packet 交回 `Planner`。
+- `implement`：按确认 spec 和 test seams 实现。
+- `diagnose`：复现、定位、返回证据；不修生产代码。
+- `prototype`：用可丢弃原型回答已声明的设计问题；结果是证据，不直接成为生产实现。
+- `review-fix`：只修 Coordinator 指定的 blocking finding IDs；最多 1 次自动 cycle。
+- Reviewer 固定 `review_base_ref...review_head_ref`，分开输出 `standards_findings` 与 `spec_findings`。两轴都无 blocking finding 才批准。
+- Inspector 由 Autopilot 或 Coordinator 触发。每次只执行一个已注册 `inspection_type`；context 维护先提议，人工批准后才写长期资料。
 
 ### 状态机
 
+Planning 与 delivery 分离，避免 Planner 越权推进实现。
+
 ```text
-needs-clarification
--> prd-draft
--> ready-for-slicing
--> needs-triage
+planning:
+intake
+-> needs-clarification
+-> spec-draft
+-> spec-confirmed
+-> tickets-draft
+-> tickets-confirmed
+-> planning-mr-ready
+-> planning-complete
+```
+
+```text
+delivery:
+ready-for-delivery
 -> ready-for-agent
 -> in-progress
 -> ready-for-review
@@ -207,58 +127,56 @@ needs-clarification
 回流：
 
 ```text
-in-progress -> blocked-needs-info -> needs-clarification
-ready-for-review -> changes-requested -> ready-for-agent
-in-progress(diagnose) -> evidence-ready -> Planner resumes triage/spec
-review-approved -> ready-for-builder-mr-merge -> ready-for-acceptance  # 仅策略禁止自动合并 Builder MR 时
+Planner blocked -> Coordinator -> needs-clarification
+Builder blocked -> Coordinator -> blocked-needs-info
+in-progress(diagnose|prototype) -> evidence-ready -> Coordinator
+ready-for-review -> changes-requested -> Coordinator -> ready-for-agent(review-fix)
+review-approved -> ready-for-builder-mr-merge -> ready-for-acceptance
+Inspector complete|blocked -> Coordinator
 ```
 
 ### 人工闸门
 
 保留 4 个必须人工确认点：
 
-- PRD 确认：目标、范围、验收标准无歧义。
-- issue 拆解确认：粒度、依赖、AFK/HITL 标记正确。
-- 用户验收确认：预览/行为是否满足需求。
-- Final MR merge 确认：代码是否进入目标分支。
+- Spec 确认：目标、范围、验收标准、test seams。
+- Tickets 确认：粒度、依赖、AFK/HITL 标记。
+- 用户验收确认：预览和行为满足需求。
+- Final MR merge 确认：代码进入目标分支。
 
-其他步骤可由 `Planner` 自动推进。
+Autopilot 创建/修改、context 写入及危险动作另需动作级人工批准。
 
-### 防失控规则
+### 技能映射
 
-- 只有 `Planner` 能派发。`Builder`、`Reviewer`、`Inspector` 不能互相调度。
-- 禁止 agent 间循环 @mention。
-- 最多 1 轮自动 review-fix；第二轮仍失败就交给人类。
-- 执行 agent 最多问 1 个 blocker；继续缺信息就回 `needs-info`。
-- Autopilot 默认 `create_issue`，不直接 run-only 执行重要任务。
-- 所有 agent instructions 使用短版 caveman：中文、短句、无废话、保留技术名词。
-- 分支/MR 操作统一使用 `branch-mr-safety`：`base_branch -> source_branch -> work_branch`；Builder 只创建 `work_branch -> source_branch` 的 MR，最终 `source_branch -> test/main` MR 由 Planner 或人类确认后处理。
-- Agent instructions 和 handoff packet 高于通用 Skill 工作流。Skill 不得扩大权限、跳过人工闸门、自动派发其他 Agent，或改变状态机。
-- Planner 可只读探索相关源码和测试，用于确认当前行为、模块边界、依赖、已有实现与 test seams；禁止 checkout、编辑、安装依赖、运行项目代码/构建/测试。
-- `review_fix_count`、`previous_review_ref`、review commit refs 必须持久化到 issue；不能只保存在单次会话。
+- `Coordinator`：`triage`、`branch-mr-safety`；只用于 intake、路由和控制面。
+- `Planner`：`batch-grill-me`、`to-spec`、`to-tickets`、`branch-mr-safety`；后者仅用于 docs-only planning MR。
+- `Builder`：`codebase-design`、`diagnosing-bugs`、`prototype`、`tdd`、`branch-mr-safety`。
+- `Reviewer`：`code-reviewer`（Standards 轴）、`tdd`、`branch-mr-safety`；Spec 轴必须独立读取完整 `spec_ref`。
+- `Inspector`：`inspection-autopilot-manager`、`writing-great-skills`；其他 skill 仅按当前 `inspection_type` 加载。
+
+Agent instructions、当前 handoff packet 和人工闸门高于 Skill。Skill 不得扩大权限、改变状态机或取得派发权。
 
 ## 建议落地配置
 
-- 第一阶段建立 4 个 agent：`Planner`、`Builder`、`Reviewer`、`Inspector`。
-- 每个 issue 控制在 0.5-2 天内可完成。
-- Backlog 只停车，不触发 agent；进入 Todo 后再分配。
-- `Planner` 并发固定为 1，避免多个规划流互相覆盖。
-- `Builder` 同一 repo 并发固定为 1；只有隔离 worktree 且 MR 目标无交叉时才提高。
-- Autopilot 默认使用 `create_issue` 模式，让结果留在 board 上。
-- 重要 Autopilot 自己设计成功信号，因为失败不会自动 retry。
-- 第三方 Skills 先审计再导入，避免指令投毒或 secret 泄露。
+- 建立 5 个 agent：`Coordinator`、`Planner`、`Builder`、`Reviewer`、`Inspector`。
+- Coordinator 是 Squad leader；五个 Agent 都是 Squad members。
+- 飞书 Bot 只绑定 Coordinator。飞书不直接入口 Planner 或执行 Agent。
+- Coordinator、Planner、Reviewer、Inspector 并发固定 `1`；Builder 同一 repo 默认 `1`。
+- Backlog 只停车；进入 Todo 且通过 ready-for-agent gate 后才派发。
+- Autopilot 默认 `create_issue`；重要巡检定义成功信号。
 
 ### Agent Instructions 同步
 
-`agents/*.md` 是设计源，Multica server instructions 是运行副本。repo 文件修改后必须手工同步，并在 Multica Agent description 记录相同 `Instruction version`。同步后核对 Agent name、bound Skills、max concurrency、version，再用无副作用 issue 验证 packet 与状态转换。当前版本：Coordinator `2026-07-28.5`；Builder `2026-07-28.3`；Reviewer `2026-07-28.2`；Inspector `2026-07-28.2`。四个 Agent 新草稿和 Skill 增删尚未同步 server；业务自定义、项目专属和第三方 Skills 不跟随记录。
+`agents/*.md` 与 [`agents/protocol.md`](agents/protocol.md) 是设计源；Multica server instructions 是运行副本。共享协议不会自动注入任何 runtime。每个 Agent 的 server instructions 必须显式包含或引用 runtime 可读取的完整协议；仅在 repo 中更新文档无效。
+
+统一 Instruction version：`2026-08-12.1`。同步后核对五个 Agent 的 name、Squad role、bound Skills、max concurrency、instructions version，并用无副作用 issue 验证 planning/delivery 状态隔离、全部 handoff 回 Coordinator、飞书入口和人工闸门。当前 repo 更新不代表 server 已同步。
 
 ## 最小试点
 
-先跑完整但低并发的四条线：
+- `Coordinator`：接收飞书请求、唯一派发、收敛所有 handoff。
+- `Planner`：生成 spec、tickets 和 docs-only planning MR。
+- `Builder`：分别验证 `implement`、`diagnose`、`prototype`、`review-fix`。
+- `Reviewer`：验证 Standards + Spec 双轴结果。
+- `Inspector`：验证 Autopilot 与 context maintenance。
 
-- `Planner`：从模糊需求生成 PRD 和小 issue。
-- `Builder`：执行 `implement`、`diagnose`、`review-fix` issue。
-- `Reviewer`：审查 `ready-for-review` issue。
-- `Inspector`：`context` 类型每周生成 context-update issue；其他巡检类型经 bootstrap 自建。
-
-判断标准：是否减少手工分发、追踪、复制 prompt、重复审查成本。如果只是把聊天窗口搬到看板，收益不足。
+判断标准：减少手工分发、追踪、复制 prompt 和重复审查成本。
