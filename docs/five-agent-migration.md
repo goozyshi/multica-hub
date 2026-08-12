@@ -1,8 +1,8 @@
 # 五 Agent 迁移方案
 
-版本：`2026-08-12.1`
+版本：`2026-08-12.3`
 
-目标：把现有 `Planner / Coordinator` 拆成独立 `Planner` 与 `Coordinator`，形成 `Coordinator + Planner + Builder + Reviewer + Inspector`。本文件描述 Multica server 迁移、权限与验证；仓库内 `agents/*.md` 是设计源，server 配置是运行副本。
+目标：把现有 `Planner / Coordinator` 拆成独立 `Planner` 与 `Coordinator`，形成 `Coordinator + Planner + Builder + Reviewer + Inspector`。本文件描述 Multica server 迁移、权限与验证；`docs/protocol.md` 与 `skills/branch-mr-safety/SKILL.md` 是设计参考，server instructions 是运行副本。
 
 ## 1. 目标拓扑
 
@@ -31,11 +31,11 @@ Coordinator（exact-head approval、幂等建票）
 
 | Agent | Server 动作 | Instructions 源 | Version | Concurrency |
 | --- | --- | --- | --- | --- |
-| Coordinator | 将现 `Planner / Coordinator` 重命名或新建；保留用户入口/Bot | `agents/coordinator.md` | `2026-08-12.1` | `1` |
-| Planner | 新建 | `agents/planner.md` | `2026-08-12.1` | `1` |
-| Builder | 保留并同步四种 work type 契约 | `agents/builder.md` | `2026-08-12.1` | `1` per repo |
-| Reviewer | 保留并同步 Coordinator handoff | `agents/reviewer.md` | `2026-08-12.1` | `1` |
-| Inspector | 保留并同步 Coordinator handoff/context profile | `agents/inspector.md` | `2026-08-12.1` | `1` |
+| Coordinator | 将现 `Planner / Coordinator` 重命名或新建；保留用户入口/Bot | server instructions | `2026-08-12.3` | `1` |
+| Planner | 新建 | server instructions | `2026-08-12.3` | `1` |
+| Builder | 保留并同步四种 work type 契约 | server instructions | `2026-08-12.3` | `1` per repo |
+| Reviewer | 保留并同步 Coordinator handoff | server instructions | `2026-08-12.3` | `1` |
+| Inspector | 保留并同步 Coordinator handoff/context profile | server instructions | `2026-08-12.3` | `1` |
 
 切换要求：
 
@@ -43,7 +43,7 @@ Coordinator（exact-head approval、幂等建票）
 - 飞书 Bot 只绑定 Coordinator。不要同时把旧入口与新入口暴露给用户。
 - Planner 必须是独立 server Agent，不是 Coordinator alias。
 - 旧 `Planner / Coordinator` instructions 下线后，不得继续 claim 新任务。
-- Agent description 记录对应 `Instruction version`，但完整行为必须放在 instructions。
+- Agent description 记录对应 `Instruction version`，完整行为必须放在 server instructions。
 - 所有 Agent access 设为 workspace 所需范围；敏感配置只放 server env/MCP。
 
 ## 3. Squad roster
@@ -93,31 +93,57 @@ inspection → Inspector。
 - inspection child issue：Coordinator assign Inspector。
 - 任何 Agent 完成/阻塞：只 handoff Coordinator。
 
-规划状态：
+主状态沿用 Matt skills 的五个状态角色：
 
 ```text
-planning-requested
--> planning-in-progress
--> planning-needs-info
--> planning-ready
--> planning-awaiting-approval
--> planning-approved
+needs-triage
+needs-info
+ready-for-agent
+ready-for-human
+wontfix
 ```
 
-执行状态：
+含义：
+
+- `needs-triage`：新需求或 raw issue，尚未完成分诊。
+- `needs-info`：等待用户、Reporter 或上游 Agent 补充信息。
+- `ready-for-agent`：范围、验收标准和依赖已明确，可以派发 Agent。
+- `ready-for-human`：等待人工决策、用户验收或人工 merge。
+- `wontfix`：明确不处理的终态。
+
+`ready-for-human` 必须在 comment 或 handoff packet 中记录：
 
 ```text
-planned
+human_gate: planning-approval | acceptance | merge | decision
+```
+
+执行阶段只作为内部 handoff 信息，不创建额外公开状态：
+
+```text
+planning
+in-progress
+review
+changes-requested
+acceptance
+done
+```
+
+标准链路：
+
+```text
+needs-triage
+-> planning
+-> ready-for-human (human_gate: planning-approval)
 -> ready-for-agent
 -> in-progress
--> ready-for-review
--> review-approved
--> ready-for-acceptance
--> ready-for-human-merge
+-> review
+-> ready-for-human (human_gate: acceptance | merge)
 -> done
 ```
 
-server 自定义状态名称不完全一致时，建立一对一映射并记录，不得把 `planning-approved`、`review-approved`、`ready-for-acceptance` 合并成一个状态。
+简单任务可从 `needs-triage` 直接进入 `ready-for-agent`，并使用 `workflow: fast-path`：跳过 Planner、Planning MR 和 planning approval，planning fields 设为 `not-required`，但仍必须提供可解析的不可变 `spec_ref`。没有 `repo:path@commit` 格式的 spec 时，必须改用 `workflow: planned`；不得使用可变 issue 正文或聊天消息替代。`needs-info` 恢复时回到原阶段；原阶段必须记录在 comment 或 packet 中。`wontfix` 不转换为 `done`。
+
+server 自定义状态名称不完全一致时，只映射上述五个主状态；执行阶段写入 comment 或 packet，不再为每个阶段创建独立状态。
 
 ## 6. Git 权限
 
@@ -211,6 +237,44 @@ planning head 变化时：
 4. 取得新 exact-head approval；
 5. 新 approval 使用新 idempotency namespace。
 
+### Review dispatch 与自动修复
+
+Coordinator 派发 Reviewer 时必须同时传递：
+
+```text
+spec_ref
+review_base_ref
+review_head_ref
+acceptance_criteria
+standards_sources
+builder_completion_ref
+test_evidence
+review_round
+assigned_finding_ids
+```
+
+`workflow: fast-path` 与 `workflow: planned` 使用相同的 `spec_ref` 格式。Reviewer 不接受 issue 正文、聊天消息或浮动 MR 作为 Spec 轴基准。
+
+Reviewer 必须：
+
+- 读取 `spec_ref` 指向的完整原始 spec；
+- 只审查固定的 `review_base_ref...review_head_ref`；
+- 分别执行 Standards 与 Spec 双轴审查；
+- 为 findings 标记所属轴和稳定 finding ID；
+- 在输入缺失或 ref/head 失效时返回 `needs-info`，不得批准。
+
+自动修复链路：
+
+```text
+Reviewer changes-requested
+  -> Coordinator 提取 blocking finding IDs
+  -> Builder(work_type: review-fix)
+  -> Coordinator 固定新的 review_head_ref
+  -> Reviewer follow-up
+```
+
+`review-fix` 只能修复 Coordinator 指定的 finding IDs。每个执行 issue 最多一次自动修复循环；第二次仍 `changes-requested` 时进入 `ready-for-human`，记录 `human_gate: decision`。Spec 变化或产品决策不得自动修复，必须回 Planner/用户。
+
 ## 9. 幂等键
 
 Planning child：
@@ -222,10 +286,14 @@ Planning child：
 Formal child：
 
 ```text
-<parent_issue_key>:<approved_planning_head>:<SLICE-ID>
+planned:
+<parent_issue_key>:<approved_plan_ref>:<SLICE-ID>
+
+fast-path:
+<parent_issue_key>:fast-path:<spec_ref>:<SLICE-ID>
 ```
 
-每次 server task 重试前先查 key。匹配则复用；冲突或重复则停在 `needs-human-decision`，不再创建一张“替代票”。
+每次 server task 重试前先查 key。匹配则复用；冲突或重复则停在 `ready-for-human`，并记录 `human_gate: decision`，不再创建一张“替代票”。
 
 ## 10. 同步顺序
 
@@ -233,8 +301,8 @@ Formal child：
 
 1. 备份五个 server Agent 与 Squad 当前 JSON 配置：name、runtime、model、instructions、description、skills、access、concurrency、env/MCP 引用。
 2. 暂停旧入口的自动任务或新 issue claim；保留已有任务，不中途换 owner。
-3. 创建 Planner server Agent，写入 `agents/planner.md` instructions，绑定 skills。
-4. 创建或更新 Coordinator，写入 `agents/coordinator.md` instructions；先不开放用户流量。
+3. 创建 Planner server Agent，写入 server instructions，绑定 skills。
+4. 创建或更新 Coordinator，写入 server instructions；先不开放用户流量。
 5. 更新 Squad roster，设 Coordinator 为 leader，加入 Planner。
 6. 同步 Squad 短 instructions。
 7. 同步 Builder 对 `prototype`、Coordinator handoff 和四 work types 的支持；未完成前设置 `prototype` dispatch kill switch。
@@ -324,11 +392,14 @@ multica squad list
 
 ### Smoke G：Review-fix budget
 
+- Reviewer dispatch packet 包含完整 `spec_ref`、固定 `review_base_ref...review_head_ref`、验收标准和测试证据。
+- Reviewer 分别返回 Standards 与 Spec 两轴结果，并为 blocking findings 生成 finding IDs。
 - Reviewer 第一次返回 `changes-requested`。
-- Coordinator 设置 `review_fix_count: 1` 并派发 exact IDs。
+- Coordinator 设置 `review_fix_count: 1`，以 `work_type: review-fix` 派发 exact IDs。
+- Builder 只修复 assigned finding IDs，完成后由 Coordinator 派发 follow-up Reviewer。
 - Reviewer 第二次仍返回 `changes-requested`。
 
-通过标准：自动化停止在 `needs-human-decision`，不出现第二次自动 review-fix。
+通过标准：Reviewer 能读取完整 spec 和 pinned diff；两轴结果可追溯；issue 进入 `ready-for-human` 并记录 `human_gate: decision`；不出现第二次自动 review-fix。
 
 ### Smoke H：验收与 Final MR
 
@@ -336,7 +407,7 @@ multica squad list
 - Coordinator 请求用户验收。
 - 验收前尝试创建 Final MR。
 
-通过标准：验收前被阻止；验收后只创建一个 Final MR；Final MR 不自动 merge；冲突不 force。
+通过标准：验收前 issue 保持 `ready-for-human` 且记录 `human_gate: acceptance`；验收后只创建一个 Final MR；Final MR 不自动 merge；冲突不 force。
 
 ### Smoke I：Inspector handoff
 
@@ -344,6 +415,16 @@ multica squad list
 - Inspector 返回 report。
 
 通过标准：Inspector 不派发 Builder；实现建议回 Coordinator，并重新进入 planning gate。
+
+### Smoke J：Fast-path
+
+- Coordinator 为单切片、范围清晰且无未决产品决策的 issue 设置 `workflow: fast-path`。
+- `spec_ref` 可解析为 `repo:path@commit`；planning fields 均为 `not-required`。
+- 不创建 planning child、Planner task 或 Planning MR。
+- Builder、Reviewer、review-fix、用户验收和 Final MR 仍按标准链路执行。
+- 删除或改写不可变 spec 后，fast-path 被阻止并转为 `workflow: planned`。
+
+通过标准：fast-path 只减少规划步骤，不减少 Spec 轴审查、review-fix 限制、用户验收或人工 merge。
 
 ## 12. 回滚
 

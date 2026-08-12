@@ -218,4 +218,4 @@ multica squad list
 - CLI / Daemon：`CLI_AND_DAEMON.md`
 - 飞书集成：https://multica.ai/docs/lark-bot-integration（Channels 文档）
 
-本地工作流实例见 `agents/README.md`（SoulStar 四 agent 设计，非 Multica 官方默认）。
+本仓库的五 Agent 工作流约束见 [`docs/protocol.md`](protocol.md)；它是本地设计参考，不是 Multica 官方默认行为。

@@ -39,6 +39,8 @@ Multica 是开源的 managed agents 平台。它不是新的代码模型，而�
 
 推荐用 **Issue-first 工作流**。
 
+本仓库的五 Agent 运行协议以 [`docs/protocol.md`](docs/protocol.md) 和 [`skills/branch-mr-safety/SKILL.md`](skills/branch-mr-safety/SKILL.md) 为准；README 只提供概览，server instructions 才是运行副本。
+
 1. 人类创建小而明确的 issue：背景、目标、验收标准、约束、测试命令。
 2. 按任务类型分配给专用 agent：实现、测试、审查、文档、巡检。
 3. agent 在本地 runtime 执行，进度和阻塞回写到 issue。
@@ -77,9 +79,16 @@ Multica 是开源的 managed agents 平台。它不是新的代码模型，而�
 
 ### 规划链路
 
-`飞书/issue -> Coordinator intake -> Planner 澄清与只读 gap analysis -> spec 草案 -> 人工确认 -> Planner 拆票 -> 人工确认 -> docs-only planning MR -> Coordinator 校验 planning handoff -> ready-for-delivery`
+复杂任务：
 
-- Planner 优先 1 轮、最多 2 轮分组澄清；每轮附推荐答案，不逐题追问。
+`飞书/issue -> Coordinator -> Planner -> Question relay（可选）-> spec/ticket plan -> docs-only Planning MR -> exact-head approval -> Builder`
+
+简单任务：
+
+`飞书/issue -> Coordinator -> ready-for-agent -> Builder`
+
+- 简单任务使用 `workflow: fast-path`，但仍必须提供不可变 `spec_ref=repo:path@commit`；没有不可变 spec 时进入 planned。
+- Planner 使用 decision frontier，不设固定澄清轮数；只处理当前阻塞 spec/ticket 的产品决策。
 - 每条验收标准和子票必须追溯到原文档或明确确认的决策。
 - Planner 可读源码、测试和文档；不得 checkout 业务分支、修改生产代码、安装依赖、运行项目代码/构建/测试。
 - Planner 的唯一写权限是规划文档与 docs-only planning MR。该 MR 不得混入源码、配置或生成物。
@@ -87,7 +96,7 @@ Multica 是开源的 managed agents 平台。它不是新的代码模型，而�
 
 ### 交付链路
 
-`ready-for-delivery -> Coordinator ready-for-agent gate -> Builder -> Coordinator -> Reviewer -> Coordinator -> 人工验收 -> Final MR 人工 merge -> done`
+`ready-for-agent -> Builder -> Coordinator -> Reviewer -> ready-for-human(acceptance) -> 用户验收 -> Final MR 人工 merge -> done`
 
 - `implement`：按确认 spec 和 test seams 实现。
 - `diagnose`：复现、定位、返回证据；不修生产代码。
@@ -98,51 +107,42 @@ Multica 是开源的 managed agents 平台。它不是新的代码模型，而�
 
 ### 状态机
 
-Planning 与 delivery 分离，避免 Planner 越权推进实现。
+Matt 主状态：
 
 ```text
-planning:
-intake
--> needs-clarification
--> spec-draft
--> spec-confirmed
--> tickets-draft
--> tickets-confirmed
--> planning-mr-ready
--> planning-complete
+needs-triage
+needs-info
+ready-for-agent
+ready-for-human
+wontfix
 ```
 
+`ready-for-human` 使用 `human_gate: planning-approval | acceptance | merge | decision` 区分人工原因。内部阶段写入 handoff packet，不创建新公开状态：
+
 ```text
-delivery:
-ready-for-delivery
--> ready-for-agent
--> in-progress
--> ready-for-review
--> review-approved
--> ready-for-acceptance
--> ready-for-human-merge
--> done
+planning
+in-progress
+review
+changes-requested
+acceptance
+done
 ```
 
 回流：
 
 ```text
-Planner blocked -> Coordinator -> needs-clarification
-Builder blocked -> Coordinator -> blocked-needs-info
-in-progress(diagnose|prototype) -> evidence-ready -> Coordinator
-ready-for-review -> changes-requested -> Coordinator -> ready-for-agent(review-fix)
-review-approved -> ready-for-builder-mr-merge -> ready-for-acceptance
+任何阶段 -> needs-info -> 原阶段
+review -> changes-requested -> ready-for-agent(review-fix)
+diagnose|prototype -> planning
 Inspector complete|blocked -> Coordinator
 ```
 
 ### 人工闸门
 
-保留 4 个必须人工确认点：
-
-- Spec 确认：目标、范围、验收标准、test seams。
-- Tickets 确认：粒度、依赖、AFK/HITL 标记。
-- 用户验收确认：预览和行为满足需求。
-- Final MR merge 确认：代码进入目标分支。
+- 复杂任务：exact planning head 批准。
+- 所有实现：用户验收。
+- 所有 Final MR：人工 merge。
+- 冲突、Spec 歧义或自动 review-fix 预算耗尽：`human_gate: decision`。
 
 Autopilot 创建/修改、context 写入及危险动作另需动作级人工批准。
 
@@ -167,9 +167,9 @@ Agent instructions、当前 handoff packet 和人工闸门高于 Skill。Skill �
 
 ### Agent Instructions 同步
 
-`agents/*.md` 与 [`agents/protocol.md`](agents/protocol.md) 是设计源；Multica server instructions 是运行副本。共享协议不会自动注入任何 runtime。每个 Agent 的 server instructions 必须显式包含或引用 runtime 可读取的完整协议；仅在 repo 中更新文档无效。
+`docs/protocol.md` 与 `skills/branch-mr-safety/SKILL.md` 是设计参考；Multica server instructions 是运行副本。共享协议不会自动注入任何 runtime。每个 Agent 的 server instructions 必须显式包含或引用 runtime 可读取的完整协议；仅在 repo 中更新文档无效。
 
-统一 Instruction version：`2026-08-12.1`。同步后核对五个 Agent 的 name、Squad role、bound Skills、max concurrency、instructions version，并用无副作用 issue 验证 planning/delivery 状态隔离、全部 handoff 回 Coordinator、飞书入口和人工闸门。当前 repo 更新不代表 server 已同步。
+统一 Instruction version：`2026-08-12.3`。同步后核对五个 Agent 的 name、Squad role、bound Skills、max concurrency、instructions version，并用无副作用 issue 验证 planned/fast-path 分流、全部 handoff 回 Coordinator、飞书入口和人工闸门。当前 repo 更新不代表 server 已同步。
 
 ## 最小试点
 
