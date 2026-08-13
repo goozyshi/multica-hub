@@ -34,7 +34,7 @@
 
 飞书群里用户只需要 @ `Planner / Coordinator`。`Planner / Coordinator` 派发时把原请求人、原群/线程和父请求链接作为内部 notification context 传给 `Builder`。
 
-`Builder` 完成或阻塞后，可以在原群/线程通知原请求人一次。通知只包含实现结果、Builder MR link、Preview URL、验证结果、风险或 blocker。`Builder` 不 @ `Reviewer`，不派发其他 agent，不推进 review loop。
+`Builder` 完成或阻塞后，可以在原群/线程通知原请求人一次。通知只包含实现结果、Builder MR link、build/验证结果、风险或 blocker。`Builder` 不 @ `Reviewer`，不派发其他 agent，不推进 review loop。
 
 `Builder` 交回 `Planner / Coordinator` 是状态 handoff，不是派发。优先 assign 当前 issue 回 `Planner / Coordinator`；如果 Multica 不支持 assign，就在当前 issue 留一条 @Planner 的 ready-for-review/blocker 评论。用户不需要手动说“请 review”。
 
@@ -98,11 +98,11 @@ ready-for-review
 
 统一使用 [`branch-mr-safety`](../skills/branch-mr-safety/SKILL.md)。分支/MR 是 agent 内部控制面，不是默认用户汇报内容。用户默认只看到实现结果、MR link、验证结果、风险和需要人工决定的 blocker。
 
-`Planner / Coordinator` 负责补齐内部 implementation packet：`repo`、`base_branch`、`source_branch`、`source_branch_status`、`issue_key`、`work_branch`、`builder_mr_target`、`final_mr_target`、`acceptance_criteria`、`test_verification_path`、`preview_required`、`notification_channel`、`notification_thread`、`notification_target`、`parent_request_link`。`Builder` 使用它创建工作分支和 Builder MR，并在完成/阻塞时通知原请求上下文；正常完成时不复述分支字段。
+`Planner / Coordinator` 负责补齐内部 implementation packet：`repo`、`base_branch`、`source_branch`、`source_branch_status`、`issue_key`、`work_branch`、`builder_mr_target`、`final_mr_target`、`acceptance_criteria`、`test_verification_path`、`notification_channel`、`notification_thread`、`notification_target`、`parent_request_link`。`Builder` 使用它创建工作分支和 Builder MR，并在完成/阻塞时通知原请求上下文；正常完成时不复述分支字段。
 
 implementation packet 还必须包含：`spec_ref`、`test_seams`、`review_fix_count`、`previous_review_ref`。`test_seams` 在规划/验收标准阶段确认，Builder 不再重复询问用户。
 
-Builder 完成后输出 Builder completion packet：Builder MR、immutable `review_base_ref` / `review_head_ref`、验收标准证据、changed files、commands、tests、preview、branch safety、risks。
+Builder 完成后输出 Builder completion packet：Builder MR、immutable `review_base_ref` / `review_head_ref`、验收标准证据、changed files、commands、build/tests、branch safety、risks。
 
 Planner 派发 Reviewer 时输出 Reviewer dispatch packet：`issue_key`、`spec_ref`、acceptance criteria、Builder MR、review refs、review round、previous review、tests、risks。
 
@@ -116,9 +116,9 @@ Inspector 输出 Inspection result packet：type、scope、result、action requi
 
 新需求默认 `source_branch_status: create_if_missing`。这表示远端 `source_branch` 不存在是预期状态，`Builder` 应从 latest `base_branch` 创建并 push。只有用户指定既有集成/feature/hotfix 分支时，才用 `source_branch_status: must_exist`。
 
-## Preview Safety
+## Build Check
 
-UI 变更可由 `Builder` 启动或复用预览。每个 repo 最多一个 preview server。已有预览安全可复用就复用；若服务正在预览其他 branch/issue，不静默切换。用户只看 `Preview: <url>`。
+UI 变更由 `Builder` 在标 `ready-for-review` 前跑通项目 build；build 失败 = packet 不完整。交互/视觉验收在 Final MR 合入后的 test 环境进行。
 
 ## Shared Communication Instruction
 
