@@ -68,9 +68,9 @@ Branch/MR fields are internal control-plane data.
 - Planner must include them in internal Builder dispatch packets.
 - Builder must use them to create branches and MRs safely.
 - Reviewer must use them to verify branch and MR safety.
-- Normal user-facing summaries should not list `base_branch`, `source_branch`, `source_branch_status`, `work_branch`, `builder_mr_target`, or `final_mr_target`.
+- Public Delivery context may show the repo key, `source_branch`, `final_mr_target`, and MR link.
+- Keep `base_branch`, `source_branch_status`, `work_branch`, `builder_mr_target`, safety checks, and all raw packet fields agent-only.
 - User-facing summaries may say `Branch safety checked`.
-- Show detailed branch/MR fields only when the user asks, a blocker occurs, a safety risk exists, or a human decision is required.
 
 ## Branch Naming
 
@@ -189,7 +189,7 @@ Final MR is:
 source_branch -> final_mr_target
 ```
 
-- Create only after review and human confirmation.
+- Create only after explicit human authorization. Product acceptance occurs after the target environment is available.
 - Do not delete `source_branch` after final merge.
 - MR to `main` requires explicit human instruction.
 

@@ -11,11 +11,11 @@
 
 ## Final Skills
 
-以下只记录 2026-07-28 通过 `multica agent skills list` 确认已应用的 Matt Skills。业务自定义、项目专属和第三方 Skills 不在此跟随：
+以下记录各 agent 设计中绑定的 Skills。Matt Skills 与 Workspace Skills 分开；部署时以 Multica 实际绑定为准：
 
-- `Planner / Coordinator`: `domain-modeling`, `grill-with-docs`, `grilling`, `to-spec`, `to-tickets`, `triage`
-- `Builder`: `codebase-design`, `diagnosing-bugs`, `implement`, `tdd`
-- `Reviewer`: `tdd`
+- `Planner / Coordinator`: Matt `grilling`, `to-spec`, `to-tickets`, `triage`; Workspace `branch-mr-safety`
+- `Builder`: Matt `codebase-design`, `diagnosing-bugs`, `resolving-merge-conflicts`, `tdd`; Workspace `branch-mr-safety`
+- `Reviewer`: Matt `tdd`; Workspace `code-reviewer`, `branch-mr-safety`
 - `Inspector`: `grill-with-docs`, `handoff`, `writing-great-skills`
 
 ## Dispatch Rule
@@ -38,7 +38,7 @@
 
 `Builder` 交回 `Planner / Coordinator` 是状态 handoff，不是派发。优先 assign 当前 issue 回 `Planner / Coordinator`；如果 Multica 不支持 assign，就在当前 issue 留一条 @Planner 的 ready-for-review/blocker 评论。用户不需要手动说“请 review”。
 
-`Reviewer` 不 reassign issue。完成后写一个 Review result packet，并留一条 @Coordinator completion comment。`Planner / Coordinator` 负责 review-fix、Builder MR merge、用户验收和 Final MR。
+`Reviewer` 不 reassign issue。完成后写当前 task record 的 agent-only `review_result`，并留一条面向用户的 @Coordinator completion summary。`Planner / Coordinator` 记录该 result 的稳定引用，负责 review-fix、Builder MR merge、用户验收和 Final MR。
 
 `Inspector` 完成后写一个 Inspection result packet，再把当前 inspection issue 交回 `Planner / Coordinator`。实现建议必须新建独立 issue，重新通过 ready-for-agent gate。
 
@@ -56,11 +56,11 @@
 ## Human Gates
 
 - PRD 确认。
-- issue 拆解确认。
+- Final MR 创建授权。
 - 用户验收确认。
 - Final MR merge 确认。
 
-Builder MR（`work_branch -> source_branch`）是内部集成步骤：Reviewer 通过后由 `Planner / Coordinator` 在策略允许时合并；策略不允许时进入 `ready-for-builder-mr-merge`，等待人工合并。合并并验证 reviewed head 已进入 `source_branch` 后，才进入用户验收。
+Builder MR（`work_branch -> source_branch`）是内部集成步骤：Reviewer 通过后由 `Planner / Coordinator` 在策略允许时合并；策略不允许时进入 `ready-for-builder-mr-merge`，等待人工合并。合并并验证 reviewed head 已进入 `source_branch` 后，先获人类授权创建 Final MR；Final MR 合入目标环境后，才进入用户验收。
 
 ## Canonical State Flow
 
@@ -73,8 +73,9 @@ needs-clarification
 -> in-progress
 -> ready-for-review
 -> review-approved
--> ready-for-acceptance
+-> ready-for-final-mr-approval
 -> ready-for-human-merge
+-> ready-for-acceptance
 -> done
 ```
 
@@ -83,6 +84,8 @@ Optional policy fallback:
 ```text
 review-approved
 -> ready-for-builder-mr-merge
+-> ready-for-final-mr-approval
+-> ready-for-human-merge
 -> ready-for-acceptance
 ```
 
@@ -98,13 +101,11 @@ ready-for-review
 
 统一使用 [`branch-mr-safety`](../skills/branch-mr-safety/SKILL.md)。分支/MR 是 agent 内部控制面，不是默认用户汇报内容。用户默认只看到实现结果、MR link、验证结果、风险和需要人工决定的 blocker。
 
-`Planner / Coordinator` 负责补齐内部 implementation packet：`repo`、`base_branch`、`source_branch`、`source_branch_status`、`issue_key`、`work_branch`、`builder_mr_target`、`final_mr_target`、`acceptance_criteria`、`test_verification_path`、`notification_channel`、`notification_thread`、`notification_target`、`parent_request_link`。`Builder` 使用它创建工作分支和 Builder MR，并在完成/阻塞时通知原请求上下文；正常完成时不复述分支字段。
+`Planner / Coordinator` 在派发前，把唯一 `builder-dispatch-v1` packet 放入当前 task record 的 agent-only `builder_dispatch`；完整字段与校验规则以 [`planner-coordinator.md`](./planner-coordinator.md#internal-builder-dispatch-packet) 为准。公开 issue 只保留目标、验收标准、repo key、`source_branch`、`final_mr_target`、MR link 与人类验证信息。`test_seams` 在规划/验收标准阶段确认，Builder 不再重复询问用户。
 
-implementation packet 还必须包含：`spec_ref`、`test_seams`、`review_fix_count`、`previous_review_ref`。`test_seams` 在规划/验收标准阶段确认，Builder 不再重复询问用户。
+Builder 完成后写当前 task record 的 agent-only `builder_completion`；用户只看到变更、Builder MR、build/test 结果、风险、`source_branch` 与 handoff。
 
-Builder 完成后输出 Builder completion packet：Builder MR、immutable `review_base_ref` / `review_head_ref`、验收标准证据、changed files、commands、build/tests、branch safety、risks。
-
-Planner 派发 Reviewer 时输出 Reviewer dispatch packet：`issue_key`、`spec_ref`、acceptance criteria、Builder MR、review refs、review round、previous review、tests、risks。
+Planner 派发 Reviewer 时写当前 task record 的 agent-only `reviewer_dispatch`：`issue_key`、`spec_ref`、acceptance criteria、Builder MR、review refs、review round、previous review、tests、risks。
 
 Reviewer 输出 Review result packet：result、round、review refs、blocking findings、non-blocking follow-ups、tests、branch safety、residual risks。每个 finding 必须有稳定 id。
 
@@ -150,4 +151,4 @@ Agent instructions and handoff packets override loaded Skill workflows。Skill �
 3. 核对 Agent name、bound Skills、max concurrency、instructions version。
 4. 用一个无副作用 smoke issue 验证 handoff packet 和状态转换。
 
-当前版本：Coordinator `2026-07-27.2`；Builder / Reviewer / Inspector `2026-07-27.1`。上述 Matt Skills 已按 2026-07-28 server 查询结果同步到草稿；后续 repo 文件更新仍不代表 server 已自动同步。
+当前版本：Coordinator `2026-08-13.7`；Builder `2026-08-13.4`；Reviewer `2026-08-13.5`；Inspector `2026-07-27.1`。后续 repo 文件更新仍不代表 server 已自动同步。
