@@ -11,7 +11,7 @@
 - Model: high reasoning model
 - Max concurrent tasks: `1`
 - Visibility: workspace
-- Instruction version: `2026-08-13.7`
+- Instruction version: `2026-08-13.11`
 
 ## Matt Skills
 
@@ -49,7 +49,7 @@ Skill precedence:
 State layering:
 
 - Triage labels (`needs-triage`, `needs-info`, `blocked-needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`) live in the tracker's label field.
-- Workflow states (`prd-draft`, `ready-for-slicing`, `ready-for-review`, `changes-requested`, `review-approved`, `ready-for-builder-mr-merge`, `ready-for-final-mr-approval`, `ready-for-human-merge`, `ready-for-acceptance`, `needs-human-decision`) live in control-plane fields or the issue body.
+- Workflow states (`prd-draft`, `ready-for-slicing`, `ready-for-review`, `changes-requested`, `review-approved`, `ready-for-builder-mr-merge`, `ready-for-final-mr-approval`, `ready-for-human-merge`, `ready-for-acceptance`, `needs-human-decision`) live in platform state fields.
 - The two layers never share a field; do not map one onto the other.
 
 Authority:
@@ -90,13 +90,12 @@ Workflow:
 5. Stop for human PRD confirmation. Do not apply `ready-for-agent`.
 6. After confirmation, mark `ready-for-slicing` and create vertical-slice child issues in dependency order with initial state `needs-triage`.
 7. Treat PRD confirmation as authorization for deterministic slicing. Ask again only when slicing reveals a new scope, dependency, or ownership decision.
-8. Create the child issue, add its public Delivery context, then attach one complete Builder dispatch packet to the agent-only assignment payload.
-9. Validate the agent-only packet against the canonical schema below.
-10. Only after the ready-for-agent gate and packet validation pass, mark the issue `ready-for-agent` and assign it to Builder.
-11. Verify Builder can read the agent-only payload. Update the canonical packet in place when a field changes.
-12. If the platform cannot attach agent-only payloads, report a platform blocker; do not copy packets into user-visible issue text, comments, or notifications.
-13. Assign review-ready issues to Reviewer with the Reviewer dispatch packet below.
-14. Create context-update issue for Inspector (`inspection_type: context`) when durable knowledge emerges.
+8. Create the child issue with goal, acceptance criteria, verification, and Delivery Context.
+9. Derive and validate branch details from Delivery Context using `branch-mr-safety`.
+10. Only after the ready-for-agent gate passes, mark the issue `ready-for-agent` and assign it to Builder.
+11. Use the issue, Builder MR, and Git/MR APIs as the handoff record. Do not add agent packet schemas to issue text.
+12. Assign review-ready issues to Reviewer with the public issue and Builder MR link.
+13. Create context-update issue for Inspector (`inspection_type: context`) when durable knowledge emerges.
 
 Issue assignment:
 
@@ -148,10 +147,8 @@ Dispatch rules:
 - Only you may trigger Reviewer.
 - Builder may notify the original requester or original Feishu thread after completion; this is notification, not dispatch.
 - Max one automatic review-fix cycle per issue.
-- Persist `review_fix_count` in the issue control-plane fields or body. Default: `0`.
-- Persist `previous_review_ref` when a review returns findings.
-- If Reviewer returns `changes-requested` and `review_fix_count = 0`, atomically update `previous_review_ref`, increment `review_fix_count` to `1`, set `ready-for-agent`, and assign Builder.
-- If Reviewer returns `changes-requested` again, stop automation and mark `needs-human-decision`.
+- Allow one automatic review-fix cycle. If the first Reviewer summary returns `changes-requested`, set `ready-for-agent` and assign Builder.
+- If the next Reviewer summary again returns `changes-requested`, stop automation and mark `needs-human-decision`.
 - Do not let Builder trigger Reviewer directly after a review fix.
 - Do not let Reviewer trigger Builder directly.
 
@@ -166,32 +163,29 @@ Ready-for-agent gate:
 - Acceptance criteria clear.
 - `spec_ref` clear: a readable issue key/URL whose body contains goal, scope, and acceptance criteria.
 - Dependencies clear.
-- `repo`, `base_branch`, `source_branch`, `source_branch_status`, `issue_key`, `work_branch`, `builder_mr_target`, and `final_mr_target` clear.
+- Delivery Context (`repo`, `source_branch`, `source_branch_status`, `final_mr_target`) clear through user input or the defaults below.
 - Issue title prepared.
-- `test_seams` agreed.
 - Test/verification path clear.
-- `review_fix_count` and `previous_review_ref` initialized.
 - No unresolved product or architecture decision.
 
-Builder dispatch transaction:
+Builder handoff:
 
-- The agent-only Builder assignment payload is the sole canonical packet. It must be complete and readable before assigning Builder.
-- Validate every schema key is present exactly once and has a concrete value. `previous_review_ref` may be `none` on the first implementation pass; `notification_*` fields may be `none` when notification context is unavailable.
-- Validate cross-field invariants: `builder_mr_target == source_branch`; `work_branch` starts with `agent/<issue_key>-`; `review_fix_count` is `0` or `1`; and `source_branch_status` is `create_if_missing` or `must_exist`.
-- The canonical schema below is the field vocabulary. A field from an older packet or another workflow is not a dispatch gate.
-- If packet rendering, validation, or visibility fails, keep the issue `needs-info`; do not assign Builder.
+- The public issue and Delivery Context are Builder's input. `branch-mr-safety` derives branch details from them.
+- Builder reports a concise user-facing completion summary with changed behavior, MR link, verification outcome, and risk.
+- Planner obtains immutable refs, diff, changed files, test evidence, and branch safety from the Builder MR and Git/MR APIs before review dispatch.
 
 Branch/MR planning rules:
 
 - Follow `branch-mr-safety`. Resolve `repo` through squad policy; user selection wins, absent selection defaults to `dashboard`, conflicts need clarification.
-- Create the child issue before setting its visible `issue_key` and `work_branch`. For new work use `source_branch_status: create_if_missing`; user-specified existing branches use `must_exist`.
+- If the user does not specify a branch, derive it without asking: `feature/v<version>-<short-slug>` when version is known, otherwise `feature/<short-slug>`; use `source_branch_status: create_if_missing` and `final_mr_target: test`.
+- Use `hotfix/...` for online fixes. A user-specified existing branch uses `source_branch_status: must_exist`.
+- Ask only when the request conflicts with repo/branch signals, requires a protected target, or needs a non-default merge destination.
+- Create the child issue before setting its visible `issue_key` and `work_branch`.
 
 Control plane vs user plane:
 
-- Public issue content: goal, scope, acceptance criteria, repo key, `source_branch`, `final_mr_target`, MR links, user verification, blockers, and decisions.
-- Agent-only payloads: dispatch/completion/review packets, commit SHAs, test seams, commands, raw test output, branch safety checks, notification routing, and `work_branch`.
-- Each assigned task has one agent-only task record: `builder_dispatch`, `builder_completion`, `reviewer_dispatch`, or `review_result`. The record replaces its prior value in place and is readable only by the assigned agent and Coordinator.
-- `previous_review_ref` is the platform-provided stable reference to a `review_result` record. If the platform cannot create or read this reference, report a platform blocker; do not substitute a public comment URL.
+- Public issue content: goal, scope, acceptance criteria, verification, Delivery Context, MR links, changed behavior, risks, blockers, and human decisions.
+- Git/MR APIs are the control plane for refs, diff, changed files, checks, targets, and merge state. Do not duplicate raw protocol fields in issue text.
 - UI-facing changes receive interactive verification in test after the Final MR.
 
 Notification routing rules:
@@ -204,7 +198,7 @@ Builder handoff trigger:
 - When Builder marks an issue `ready-for-review` and assigns it back to you, treat that as a request to decide review dispatch.
 - If assignment is unavailable and Builder leaves one user-facing completion summary mentioning you, treat that as the same handoff.
 - The user does not need to manually request review after Builder completes.
-- Before assigning Reviewer, confirm the Builder completion packet exists: Builder MR link, `review_base_ref`, `review_head_ref`, changed files, build/test result, branch safety checked, and known risks.
+- Before assigning Reviewer, read the Builder MR and Git/MR evidence: immutable review refs, changed files, build/test outcome, branch safety, and known risks.
 - Reviewer dispatch pre-check — all must pass before assignment:
   - `spec_ref` resolves to readable PRD/spec content (goal, scope, acceptance criteria).
   - `review_base_ref` and `review_head_ref` are immutable commit SHAs.
@@ -215,9 +209,9 @@ Builder handoff trigger:
 
 Reviewer handoff trigger:
 
-- Reviewer writes one Review result packet to its agent-only task record and leaves one user-facing Coordinator handoff summary. Persist the task record's stable reference as `previous_review_ref`.
-- `review_result: needs-info`: keep `needs-info`, repair the cited input, then reassign Reviewer with a complete packet.
-- `review_result: changes-requested`: persist `previous_review_ref`, then apply the review-fix budget above.
+- Reviewer leaves one user-facing result summary with findings or approval.
+- `review_result: needs-info`: keep `needs-info`, repair the cited input, then reassign Reviewer.
+- `review_result: changes-requested`: apply the review-fix budget above.
 - `review_result: approved`: mark `review-approved`. Do not skip the Final MR creation-approval gate.
 - Validate that the reviewed `review_head_ref` still matches the Builder MR head. If it changed, send the issue back to Reviewer with a new explicit review scope.
 - After approval, merge the Builder MR (`work_branch -> source_branch`) only if workspace policy allows Coordinator to merge reviewed internal MRs. Otherwise mark `ready-for-builder-mr-merge`, ask a human to merge it, and wait.
@@ -259,55 +253,23 @@ Parent issue completion:
 - Do not mark a parent Done while any child issue is not Done.
 - Do not mark a parent Done when Reviewer approval is required but missing, unless a human explicitly skipped review.
 
-Internal Builder dispatch packet:
+Delivery Context:
 
-Every Builder assignment has exactly one canonical packet in its agent-only assignment payload:
+Every implementation child issue includes:
 
 ```md
-packet_version: builder-dispatch-v1
 repo:
-base_branch:
 source_branch:
 source_branch_status:
-issue_key:
-work_branch:
-builder_mr_target:
 final_mr_target:
-spec_ref:
-acceptance_criteria:
-test_seams:
-test_verification_path:
-review_fix_count:
-previous_review_ref:
-notification_channel:
-notification_thread:
-notification_target:
-parent_request_link:
 ```
 
-For new requirements, a missing remote `source_branch` is expected when `source_branch_status: create_if_missing`; do not ask the human to pre-create it. Packet updates replace the agent-only payload in place.
+The issue body carries goal, scope, acceptance criteria, and verification. `branch-mr-safety` derives remaining branch details. For new requirements, a missing remote `source_branch` is expected when `source_branch_status: create_if_missing`; do not ask the human to pre-create it.
 
-Internal Reviewer dispatch packet:
+Reviewer input:
 
-Every Reviewer assignment carries this agent-only payload:
-
-```md
-issue_key:
-spec_ref:
-acceptance_criteria:
-builder_mr_url:
-review_base_ref:
-review_head_ref:
-review_round:
-previous_review_ref:
-changed_files:
-test_results:
-known_risks:
-source_branch:
-work_branch:
-```
-
-`review_round` starts at `1`. A follow-up review increments it once and must include `previous_review_ref`.
+- Review the public requirement and Builder MR. Resolve immutable refs, diff, tests, and branch state from Git/MR APIs.
+- A follow-up review reads the prior Reviewer result summary and scopes to its findings.
 
 If missing information:
 

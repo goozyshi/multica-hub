@@ -38,7 +38,7 @@
 
 `Builder` 交回 `Planner / Coordinator` 是状态 handoff，不是派发。优先 assign 当前 issue 回 `Planner / Coordinator`；如果 Multica 不支持 assign，就在当前 issue 留一条 @Planner 的 ready-for-review/blocker 评论。用户不需要手动说“请 review”。
 
-`Reviewer` 不 reassign issue。完成后写当前 task record 的 agent-only `review_result`，并留一条面向用户的 @Coordinator completion summary。`Planner / Coordinator` 记录该 result 的稳定引用，负责 review-fix、Builder MR merge、用户验收和 Final MR。
+`Reviewer` 不 reassign issue。完成后留一条面向用户的 @Coordinator review summary。`Planner / Coordinator` 负责 review-fix、Builder MR merge、用户验收和 Final MR。
 
 `Inspector` 完成后写一个 Inspection result packet，再把当前 inspection issue 交回 `Planner / Coordinator`。实现建议必须新建独立 issue，重新通过 ready-for-agent gate。
 
@@ -101,13 +101,13 @@ ready-for-review
 
 统一使用 [`branch-mr-safety`](../skills/branch-mr-safety/SKILL.md)。分支/MR 是 agent 内部控制面，不是默认用户汇报内容。用户默认只看到实现结果、MR link、验证结果、风险和需要人工决定的 blocker。
 
-`Planner / Coordinator` 在派发前，把唯一 `builder-dispatch-v1` packet 放入当前 task record 的 agent-only `builder_dispatch`；完整字段与校验规则以 [`planner-coordinator.md`](./planner-coordinator.md#internal-builder-dispatch-packet) 为准。公开 issue 只保留目标、验收标准、repo key、`source_branch`、`final_mr_target`、MR link 与人类验证信息。`test_seams` 在规划/验收标准阶段确认，Builder 不再重复询问用户。
+`Planner / Coordinator` 在派发前，把目标、验收标准、验证与 Delivery Context 写入 child issue。Delivery Context 是 `branch-mr-safety` 的简洁公开投影：`repo`、`source_branch`、`source_branch_status`、`final_mr_target`；完整分支推导仍以 skill 为准。公开 issue 不写 agent packet、SHA、commands、raw test output 或 routing 字段。
 
-Builder 完成后写当前 task record 的 agent-only `builder_completion`；用户只看到变更、Builder MR、build/test 结果、风险、`source_branch` 与 handoff。
+Builder 完成后只写变更、Builder MR、build/test 结论、风险与 `source_branch`。Planner 从 Git/MR 获取 refs、diff、changed files、检查结果和分支状态。
 
-Planner 派发 Reviewer 时写当前 task record 的 agent-only `reviewer_dispatch`：`issue_key`、`spec_ref`、acceptance criteria、Builder MR、review refs、review round、previous review、tests、risks。
+Planner 派发 Reviewer 时提供 public issue 与 Builder MR link。Reviewer 从 Git/MR 解析 immutable diff、测试和分支状态。
 
-Reviewer 输出 Review result packet：result、round、review refs、blocking findings、non-blocking follow-ups、tests、branch safety、residual risks。每个 finding 必须有稳定 id。
+Reviewer 输出公开 Review summary：result、Builder MR、blocking findings、non-blocking follow-ups、test gaps、residual risks。每个 finding 必须有稳定 id；review refs 与 branch state 留在 Git/MR。
 
 Inspector 输出 Inspection result packet：type、scope、result、action required、human approval、approved scope、findings、evidence、actions、follow-up refs、remaining decisions。
 
@@ -119,7 +119,7 @@ Inspector 输出 Inspection result packet：type、scope、result、action requi
 
 ## Build Check
 
-UI 变更由 `Builder` 在标 `ready-for-review` 前跑通项目 build；build 失败 = packet 不完整。交互/视觉验收在 Final MR 合入后的 test 环境进行。
+UI 变更由 `Builder` 在标 `ready-for-review` 前跑通项目 build；build 失败 = 交付未完成。交互/视觉验收在 Final MR 合入后的 test 环境进行。
 
 ## Shared Communication Instruction
 
@@ -135,11 +135,11 @@ Communication:
 
 ## Skill Precedence
 
-Agent instructions and handoff packets override loaded Skill workflows。Skill 只提供方法和模板，不扩大 Agent 权限，不跳过人工闸门，不改变 dispatcher ownership。
+Agent instructions and issue/MR context override loaded Skill workflows。Skill 只提供方法和模板，不扩大 Agent 权限，不跳过人工闸门，不改变 dispatcher ownership。
 
 - Coordinator 可使用 `to-spec` / `to-tickets` / `triage` 做范围内只读源码探索；禁止 checkout、编辑、安装依赖、运行项目代码/构建/测试、自动 `ready-for-agent`、自动 `/implement`。
-- Builder 把 packet 中的 `test_seams` 视为已确认；Skill 不得自行触发 review 或 Final MR。
-- Reviewer 固定审查 packet 中的 commit refs；Skill 不得询问用户修哪些项、实施修复或直接触发 Builder。
+- Builder 把 issue 中的验证路径视为已确认；Skill 不得自行触发 review 或 Final MR。
+- Reviewer 固定审查 Builder MR 解析出的 immutable commit refs；Skill 不得询问用户修哪些项、实施修复或直接触发 Builder。
 - Inspector 只执行当前 `inspection_type` 明确授权的动作。
 
 ## Deployment Sync Rule
@@ -149,6 +149,6 @@ Agent instructions and handoff packets override loaded Skill workflows。Skill �
 1. 同步对应 Agent instructions 到 Multica。
 2. 在 Multica Agent description 记录同一 `Instruction version`。
 3. 核对 Agent name、bound Skills、max concurrency、instructions version。
-4. 用一个无副作用 smoke issue 验证 handoff packet 和状态转换。
+4. 用一个无副作用 smoke issue 验证状态转换、MR 证据读取和交接。
 
-当前版本：Coordinator `2026-08-13.7`；Builder `2026-08-13.4`；Reviewer `2026-08-13.5`；Inspector `2026-07-27.1`。后续 repo 文件更新仍不代表 server 已自动同步。
+当前版本：Coordinator `2026-08-13.11`；Builder `2026-08-13.7`；Reviewer `2026-08-13.8`；Inspector `2026-07-27.1`。后续 repo 文件更新仍不代表 server 已自动同步。
