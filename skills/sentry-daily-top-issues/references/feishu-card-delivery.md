@@ -11,10 +11,19 @@
 - 手工运行、配置变更后的首次运行或 validator 版本变更时，必须再次展示预览并等待确认；未确认不得发送。
 - 使用仓库内的 `scripts/validate_feishu_card.py` 校验配置和最终 Card JSON。validator 返回非零、`status` 不是 `valid` 或 `decision` 不是 `ready-to-send` 时，结果为 `blocked` 或 `needs-info`，禁止发送。
 
+## Markdown 动态文本转义
+
+- 进入 Card 2.0 `markdown.content` 的动态文本必须先转义 HTML 字符：`&` 转为 `&amp;`、`<` 转为 `&lt;`、`>` 转为 `&gt;`；例如原始摘要 `<object>.value` 必须序列化为 `&lt;object&gt;.value`，飞书渲染后显示为 `<object>.value`。
+- 只转义显示文本变量，不转义 Markdown 结构、链接 URL 或按钮 callback 的原始字段。`issue_title` 在 callback value 中保留原始值，标题 Markdown 使用单独的 `issue_title_markdown` 转义副本。
+- `analysis`、`recommendation`、摘要和其他动态 Markdown 文本遵守同一规则；不要在发送前再次 `html.unescape`，避免转义结果重新变成 HTML 标签。
+- `div` 的 `plain_text` 不经过 Markdown 解析，但其内容仍必须保持普通文本，不得借此写入 Markdown 语法。
+- validator 必须拒绝 Markdown 内容中的未转义 HTML 标签，例如 `<object>`、`<script>`；拒绝后不得发送卡片。
+
 ```bash
 python3 skills/sentry-daily-top-issues/scripts/validate_feishu_card.py \
   --card /tmp/sentry-card/card.json \
   --config /tmp/sentry-card/send-config.json \
+  --operation create \
   --candidate-count <N> \
   --candidate-id <Issue-ID> \
   --resolution-enabled true \
@@ -33,7 +42,7 @@ python3 skills/sentry-daily-top-issues/scripts/validate_feishu_card.py \
 
 使用飞书 interactive Card 2.0 JSON，保持简洁布局。根对象必须包含 `"schema": "2.0"`、`header` 和 `body.elements`；使用实际换行或独立元素，绝不把字符 `\\n` 显示给用户。
 
-序列化要求：每条 Issue 必须拆成独立的 `body.elements`，不得把标题、元数据、指标、路由、初判和建议拼成一个字符串。错误标题使用 `tag:"markdown"` 元素承载 `**[<错误摘要>](<issue_url>)**`；指标和“初判/建议”使用独立的 `tag:"markdown"` 元素以承载 Markdown 加粗，项目/归因/版本/路由等元数据使用 `tag:"div"` + `text.tag:"plain_text"`，并设置 `text_color:"grey"`、`text_size:"notation"`、`text_align:"left"`。Card 2.0 的 `markdown` 元素不支持 `text_color` 字段；任何 `markdown.text_color` 都必须在发送前被 validator 拒绝。不得在 `plain_text` 中写入 `**`、Markdown 链接或转义换行。需要换行时使用独立元素或真实换行符 `\n`（解析后的 JSON 字符串），发送前检查最终 Card JSON 中不存在字面量 `\\n`、裸 `**` 或未解析的 Markdown 标记。
+序列化要求：每条 Issue 必须拆成独立的 `body.elements`，不得把标题、元数据、指标、路由、初判和建议拼成一个字符串。错误标题使用 `tag:"markdown"` 元素承载 `**[<错误摘要>](<issue_url>)**`；项目/归因/版本/路由上下文使用独立的 `tag:"div"` + `text.tag:"plain_text"`，并设置 `text_color:"default"`、`text_size:"notation"`、`text_align:"left"`，同时使用蓝色信息图标；指标和“初判/建议”使用独立的 `tag:"markdown"` 元素，错误标题、指标中的“事件数 · 用户数”部分和“初判/建议”标签使用 Markdown 加粗。Card 2.0 的 `markdown` 元素不支持 `text_color` 字段；任何 `markdown.text_color` 都必须在发送前被 validator 拒绝。不得在 `plain_text` 中写入 `**`、Markdown 链接或转义换行。需要换行时使用独立元素或真实换行符 `\n`（解析后的 JSON 字符串），发送前检查最终 Card JSON 中不存在字面量 `\\n`、裸 `**` 或未解析的 Markdown 标记。
 
 ### 固定 Card 2.0 模板
 
@@ -58,15 +67,20 @@ python3 skills/sentry-daily-top-issues/scripts/validate_feishu_card.py \
       },
       {
         "tag": "markdown",
-        "content": "**[{{issue_title}}]({{issue_url}})**",
+        "content": "**[{{issue_title_markdown}}]({{issue_url}})**",
         "margin": "0px"
       },
       {
         "tag": "div",
+        "icon": {
+          "tag": "standard_icon",
+          "token": "info_outlined",
+          "color": "blue"
+        },
         "text": {
           "tag": "plain_text",
           "content": "{{group}} · {{ownership}}（{{analysis_status}}）{{route_suffix}}",
-          "text_color": "grey",
+          "text_color": "default",
           "text_size": "notation",
           "text_align": "left"
         },
@@ -74,17 +88,17 @@ python3 skills/sentry-daily-top-issues/scripts/validate_feishu_card.py \
       },
       {
         "tag": "markdown",
-        "content": "**{{event_count}} 次** · {{user_count}} 用户 · 最近 {{last_seen_relative}}{{release_suffix}}",
+        "content": "**{{event_count}} 次 · {{user_count}} 用户** · 最近 {{last_seen_relative}}{{release_suffix}}",
         "margin": "0px"
       },
       {
         "tag": "markdown",
-        "content": "初判：{{analysis}}",
+        "content": "**初判：** {{analysis}}",
         "margin": "0px"
       },
       {
         "tag": "markdown",
-        "content": "建议：{{recommendation}}",
+        "content": "**建议：** {{recommendation}}",
         "margin": "0px"
       },
       {
@@ -124,27 +138,27 @@ python3 skills/sentry-daily-top-issues/scripts/validate_feishu_card.py \
 }
 ```
 
-模板渲染后还必须执行以下机械规则：`event_count`、`user_count` 等载荷字段恢复为正确类型；`{{environment_prefix}}`、`{{route_suffix}}`、`{{release_suffix}}` 缺失时替换为空字符串，非空 `release_suffix` 自带前置 ` · `；每增加一个候选块就在上一候选按钮后增加一个 `{"tag":"hr","margin":"4px 0px"}`；已存在解决单时只替换对应按钮对象；任何 `markdown` 元素不得出现 `text_color`。最后运行 validator，未返回 `status: valid` 和 `decision: ready-to-send` 时禁止发送。
+模板渲染后还必须执行以下机械规则：`event_count`、`user_count` 等载荷字段恢复为正确类型；`{{environment_prefix}}`、`{{route_suffix}}`、`{{release_suffix}}` 缺失时替换为空字符串，非空 `release_suffix` 自带前置 `·`；上下文块必须保持 `div + plain_text(default + notation) + blue info icon`；每增加一个候选块就在上一候选按钮后增加一个 `{"tag":"hr","margin":"4px 0px"}`，候选分隔线数量严格为 `N - 1`；已存在解决单时只替换对应按钮对象；任何 `markdown` 元素不得出现 `text_color`。最后运行 validator，未返回 `status: valid` 和 `decision: ready-to-send` 时禁止发送。
 
-紧凑布局：所有 `markdown`、`div` 和 `button` 元素显式设置 `margin:"0px"`；候选之间的独立 `hr` 分隔线设置 `margin:"4px 0px"`。正文元素不得使用空内容、首尾空行或连续空行；不通过空白元素制造间距。
+紧凑布局：所有 `markdown`、`div` 和 `button` 元素显式设置 `margin:"0px"`；候选之间的独立 `hr` 分隔线设置 `margin:"4px 0px"`。指标、初判和建议连续展示，不额外插入空白元素制造间距。正文元素不得使用空内容、首尾空行或连续空行。
 
-状态更新必须基于已发送的规范化 Card JSON：复制原卡片，只替换发生状态变化的按钮对象，保留所有非按钮元素及其顺序、标签和视觉字段。处理中、成功和幂等复用等按钮状态更新必须将更新前 Card JSON 作为 `--previous-card` 传给 validator；按钮数量和位置变化、非按钮结构变化或视觉字段变化均为 `blocked`。失败提示若需要更新正文，也必须通过同一规范化渲染路径生成并保留上下文样式。
+状态更新必须基于已发送的规范化 Card JSON：先持久化发送成功的完整 Card JSON，更新时复制原卡片，只替换发生状态变化的按钮对象，保留所有非按钮元素及其顺序、标签和视觉字段。处理中、成功和幂等复用等按钮状态更新必须使用 `--operation update`，并将更新前 Card JSON 作为 `--previous-card` 传给 validator；缺少旧卡片、按钮数量或位置变化、非按钮结构变化或视觉字段变化均为 `blocked`，不得调用 Lark 更新接口。失败提示若需要更新正文，也必须通过同一规范化渲染路径生成并保留上下文结构。
 
 1. 红色标题栏：`【<scope>】Sentry 错误巡检 · <frequency> Top <display_top_n>`；`frequency` 根据 `time_window` 推导（`24h` 为“每日”，`7d` 为“每周”，其他值直接显示时间窗），不得写死业务名或周期。
 2. 一行摘要：`<environment> · 近 <time_window> · <总 Error Issue 数> 条未解决`；环境缺失时省略，不重复展示 Top 数量。
-3. 按全局排名展示 `display_top_n` 条，每条使用独立的文本块，不重复展示各组 Top N。相邻候选之间必须插入一个独立顶层 `{"tag":"hr"}` 元素；`N` 条候选必须恰好有 `N - 1` 个分隔符，分隔符紧跟上一条候选的解决单按钮并紧邻下一条候选标题，最后一条之后不得添加分隔符。
+3. 按全局排名展示 `display_top_n` 条，每条使用独立的文本块，不重复展示各组 Top N。相邻候选之间必须插入一个独立顶层 `{"tag":"hr"}` 元素；`N` 条候选必须恰好有 `N - 1` 个候选分隔符，分隔符紧跟上一条候选的解决单按钮并紧邻下一条候选标题，最后一条之后不得添加候选分隔符。
 4. 每条按示例使用独立文本块（按钮作为独立元素，不计入正文行数），顺序固定：
    - `**[<错误摘要>](<issue_url>)**`，标题加粗并直接链接 Sentry Issue；不展示 `issue_id`、项目短码或其他机器标识。错误摘要字段优先级固定为：详情 `exception.values[0].value`、`message`、`issue_title` 或详情 `title`、`culprit`；每级取非空值，全部缺失时使用“错误标题缺失”。`metadata.value`、`_fingerprint_info` 等重复元数据不作为首选标题，绝不渲染内部字段名。
-   - `<分组名> · <Web 前端|后端|客户端>（<初步判断|待核实>） · 路由：<页面路径>`；路由紧跟归因展示，页面路径缺失时省略路由及前置分隔符；不要展示“全局第 N 条”。
-   - `**<event_count> 次** · <user_count> 用户 · 最近 <last_seen 相对时间> · <release>`；`release` 缺失时仅省略该字段，环境不在此行重复展示。
-   - `初判：<可能原因>`；标签与正文同行，详情证据不足时在正文末尾标注“证据不足”。
-   - `建议：<建议处理>`；标签与正文同行，使用纯文案，不添加色块或引用块。
+   - `<分组名> · <Web 前端|后端|客户端>（<初步判断|待核实>） · 路由：<页面路径>`；该上下文使用 `div + plain_text`、`default` 色、`notation` 字号和蓝色信息图标，页面路径缺失时省略路由及前置分隔符；不要展示“全局第 N 条”。
+   - `**<event_count> 次 · <user_count> 用户** · 最近 <last_seen 相对时间> · <release>`；仅事件数和用户数部分加粗，时间与版本保持常规字重，`release` 缺失时仅省略该字段，环境不在此行重复展示。
+   - `**初判：** <可能原因>`；仅标签加粗，正文保持常规字重并与标签同行，详情证据不足时在正文末尾标注“证据不足”。
+   - `**建议：** <建议处理>`；仅标签加粗，正文保持常规字重并与标签同行，使用纯文案，不添加色块或引用块。
 5. 每条正文后立即追加一个 Card 2.0 操作按钮，不能集中到卡片底部；每条只能出现一次。按钮状态固定为三态，卡片背景保持白色：无未关闭解决单时为左对齐、`size:"small"`、`width:"default"`、`type:"primary"`（蓝色描边）的“创建解决单” callback 按钮；回调已受理但解决单尚未返回时为相同尺寸、`type:"default"`、`disabled:true`（灰色禁用）的“处理中…”按钮；已创建或复用解决单且有 URL 时为相同尺寸、`type:"default"`（正常默认样式）的“查看解决单” open_url 按钮。按钮不得包在居中容器内。Card 2.0 回调按钮必须使用 `behaviors`，不得使用旧式顶层 `value`。
 6. `inspection_url_template` 存在且通过执行门禁校验时，将当前巡检 Issue ID 拼接到前缀后（历史 `<Issue-ID>` 模板则执行占位符替换），在卡片底部提供一个独立的 Card 2.0 `button`，设置 `width:"fill"` 撑满整行，使用 `behaviors:[{"type":"open_url","default_url":"<resolved-url>"}]`；未配置模板时省略该按钮。配置存在但无效时按执行门禁返回 `blocked`，不得发送缺少该按钮的卡片。
 
-视觉层级固定为：顶层 `header.template:"red"` 告警标题栏；错误标题使用 `markdown` 的加粗链接（由飞书 Markdown 默认链接样式呈现）；事件数和异常趋势使用 Markdown 加粗强调；项目/归因/版本/路由等上下文使用 `div` 的灰色小字，且必须保持 `text_color:"grey"`、`text_size:"notation"`、`text_align:"left"`；所有 `markdown` 元素不得设置 `text_color`，避免 Card 2.0 接口拒绝未知字段；“初判：”和“建议：”使用同一白色背景的 `markdown` 常规文案，标签可半粗但与正文同行；不使用色块、引用块、额外底色或高饱和颜色。卡片不得放入完整堆栈、原始标签、长段落、重复列表、IP、用户标识或 Webhook。
+视觉层级固定为：顶层 `header.template:"red"` 告警标题栏；错误标题使用 `markdown` 的加粗链接（由飞书 Markdown 默认链接样式呈现）；指标中的事件数和用户数部分使用 Markdown 加粗，最近时间和版本保持常规字重；项目/归因/版本/路由等上下文使用 `div + plain_text` 的 `default` 色 `notation` 小字，并以前置蓝色信息图标区分；指标、初判和建议连续展示，不插入中间分隔线；所有 `markdown` 元素不得设置 `text_color`，避免 Card 2.0 接口拒绝未知字段；“初判：”和“建议：”使用同一白色背景的 `markdown` 常规文案，标签必须加粗，正文保持常规字重并与标签同行；不使用色块、引用块、额外底色或高饱和颜色。卡片不得放入完整堆栈、原始标签、长段落、重复列表、IP、用户标识或 Webhook。
 
-上述视觉规则同时适用于首次创建和后续更新。首次创建必须完整通过颜色与层级校验；`--previous-card` 只额外校验更新是否仅替换允许变化的按钮，不得被当作首次视觉校验的替代。
+上述视觉规则同时适用于首次创建和后续更新。首次创建使用 `--operation create`，要求上下文使用 `div + plain_text(default + notation) + blue info icon`、指标中的事件数和用户数部分加粗、`初判/建议` 标签加粗，并完整通过颜色与层级校验；更新使用 `--operation update --previous-card <previous-card.json>`，先完成当前卡片校验，再额外校验是否仅替换允许变化的按钮。历史卡片若仍使用普通 `markdown` 上下文、灰色小字或未加粗标签，更新时沿用旧结构，不自动迁移非按钮样式。
 
 按钮状态转换：点击“创建解决单”且回调已受理后，立即将同一位置更新为白底灰色禁用的“处理中…”；解决单创建或幂等复用成功后更新为白底默认样式的“查看解决单”并写入解决单 URL；创建失败时恢复为白底蓝色描边的“创建解决单”，并在该条建议后追加简短失败提示。
 
@@ -171,7 +185,7 @@ python3 skills/sentry-daily-top-issues/scripts/validate_feishu_card.py \
 - 不得因回调尚未配置、详情读取失败或某条初步研判证据不足而移除按钮；这些状态只影响按钮点击后的处理结果。
 - `N = 0` 时发送明确的“暂无符合条件的未解决 Error Issue”空态，不生成空动作。
 - 结构校验失败时返回 `blocked` 并保留巡检结果，禁止发送部分卡片或无按钮卡片。
-- 状态更新时，在原卡片基础上只替换按钮对象，并使用 `--previous-card <previous-card.json>` 校验更新前后的非按钮结构；校验失败时不得调用 Lark 更新接口。
+- 状态更新时，必须在原卡片基础上只替换按钮对象，使用 `--operation update --previous-card <previous-card.json>` 校验更新前后的非按钮结构和视觉字段；校验失败时不得调用 Lark 更新接口。
 
 ## 发送
 

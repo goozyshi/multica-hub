@@ -16,15 +16,20 @@
       },
       {
         "tag": "markdown",
-        "content": "**[{{issue_title}}]({{issue_url}})**",
+        "content": "**[{{issue_title_markdown}}]({{issue_url}})**",
         "margin": "0px"
       },
       {
         "tag": "div",
+        "icon": {
+          "tag": "standard_icon",
+          "token": "info_outlined",
+          "color": "blue"
+        },
         "text": {
           "tag": "plain_text",
           "content": "{{group}} · {{ownership}}（{{analysis_status}}）{{route_suffix}}",
-          "text_color": "grey",
+          "text_color": "default",
           "text_size": "notation",
           "text_align": "left"
         },
@@ -32,17 +37,17 @@
       },
       {
         "tag": "markdown",
-        "content": "**{{event_count}} 次** · {{user_count}} 用户 · 最近 {{last_seen_relative}}{{release_suffix}}",
+        "content": "**{{event_count}} 次 · {{user_count}} 用户** · 最近 {{last_seen_relative}}{{release_suffix}}",
         "margin": "0px"
       },
       {
         "tag": "markdown",
-        "content": "初判：{{analysis}}",
+        "content": "**初判：** {{analysis}}",
         "margin": "0px"
       },
       {
         "tag": "markdown",
-        "content": "建议：{{recommendation}}",
+        "content": "**建议：** {{recommendation}}",
         "margin": "0px"
       },
       {

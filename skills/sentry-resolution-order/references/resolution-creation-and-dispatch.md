@@ -10,7 +10,42 @@
 - 新建解决单必须写入可查询元数据：`sentry_dedupe_key`、`sentry_project`、`sentry_issue_id`。
 - 历史单据缺少元数据时，可通过描述中的去重键精确匹配并在确认后补齐元数据，避免同一问题重复建单。
 
-创建或复用解决单后，返回 `solution_issue_id`、`solution_issue_url` 和当前状态，供巡检卡片下次渲染。
+创建或复用解决单后，至少记录并返回：
+
+- `runtime_issue_id`：`create_issue` 模式下由 Autopilot 自动生成的当前运行单 UUID；
+- `solution_issue_id`、`solution_issue_url`：实际 Sentry 解决单；
+- `user_visible_issue_id`、`user_visible_issue_url`：用户从飞书进入的入口；`create_issue` 模式使用运行根单，`run_only` 模式使用实际解决单；
+- 当前解决单状态及 Builder 子单 ID（如果已创建）。
+
+用户可见入口与实际解决单必须同时保留，不能用运行根单 ID 覆盖 `solution_issue_id`。
+
+## `create_issue` 运行单根父单
+
+`execution_mode=create_issue` 时，Autopilot 平台会在 Skill 开始执行前创建当前运行 Issue。该 Issue 是本次流程的根父单，通常由 Autopilot 配置的 Coordinator Agent 执行；它不是需要再次创建的解决单，也不要求通过后置 `issue assign` 改派给目标 Squad。
+
+创建实际 Sentry 解决单时，必须把当前运行单 UUID 作为 `parent`，并在同一个创建请求中绑定 Autopilot 配置的目标：
+
+```bash
+multica issue create ... \
+  --parent <runtime_issue_id> \
+  --assignee-id <target_assignee>
+```
+
+创建后必须同时回读：
+
+- 实际解决单 `parent_issue_id == runtime_issue_id`；
+- 实际解决单 `assignee_type == target_assignee_type`；
+- 实际解决单 `assignee_id == target_assignee`。
+
+三项任一不匹配时，保留已创建单并返回 `dispatch blocked`；不得创建第二个无 `parent` 的顶层解决单，也不得把运行根单误报为已派发给目标。
+
+`execution_mode=run_only` 没有平台预创建运行单，实际解决单才直接作为根单创建：
+
+```bash
+multica issue create ... --assignee-id <target_assignee>
+```
+
+如果 `create_issue` 模式无法取得当前 `runtime_issue_id`，停止创建并返回 `dispatch blocked`。
 
 ## 详情复核与快照复用
 
@@ -59,23 +94,31 @@
 - 回调 Autopilot 自身的执行者仍是 Coordinator，这与解决单的目标 assignee 分开配置；
 - 创建前校验目标 UUID 对应的对象仍存在且可指派；目标无效时阻断建单。
 
-### 创建时绑定（硬门槛）
+### 实际解决单创建时绑定（硬门槛）
 
-新建解决单必须在创建请求中传入目标 assignee：
+新建实际解决单必须在创建请求中传入目标 assignee。`create_issue` 模式还必须同时传入运行根单：
+
+```bash
+multica issue create ... \
+  --parent <runtime_issue_id> \
+  --assignee-id <target_assignee>
+```
+
+`run_only` 模式没有 `runtime_issue_id`，使用以下直接根单命令：
 
 ```bash
 multica issue create ... --assignee-id <target_assignee>
 ```
 
-执行前先把 `target_assignee` 解析为 UUID，并检查最终创建命令确实包含 `--assignee-id <target_assignee>`。创建接口无法携带该参数时，停止创建并返回 `dispatch blocked`；不得用默认归属 Coordinator 的 Issue 代替。
+执行前先把 `target_assignee` 解析为 UUID，并检查最终创建命令确实包含 `--assignee-id <target_assignee>`；`create_issue` 模式还必须包含 `--parent <runtime_issue_id>`。创建接口无法携带这些参数时，停止创建并返回 `dispatch blocked`。
 
-不能先创建一个默认归属 Coordinator 的 Issue，再依赖后置指派完成正常派发。正常新建分支禁止调用 `multica issue assign`，也禁止用 `@名称`、评论 mention 或 `--no-start` 代替创建时绑定。目标校验失败或目标绑定结果不可确认时，停止创建并返回 `dispatch blocked`。
+Autopilot 平台预创建的 Coordinator 运行根单是流程容器，不属于上述“默认归属 Coordinator 的实际解决单”。不能再创建一个无 `parent` 的 Coordinator 解决单，或先创建实际解决单再依赖后置指派完成正常派发。正常新建分支禁止调用 `multica issue assign`，也禁止用 `@名称`、评论 mention 或 `--no-start` 代替创建时绑定。目标校验失败或目标绑定结果不可确认时，停止创建并返回 `dispatch blocked`。
 
 创建返回后立即回读 Issue，确认平台已记录目标 assignee；未通过回读时保留已创建 Issue，标记 `dispatch blocked`，不得报告“已派发”或“已触发执行”。
 
 ### 后置补偿
 
-`issue assign` 只用于历史单据或创建接口异常后的补偿，不是正常新建路径。补偿分支必须有独立人工确认，不能由正常回调自动进入：
+`issue assign` 只用于历史单据或创建接口异常后的补偿，不是正常新建路径。补偿分支必须有独立人工确认，不能由正常回调自动进入；补偿不得把 `runtime_issue_id` 当作实际解决单，也不得改变运行根单的 Coordinator 归属：
 
 ```bash
 multica issue assign <solution_issue_id> --to-id <target_assignee>
@@ -98,6 +141,7 @@ multica issue get <solution_issue_id> --output json
 - `assignee_type` 等于配置的 `target_assignee_type`；
 - `assignee_id` 精确等于配置的 `target_assignee`；
 - Issue 仍存在且未被取消。
+- `create_issue` 模式下，实际解决单的 `parent_issue_id` 等于 `runtime_issue_id`。
 
 结果必须区分：
 
@@ -108,9 +152,9 @@ multica issue get <solution_issue_id> --output json
 
 `assigned`、`started`、`deferred` 和 `blocked` 不得混写为“已触发执行”。对于 Squad，至少先确认 Issue 的平台 assignee 为该 Squad；leader 何时 claim 或开始执行，单独依据执行记录判断。
 
-## 父子 Issue 执行流程
+## 实际解决单与 Builder 父子流程
 
-是否只创建或复用父解决单，由当前 Autopilot 的父子流程配置决定。父解决单负责 Sentry 事实、去重、证据、基线和整体状态。
+实际解决单负责 Sentry 事实、去重、证据、基线和整体状态。`create_issue` 模式下，它是运行根单的直接子单；`run_only` 模式下，它是流程根单。
 
 只有当前 Autopilot 同时配置以下条件，才允许创建执行 sub-issue：
 
@@ -123,15 +167,15 @@ multica issue get <solution_issue_id> --output json
 
 `implementation_target` 必须独立配置，不得从父单的 `target_assignee` 推断 Builder 或其他执行者。
 
-### 父解决单
-
-父解决单必须在创建时绑定 Autopilot 配置的目标：
+### 实际解决单
 
 ```bash
-multica issue create ... --assignee-id <target_assignee>
+multica issue create ... \
+  --parent <runtime_issue_id> \
+  --assignee-id <target_assignee>
 ```
 
-创建后回读并确认平台 assignee 与目标一致。父单创建或指派未确认时，不创建执行子单。
+上例适用于 `create_issue` 模式；`run_only` 模式省略 `--parent`。创建后回读并确认父子关系（如适用）和平台 assignee 与目标一致。实际解决单创建或指派未确认时，不创建 Builder 子单。
 
 ### 执行子单
 
@@ -145,11 +189,11 @@ multica issue create ... \
 
 子单必须：
 
-- `parent_issue_id` 等于父解决单 ID；
+- `parent_issue_id` 等于 `solution_issue_id`；
 - assignee 等于独立配置的 `implementation_target`；
-- 记录项目、仓库、分支、验收标准、验证路径和父解决单链接；
+- 记录项目、仓库、分支、验收标准、验证路径和实际解决单链接；
 - 使用 `<project>:<sentry_issue_id>:implementation` 做执行子单幂等键；
-- 不重复写入创建基线，不替代父单的 Sentry 去重。
+- 不重复写入创建基线，不替代实际解决单的 Sentry 去重。
 
 子单创建后必须回读 `parent_issue_id`、`assignee_type` 和 `assignee_id`。任一不匹配时，保留已创建 Issue，返回 `dispatch blocked`，不得报告已派发或已开始执行。
 
@@ -160,8 +204,8 @@ multica issue create ... \
 - `child_started`：存在目标 Agent/Squad 的执行记录；
 - `child_blocked`：子单创建、指派或回读失败。
 
-父解决单在执行子单完成、结果回传且完成验收前保持处理中。子单失败时保留父单和证据，返回 `child_blocked`，不得创建无 parent 的替代执行单。
+实际解决单在执行子单完成、结果回传且完成验收前保持处理中。子单失败时保留运行根单、实际解决单和证据，返回 `child_blocked`，不得创建无 parent 的替代执行单。
 
-当前 Autopilot 未启用自动派发或配置缺失时，只完成父解决单流程并明确返回 `child_pending`；不得把父单已归属目标误报为执行子单已启动。
+当前 Autopilot 未启用自动派发或配置缺失时，只完成实际解决单流程并明确返回 `child_pending`；不得把实际解决单已归属目标误报为执行子单已启动。
 
 无论是否启用父子流程，Coordinator 都不修改代码、不自动合并、发布或关闭 Sentry Issue。后续实现、评审、合并和验收由执行子单的目标 Agent 或 Squad 按其工作协议负责。

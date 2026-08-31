@@ -25,6 +25,7 @@ ISSUE_TITLE_RE = re.compile(
 CHAT_ID_RE = re.compile(r"^oc_[A-Za-z0-9]+$")
 PLACEHOLDER_RE = re.compile(r"<[^>]+>")
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\([^)]+\)")
+RAW_HTML_TAG_RE = re.compile(r"</?[A-Za-z][^>]*>")
 IPV4_RE = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
 
 REQUIRED_CALLBACK_FIELDS = (
@@ -170,6 +171,7 @@ def validate_candidate_visual_style(
     path: str,
     *,
     is_title: bool = False,
+    require_analysis_label_emphasis: bool = False,
 ) -> None:
     content = text_content(element)
     tag = element.get("tag")
@@ -177,11 +179,51 @@ def validate_candidate_visual_style(
     if is_title:
         return
 
-    if content.startswith(("初判：", "建议：")):
+    is_metrics = bool(re.match(r"^\**\d[\d,]*\s*次", content)) and "用户" in content
+    metrics_prefix = re.match(
+        r"^\*\*\d[\d,]*\s*次\s*·\s*\d[\d,]*\s*用户\*\*",
+        content,
+    )
+    if is_metrics and (
+        tag != "markdown"
+        or metrics_prefix is None
+        or content.count("**") != 2
+    ):
+        validator.add(
+            "invalid_metrics_style",
+            "事件数和用户数必须由同一个 markdown 元素加粗，最近时间和版本保持常规字重",
+            path,
+        )
+
+    analysis_label = next(
+        (
+            label
+            for label in ("初判：", "建议：")
+            if content.startswith(label) or content.startswith(f"**{label}**")
+        ),
+        None,
+    )
+    if analysis_label:
         if tag != "markdown":
             validator.add(
                 "invalid_analysis_element",
                 "初判和建议必须使用 markdown 元素",
+                path,
+            )
+            return
+        emphasized_prefix = f"**{analysis_label}**"
+        if require_analysis_label_emphasis and not content.startswith(
+            emphasized_prefix
+        ):
+            validator.add(
+                "invalid_analysis_label_style",
+                f"{analysis_label} 标签必须加粗，正文保持常规字重",
+                path,
+            )
+        if content.startswith(emphasized_prefix) and "**" in content[len(emphasized_prefix) :]:
+            validator.add(
+                "invalid_analysis_body_style",
+                f"{analysis_label} 正文不得继续使用 Markdown 加粗",
                 path,
             )
 
@@ -190,7 +232,25 @@ def validate_context_text_style(
     element: dict[str, Any],
     validator: CardValidation,
     path: str,
+    *,
+    require_stable_context: bool = False,
 ) -> None:
+    if element.get("tag") == "markdown":
+        if require_stable_context:
+            validator.add(
+                "invalid_context_element",
+                "新卡片的项目/归因/版本/路由上下文必须使用 div + plain_text",
+                path,
+            )
+        for field in ("text_color", "text_size", "text_align"):
+            if field in element:
+                validator.add(
+                    "invalid_context_markdown_style",
+                    "上下文 markdown 不得依赖颜色、字号或对齐字段",
+                    f"{path}.{field}",
+                )
+        return
+
     if element.get("tag") != "div":
         validator.add(
             "invalid_context_element",
@@ -203,23 +263,44 @@ def validate_context_text_style(
     if not isinstance(text, dict) or text.get("tag") != "plain_text":
         validator.add(
             "invalid_context_text",
-            "项目/归因/版本/路由上下文必须使用 div + plain_text",
+            "上下文必须使用 div + plain_text",
             f"{path}.text",
         )
         return
 
-    expected_style = {
-        "text_color": "grey",
-        "text_size": "notation",
-        "text_align": "left",
-    }
-    for field, expected in expected_style.items():
-        if text.get(field) != expected:
+    if require_stable_context:
+        expected_style = {
+            "text_color": "default",
+            "text_size": "notation",
+            "text_align": "left",
+        }
+        for field, expected in expected_style.items():
+            if text.get(field) != expected:
+                validator.add(
+                    "invalid_context_text_style",
+                    f"新卡片上下文文本 {field} 必须为 {expected}",
+                    f"{path}.text.{field}",
+                )
+        icon = element.get("icon")
+        if (
+            not isinstance(icon, dict)
+            or icon.get("tag") != "standard_icon"
+            or icon.get("token") != "info_outlined"
+            or icon.get("color") != "blue"
+        ):
             validator.add(
-                "invalid_context_text_style",
-                f"上下文文本 {field} 必须为 {expected}",
-                f"{path}.text.{field}",
+                "invalid_context_icon",
+                "新卡片上下文必须使用蓝色 info_outlined 标准图标",
+                f"{path}.icon",
             )
+        return
+
+    if text.get("text_size") not in {None, "notation"}:
+        validator.add(
+            "invalid_context_text_style",
+            "更新卡片上下文 text_size 只能保持 notation 或沿用历史值",
+            f"{path}.text.text_size",
+        )
 
 
 def is_sensitive_key(key: str) -> bool:
@@ -244,12 +325,20 @@ def validate_sensitive_content(
 ) -> None:
     def validate_markdown_fields(value: Any, path: str) -> None:
         if isinstance(value, dict):
-            if value.get("tag") == "markdown" and "text_color" in value:
-                validator.add(
-                    "unsupported_markdown_field",
-                    "Card 2.0 的 markdown 元素不支持 text_color 字段",
-                    f"{path}.text_color",
-                )
+            if value.get("tag") == "markdown":
+                if "text_color" in value:
+                    validator.add(
+                        "unsupported_markdown_field",
+                        "Card 2.0 的 markdown 元素不支持 text_color 字段",
+                        f"{path}.text_color",
+                    )
+                content = value.get("content")
+                if isinstance(content, str) and RAW_HTML_TAG_RE.search(content):
+                    validator.add(
+                        "unescaped_markdown_html",
+                        "Markdown 动态文本不得包含未转义 HTML 标签，请将 < 和 > 转为实体",
+                        f"{path}.content",
+                    )
             for key, child in value.items():
                 validate_markdown_fields(child, f"{path}.{key}")
         elif isinstance(value, list):
@@ -781,23 +870,19 @@ def validate_candidate_separators(
     title_indexes: list[int],
     candidate_count: int,
     validator: CardValidation,
+    *,
+    reject_internal_separators: bool,
 ) -> None:
+    expected_separator_count = max(candidate_count - 1, 0)
+    if len(title_indexes) != candidate_count:
+        return
+
     separator_indices = [
         index
         for index, element in enumerate(elements)
         if isinstance(element, dict) and element.get("tag") == "hr"
     ]
-    expected_separator_count = max(candidate_count - 1, 0)
-    if len(separator_indices) != expected_separator_count:
-        validator.add(
-            "candidate_separator_count",
-            f"候选分隔符数量为 {len(separator_indices)}，预期 {expected_separator_count}",
-            "$.body.elements",
-        )
-
-    if len(title_indexes) != candidate_count:
-        return
-
+    candidate_separator_indices: list[int] = []
     for candidate_index in range(candidate_count - 1):
         start = title_indexes[candidate_index]
         end = title_indexes[candidate_index + 1]
@@ -825,12 +910,28 @@ def validate_candidate_separators(
                 f"$.body.elements[{separator_index}]",
             )
             continue
+        candidate_separator_indices.append(separator_index)
         if separator_index + 1 != end:
             validator.add(
                 "invalid_candidate_separator_order",
                 "候选 hr 分隔符必须紧邻下一条候选标题",
                 f"$.body.elements[{separator_index}]",
             )
+
+    if len(candidate_separator_indices) != expected_separator_count:
+        validator.add(
+            "candidate_separator_count",
+            f"候选分隔符数量为 {len(candidate_separator_indices)}，预期 {expected_separator_count}",
+            "$.body.elements",
+        )
+    if reject_internal_separators:
+        for separator_index in separator_indices:
+            if separator_index not in candidate_separator_indices:
+                validator.add(
+                    "unexpected_internal_separator",
+                    "指标、初判和建议之间不得插入分隔线",
+                    f"$.body.elements[{separator_index}]",
+                )
 
 
 def validate_compact_layout(
@@ -881,6 +982,8 @@ def validate_card(
     candidate_ids: set[str],
     resolution_enabled: bool,
     expected_inspection_url: str | None,
+    *,
+    require_create_visual_style: bool,
 ) -> None:
     if not isinstance(card, dict):
         validator.add("invalid_card", "Card JSON 必须是对象", "$")
@@ -946,6 +1049,7 @@ def validate_card(
         title_indexes,
         candidate_count,
         validator,
+        reject_internal_separators=require_create_visual_style,
     )
     validate_compact_layout(elements, validator)
 
@@ -1025,16 +1129,24 @@ def validate_card(
                     validator,
                     f"$.body.elements[{content_index}]",
                     is_title=content_index == title_index,
+                    require_analysis_label_emphasis=require_create_visual_style,
                 )
         context_elements = [
             (index, element)
             for index, element in content_elements
-            if isinstance(element, dict) and element.get("tag") == "div"
+            if (
+                isinstance(element, dict)
+                and element.get("tag") in {"markdown", "div"}
+                and not is_issue_title(element)
+                and not text_content(element).startswith(
+                    ("**", "初判：", "建议：")
+                )
+            )
         ]
         if not context_elements:
             validator.add(
                 "missing_context_element",
-                "每条候选必须包含带固定视觉样式的上下文 div",
+                "每条候选必须包含独立的上下文 div",
                 f"$.body.elements[{title_index}:{segment_end}]",
             )
         for context_index, context_element in context_elements:
@@ -1042,6 +1154,7 @@ def validate_card(
                 context_element,
                 validator,
                 f"$.body.elements[{context_index}]",
+                require_stable_context=require_create_visual_style,
             )
         segment_text = " ".join(text_content(element) for element in elements[title_index:segment_end])
         if "初判：" not in segment_text:
@@ -1119,6 +1232,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--previous-card",
         help="状态更新前的 Card JSON；传入后只允许按钮状态变化",
     )
+    parser.add_argument(
+        "--operation",
+        choices=("create", "update"),
+        default="create",
+        help="卡片操作类型；update 必须同时传入 --previous-card",
+    )
     return parser
 
 
@@ -1161,6 +1280,18 @@ def main(argv: list[str] | None = None) -> int:
         if args.previous_card
         else None
     )
+    if args.operation == "update" and not args.previous_card:
+        validator.add(
+            "missing_previous_card",
+            "update 操作必须提供更新前的 Card JSON",
+            "$.previous_card",
+        )
+    if args.operation == "create" and args.previous_card:
+        validator.add(
+            "unexpected_previous_card",
+            "create 操作不得传入更新前的 Card JSON",
+            "$.previous_card",
+        )
     if card is not None:
         validate_card(
             card,
@@ -1169,6 +1300,7 @@ def main(argv: list[str] | None = None) -> int:
             set(args.candidate_id),
             args.resolution_enabled,
             expected_url,
+            require_create_visual_style=args.operation == "create",
         )
         if args.previous_card and previous_card is not None:
             validate_card_update(previous_card, card, validator)
