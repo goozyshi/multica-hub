@@ -42,6 +42,21 @@ python3 skills/sentry-daily-top-issues/scripts/validate_feishu_card.py \
 
 使用飞书 interactive Card 2.0 JSON，保持简洁布局。根对象必须包含 `"schema": "2.0"`、`header` 和 `body.elements`；使用实际换行或独立元素，绝不把字符 `\\n` 显示给用户。
 
+### 错误摘要字段提取
+
+每条候选必须先生成唯一的 `resolved_issue_title`，再同时填入 callback 的 `issue_title` 和标题展示副本 `issue_title_markdown`。按以下顺序读取第一个非空字符串，不得由模型自由选择：
+
+1. 详情 `exception.values[0].value`
+2. 详情 `message`
+3. 详情或列表 `issue_title`
+4. 详情 `title`
+5. 详情 `culprit`
+6. `错误标题缺失`
+
+`metadata.value`、`_fingerprint_info.client_fingerprint`、函数名、堆栈文件名和路由字段只用于证据或上下文，不得抢占前面的标题优先级。若 `exception.values[0].value` 存在，即使同时存在 `title`，也必须使用异常值；例如 `exception.values[0].value` 为 `Event \`ProgressEvent\` (type=error) captured as exception`、`title` 为 `o.onerror` 时，卡片标题必须是前者。
+
+展示时仅对 `resolved_issue_title` 生成 HTML 转义后的 `issue_title_markdown`；callback 的 `issue_title` 保留同一标题的原始值。最终 Card 标题、callback `issue_title` 和 `resolved_issue_title` 必须一致，否则返回 `blocked`。
+
 序列化要求：每条 Issue 必须拆成独立的 `body.elements`，不得把标题、元数据、指标、路由、初判和建议拼成一个字符串。错误标题使用 `tag:"markdown"` 元素承载 `**[<错误摘要>](<issue_url>)**`；项目/归因/版本/路由上下文使用独立的 `tag:"div"` + `text.tag:"plain_text"`，并设置 `text_color:"default"`、`text_size:"notation"`、`text_align:"left"`，同时使用蓝色信息图标；指标和“初判/建议”使用独立的 `tag:"markdown"` 元素，错误标题、指标中的“事件数 · 用户数”部分和“初判/建议”标签使用 Markdown 加粗。Card 2.0 的 `markdown` 元素不支持 `text_color` 字段；任何 `markdown.text_color` 都必须在发送前被 validator 拒绝。不得在 `plain_text` 中写入 `**`、Markdown 链接或转义换行。需要换行时使用独立元素或真实换行符 `\n`（解析后的 JSON 字符串），发送前检查最终 Card JSON 中不存在字面量 `\\n`、裸 `**` 或未解析的 Markdown 标记。
 
 ### 固定 Card 2.0 模板
@@ -148,7 +163,7 @@ python3 skills/sentry-daily-top-issues/scripts/validate_feishu_card.py \
 2. 一行摘要：`<environment> · 近 <time_window> · <总 Error Issue 数> 条未解决`；环境缺失时省略，不重复展示 Top 数量。
 3. 按全局排名展示 `display_top_n` 条，每条使用独立的文本块，不重复展示各组 Top N。相邻候选之间必须插入一个独立顶层 `{"tag":"hr"}` 元素；`N` 条候选必须恰好有 `N - 1` 个候选分隔符，分隔符紧跟上一条候选的解决单按钮并紧邻下一条候选标题，最后一条之后不得添加候选分隔符。
 4. 每条按示例使用独立文本块（按钮作为独立元素，不计入正文行数），顺序固定：
-   - `**[<错误摘要>](<issue_url>)**`，标题加粗并直接链接 Sentry Issue；不展示 `issue_id`、项目短码或其他机器标识。错误摘要字段优先级固定为：详情 `exception.values[0].value`、`message`、`issue_title` 或详情 `title`、`culprit`；每级取非空值，全部缺失时使用“错误标题缺失”。`metadata.value`、`_fingerprint_info` 等重复元数据不作为首选标题，绝不渲染内部字段名。
+   - `**[<错误摘要>](<issue_url>)**`，标题加粗并直接链接 Sentry Issue；不展示 `issue_id`、项目短码或其他机器标识。错误摘要字段提取、优先级和 `resolved_issue_title` 一致性以“错误摘要字段提取”为唯一规则，绝不渲染内部字段名。
    - `<分组名> · <Web 前端|后端|客户端>（<初步判断|待核实>） · 路由：<页面路径>`；该上下文使用 `div + plain_text`、`default` 色、`notation` 字号和蓝色信息图标，页面路径缺失时省略路由及前置分隔符；不要展示“全局第 N 条”。
    - `**<event_count> 次 · <user_count> 用户** · 最近 <last_seen 相对时间> · <release>`；仅事件数和用户数部分加粗，时间与版本保持常规字重，`release` 缺失时仅省略该字段，环境不在此行重复展示。
    - `**初判：** <可能原因>`；仅标签加粗，正文保持常规字重并与标签同行，详情证据不足时在正文末尾标注“证据不足”。

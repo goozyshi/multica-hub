@@ -21,9 +21,9 @@ Autopilot 描述采用 Markdown 分组格式。固定系统字段位于“基本
 
 ## 初步研判
 
-列表查询完成后，先按所有分组结果选出最终 `display_top_n` 条，再仅对这些条目调用 Sentry MCP `get_sentry_resource` 读取 Issue 详情及代表性事件；不得为全部候选逐条读取详情。详情调用失败不影响排序，但必须标记“证据不足”。
+列表查询完成后，先按所有分组结果选出最终 `display_top_n` 条，再仅对这些条目调用 Sentry MCP `get_sentry_resource` 读取 Issue 详情及代表性事件；不得为全部候选逐条读取详情。详情调用失败不影响排序，但必须标记“证据不足”。读取详情后，必须按 [飞书卡片与发送 Reference](references/feishu-card-delivery.md) 的“错误摘要字段提取”规则解析唯一的 `resolved_issue_title`，不得直接把 Sentry 返回的顶层 `title` 当作卡片标题。
 
-每条 Issue 优先使用详情中的异常信息、代表性堆栈位置、路由/接口、`culprit`、`release`、环境、状态、事件数、影响用户数和最近活跃时间，生成一句“可能原因”和一句“建议处理”；详情不可用时回退到列表字段并明确标记“证据不足”。两句均为初步研判，不得写成已确认根因。
+每条 Issue 优先使用详情中的异常信息、代表性堆栈位置、路由/接口、`culprit`、`release`、环境、状态、事件数、影响用户数和最近活跃时间，生成一句“可能原因”和一句“建议处理”；详情不可用时回退到列表字段并明确标记“证据不足”。两句均为初步研判，不得写成已确认根因。卡片标题和创建解决单 callback 的 `issue_title` 必须使用同一个 `resolved_issue_title`；展示副本单独生成 `issue_title_markdown`，不得由 `title`、`culprit` 或 `metadata.value` 覆盖。
 
 - 有明确异常类型、模块、路由或 HTTP 状态时，才可据此归类；例如网络/请求失败可建议核查接口可用性、状态码、超时和网络路径。
 - 标题或定位不足以支撑判断时，写“证据不足，需查看 Sentry 事件详情”，并建议进入 Sentry 核对首个异常、最近发布与上下文。

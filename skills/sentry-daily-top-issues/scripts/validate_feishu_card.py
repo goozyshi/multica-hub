@@ -677,6 +677,34 @@ def validate_callback_payload(
         )
 
 
+def validate_title_callback_consistency(
+    title_element: dict[str, Any],
+    button: dict[str, Any],
+    validator: CardValidation,
+    path: str,
+) -> None:
+    title_match = ISSUE_TITLE_RE.fullmatch(text_content(title_element))
+    behaviors = button.get("behaviors")
+    if (
+        title_match is None
+        or not isinstance(behaviors, list)
+        or len(behaviors) != 1
+        or not isinstance(behaviors[0], dict)
+        or behaviors[0].get("type") != "callback"
+        or not isinstance(behaviors[0].get("value"), dict)
+    ):
+        return
+
+    callback_title = behaviors[0]["value"].get("issue_title")
+    displayed_title = html.unescape(title_match.group("title"))
+    if callback_title != displayed_title:
+        validator.add(
+            "title_callback_mismatch",
+            "卡片标题与 callback 的 issue_title 必须使用同一个 resolved_issue_title",
+            f"{path}.behaviors[0].value.issue_title",
+        )
+
+
 def validate_solution_button(
     button: Any,
     validator: CardValidation,
@@ -1111,12 +1139,24 @@ def validate_card(
             )
             continue
         button_index, button = segment_buttons[0]
-        validate_solution_button(
+        solution_button_kind = validate_solution_button(
             button,
             validator,
             f"$.body.elements[{button_index}]",
             candidate_ids,
         )
+        if (
+            require_create_visual_style
+            and solution_button_kind == "create"
+            and isinstance(elements[title_index], dict)
+            and isinstance(button, dict)
+        ):
+            validate_title_callback_consistency(
+                elements[title_index],
+                button,
+                validator,
+                f"$.body.elements[{button_index}]",
+            )
         content_elements = [
             (index, element)
             for index, element in enumerate(elements[title_index:segment_end], title_index)
