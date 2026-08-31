@@ -4,9 +4,9 @@
 
 ## Autopilot 配置
 
-- 解决单 Autopilot 设置 `impact_trend_observation: enabled` 时，用户点击创建或复用解决单后建立基线；字段缺失或值不是 `enabled` 时，默认关闭。
-- `observation_timeout_days` 必须是正整数，用于限制未出现修复信号或人工确认时的最长自动采样周期；未配置时默认 14 天。出现修复信号后，仍按 `post_fix_observation_days` 完成观察。
-- `post_fix_observation_days` 未配置时默认 3 个日报周期。
+- 解决单 Autopilot 设置 `impact_trend_observation: enabled` 时，用户点击创建或复用解决单后建立基线；字段缺失或值不是 `enabled` 时跳过基线。
+- `observation_timeout_days` 必须是正整数，用于限制未出现修复信号或人工确认时的最长自动采样周期；必须由当前 Autopilot 提供。出现修复信号后，仍按 `post_fix_observation_days` 完成观察。
+- `post_fix_observation_days` 必须由当前 Autopilot 提供，且为正整数。
 - 这些字段属于解决单 Autopilot 配置，不属于日报 Autopilot 的 `resolution_enabled`；仅写入 `observation_timeout_days` 不会启用基线。
 
 ## 目标与边界
@@ -113,16 +113,16 @@ repair_signal_detail
 ## 观测停止与解决单状态（不新增状态机）
 
 - `todo`、`in_progress`、`blocked`、`in_review` 都表示解决单仍在处理中，继续按相同口径每日观测。`in_review` 只表示代码评审，不是修复节点。
-- 出现明确修复信号后，记录 `repair_signal_*`，并设置 `post_fix_observation_started_at` 与 `post_fix_observation_until`。默认至少完成 3 个日报周期；配置 `post_fix_observation_days` 时按其值执行。此期间解决单不能提前标记为 `done`。
+- 出现明确修复信号后，记录 `repair_signal_*`，并设置 `post_fix_observation_started_at` 与 `post_fix_observation_until`。观测周期使用当前 Autopilot 的 `post_fix_observation_days`；此期间解决单不能提前标记为 `done`。
 - 只有后续观测窗口完成，且用户/人工确认修复，才将解决单标记为 `done`，写入 `observation_result`、`observation_stopped_at` 和 `observation_stop_reason: verified_done`，随后停止观测。
 - 窗口内仍有异常或趋势不可比时，不得标记为 `done`；保持处理中或由人工重新打开/建立后续解决单。观测结果是证据，不自动驱动状态转换。
 - `cancelled` 立即停止观测，写入 `observation_stop_reason: cancelled`；取消不代表已修复。后续重新处理时建立新的 `baseline_generation`。
-- 超过 `observation_timeout_days`（未配置时为 14 天）仍没有修复信号或人工确认时，可停止自动采样并写入 `observation_stop_reason: timeout_manual_confirmation`；结果标记为待确认/未知，不得标记为已修复。
+- 超过当前 Autopilot 配置的 `observation_timeout_days` 仍没有修复信号或人工确认时，可停止自动采样并写入 `observation_stop_reason: timeout_manual_confirmation`；结果标记为待确认/未知，不得标记为已修复。
 - 若历史流程在观测窗口完成前已写入 `done`，将 `done_at` 视为候选人工信号，继续完成观测；若仍有异常，标记状态语义冲突并交由人工决定是否重新打开，不自动回写状态。
 
 ## 安全与兼容性
 
 - 只保存计数、时间、项目、Issue、版本、环境和脱敏摘要；禁止写入完整堆栈、IP、用户标识、原始敏感标签、App Secret 或 Webhook。
-- 基线/观测属于附加数据；卡片按钮三态、解决单去重、Coordinator → `target_assignee` 派发和既有 Autopilot 状态同步不变。Coordinator → Builder 不属于默认流程。
+- 基线/观测属于附加数据；卡片按钮三态、解决单去重、Coordinator → `target_assignee` 派发和既有 Autopilot 状态同步不变。Coordinator → Builder 不属于本 Reference 的流程。
 - 趋势查询失败只影响趋势字段，不能回滚已经成功的建单或复用；应显示“证据不足”并保留触发快照。
-- 本 Reference 不改变现有 `SKILL.md` 的默认流程。若启用独立的定时观测，还需单独补充观测触发器和验收标准。
+- 本 Reference 不改变现有 `SKILL.md` 的配置驱动流程。若启用独立的定时观测，还需单独补充观测触发器和验收标准。

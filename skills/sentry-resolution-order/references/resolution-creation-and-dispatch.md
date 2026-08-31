@@ -1,6 +1,6 @@
 # Sentry 解决单创建与派发 Reference
 
-仅在当前回调需要创建或复用 Sentry 解决单时读取本 Reference。它定义安全校验、幂等去重、详情复核、解决单内容、目标派发和后续实现分支；输入字段和主流程以 `SKILL.md` 为准，影响趋势观测以 `sentry-impact-baseline.md` 为准。
+仅在当前回调需要创建或复用 Sentry 解决单时读取本 Reference。它定义通用安全校验、幂等去重、详情复核、解决单内容、目标派发和后续实现协议；业务范围、目标 UUID、快照时效、父子流程和实现目标必须从当前 Autopilot 读取，不得使用本文示例或内置默认值。
 
 ## 安全与去重
 
@@ -16,7 +16,7 @@
 
 回调中的列表快照和 `detail_snapshot` 是巡检阶段的触发上下文。Coordinator 不应无条件重复调用 Sentry MCP：
 
-- `detail_snapshot` 完整、`detail_fetched_at` 在有效时间内（默认 15 分钟）、Issue 状态未变化且 `sentry_issue_id` / fingerprint 一致时，直接复用详情证据和 `analysis_summary`；
+- `detail_snapshot` 完整、`detail_fetched_at` 在当前 Autopilot 配置的有效时间内、Issue 状态未变化且 `sentry_issue_id` / fingerprint 一致时，直接复用详情证据和 `analysis_summary`；
 - 快照缺失、超过有效时间、Issue 状态变化、fingerprint 不一致或 `analysis_confidence` 为低时，才使用自身已配置的 Sentry MCP（`get_sentry_resource`）重新读取 Issue 详情及代表性事件；
 - 无论是否复用，都要在建单前校验 Issue 当前状态和去重键；快照不能替代幂等校验；
 - 详情读取失败或权限不足：仍可基于已验证快照建单，但明确记录“证据不足，需人工在 Sentry 复核”，不得编造根因或代码位置；
@@ -108,11 +108,11 @@ multica issue get <solution_issue_id> --output json
 
 `assigned`、`started`、`deferred` 和 `blocked` 不得混写为“已触发执行”。对于 Squad，至少先确认 Issue 的平台 assignee 为该 Squad；leader 何时 claim 或开始执行，单独依据执行记录判断。
 
-## 父子 Issue 执行流程（默认关闭）
+## 父子 Issue 执行流程
 
-默认只创建或复用父解决单，并按 `target_assignee_type` / `target_assignee` 归属目标 Agent 或 Squad。父解决单负责 Sentry 事实、去重、证据、基线和整体状态。
+是否只创建或复用父解决单，由当前 Autopilot 的父子流程配置决定。父解决单负责 Sentry 事实、去重、证据、基线和整体状态。
 
-只有 Autopilot 同时配置以下条件，才允许创建执行 sub-issue：
+只有当前 Autopilot 同时配置以下条件，才允许创建执行 sub-issue：
 
 - `post_resolution_flow: coordinator_validated_builder`；
 - `enabled: true`；
@@ -162,6 +162,6 @@ multica issue create ... \
 
 父解决单在执行子单完成、结果回传且完成验收前保持处理中。子单失败时保留父单和证据，返回 `child_blocked`，不得创建无 parent 的替代执行单。
 
-`auto_dispatch_after_gate: false` 或配置缺失时，只完成父解决单流程并明确返回 `child_pending`；不得把父单已归属目标误报为执行子单已启动。
+当前 Autopilot 未启用自动派发或配置缺失时，只完成父解决单流程并明确返回 `child_pending`；不得把父单已归属目标误报为执行子单已启动。
 
 无论是否启用父子流程，Coordinator 都不修改代码、不自动合并、发布或关闭 Sentry Issue。后续实现、评审、合并和验收由执行子单的目标 Agent 或 Squad 按其工作协议负责。

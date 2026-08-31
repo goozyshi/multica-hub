@@ -1,0 +1,82 @@
+{
+  "schema": "2.0",
+  "header": {
+    "template": "red",
+    "title": {
+      "tag": "plain_text",
+      "content": "【{{scope}}】Sentry 错误巡检 · {{frequency}} Top {{display_top_n}}"
+    }
+  },
+  "body": {
+    "elements": [
+      {
+        "tag": "markdown",
+        "content": "{{environment_prefix}}近 {{time_window}} · {{unresolved_count}} 条未解决",
+        "margin": "0px"
+      },
+      {
+        "tag": "markdown",
+        "content": "**[{{issue_title}}]({{issue_url}})**",
+        "margin": "0px"
+      },
+      {
+        "tag": "div",
+        "text": {
+          "tag": "plain_text",
+          "content": "{{group}} · {{ownership}}（{{analysis_status}}）{{route_suffix}}",
+          "text_color": "grey",
+          "text_size": "notation",
+          "text_align": "left"
+        },
+        "margin": "0px"
+      },
+      {
+        "tag": "markdown",
+        "content": "**{{event_count}} 次** · {{user_count}} 用户 · 最近 {{last_seen_relative}}{{release_suffix}}",
+        "margin": "0px"
+      },
+      {
+        "tag": "markdown",
+        "content": "初判：{{analysis}}",
+        "margin": "0px"
+      },
+      {
+        "tag": "markdown",
+        "content": "建议：{{recommendation}}",
+        "margin": "0px"
+      },
+      {
+        "tag": "button",
+        "text": {
+          "tag": "plain_text",
+          "content": "创建解决单"
+        },
+        "type": "primary",
+        "size": "small",
+        "width": "default",
+        "behaviors": [
+          {
+            "type": "callback",
+            "value": {
+              "action": "create_sentry_resolution",
+              "sentry_org": "{{sentry_org}}",
+              "project": "{{project}}",
+              "issue_id": "{{issue_id}}",
+              "issue_title": "{{issue_title}}",
+              "issue_url": "{{issue_url}}",
+              "event_count": "{{event_count}}",
+              "user_count": "{{user_count}}",
+              "first_seen": "{{first_seen}}",
+              "last_seen": "{{last_seen}}",
+              "group": "{{group}}",
+              "dedupe_key": "{{project}}:{{issue_id}}",
+              "resolution_autopilot": "{{resolution_autopilot}}",
+              "inspection_issue_id": "{{inspection_issue_id}}"
+            }
+          }
+        ],
+        "margin": "0px"
+      }
+    ]
+  }
+}

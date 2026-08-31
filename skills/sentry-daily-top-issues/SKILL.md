@@ -45,7 +45,7 @@ Autopilot 描述采用 Markdown 分组格式。固定系统字段位于“基本
 
 ## 飞书输出与发送
 
-需要生成或发送飞书消息时，读取 [飞书卡片与发送 Reference](references/feishu-card-delivery.md)。该 Reference 定义通道配置校验、首次创建的告警颜色与视觉层级、`global_top_n_markdown_v1` Card 2.0 结构、按钮状态、回调载荷、发送前一致性校验和发送命令。未通过 Reference 中的校验时，保留巡检结果并按规定返回 `needs-info` 或 `blocked`，不得发送消息。
+需要生成或发送飞书消息时，读取 [飞书卡片与发送 Reference](references/feishu-card-delivery.md)，并直接读取 `templates/feishu-card-v2.json` 作为固定结构。AI 只填充查询结果、分析文案和按钮状态；不得重新推理或重建 Card JSON。该 Reference 定义通道配置校验、首次创建的视觉层级、`global_top_n_markdown_v1` Card 2.0 结构、按钮状态、回调载荷、发送前一致性校验和发送命令。未通过 Reference 中的校验时，保留巡检结果并按规定返回 `needs-info` 或 `blocked`，不得发送消息。
 
 卡片状态更新同样读取该 Reference：基于已发送 Card JSON 只替换对应按钮，使用 `--previous-card` 校验非按钮结构和视觉样式未变化；校验失败不得调用 Lark 更新接口。
 
