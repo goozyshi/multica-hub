@@ -101,7 +101,7 @@ ready-for-review
 
 统一使用 [`branch-mr-safety`](../skills/branch-mr-safety/SKILL.md)。分支/MR 是 agent 内部控制面，不是默认用户汇报内容。用户默认只看到实现结果、MR link、验证结果、风险和需要人工决定的 blocker。
 
-`Planner / Coordinator` 在派发前，把目标、验收标准、验证与 Delivery Context 写入 child issue。Delivery Context 是 `branch-mr-safety` 的简洁公开投影：`repo`、`source_branch`、`source_branch_status`、`final_mr_target`；完整分支推导仍以 skill 为准。公开 issue 不写 agent packet、SHA、commands、raw test output 或 routing 字段。
+`Planner / Coordinator` 在派发前，先读取 child issue 的可见 key，再把目标、验收标准、验证与完整 Delivery Context 写入 child issue：`repo`、`base_branch`、`source_branch`、`source_branch_status`、`issue_key`、`work_branch`、`builder_mr_target`、`final_mr_target`。这是为当前无私有派发载体保留的最小分支安全上下文；公开 issue 不写 agent packet、SHA、commands、raw test output 或 routing 字段。
 
 Builder 完成后只写变更、Builder MR、build/test 结论、风险与 `source_branch`。Planner 从 Git/MR 获取 refs、diff、changed files、检查结果和分支状态。
 
@@ -120,6 +120,8 @@ Inspector 输出 Inspection result packet：type、scope、result、action requi
 ## Build Check
 
 UI 变更由 `Builder` 在标 `ready-for-review` 前跑通项目 build；build 失败 = 交付未完成。交互/视觉验收在 Final MR 合入后的 test 环境进行。
+
+测试有既有 seam 时，Builder 补焦点覆盖，Reviewer 按缺测审查；没有可行 seam 时，Planner 在 issue 记录证据与 fallback 验证，Builder 不新建测试框架，Reviewer 把 test gap 作为风险而非自动 blocking。
 
 ## Shared Communication Instruction
 
@@ -151,4 +153,4 @@ Agent instructions and issue/MR context override loaded Skill workflows。Skill 
 3. 核对 Agent name、bound Skills、max concurrency、instructions version。
 4. 用一个无副作用 smoke issue 验证状态转换、MR 证据读取和交接。
 
-当前版本：Coordinator `2026-08-13.11`；Builder `2026-08-13.7`；Reviewer `2026-08-13.8`；Inspector `2026-07-27.1`。后续 repo 文件更新仍不代表 server 已自动同步。
+当前版本：Coordinator `2026-08-13.13`；Builder `2026-08-13.9`；Reviewer `2026-08-13.9`；Inspector `2026-07-27.1`。后续 repo 文件更新仍不代表 server 已自动同步。

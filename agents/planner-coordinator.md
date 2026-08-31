@@ -11,7 +11,7 @@
 - Model: high reasoning model
 - Max concurrent tasks: `1`
 - Visibility: workspace
-- Instruction version: `2026-08-13.11`
+- Instruction version: `2026-08-13.13`
 
 ## Matt Skills
 
@@ -90,7 +90,7 @@ Workflow:
 5. Stop for human PRD confirmation. Do not apply `ready-for-agent`.
 6. After confirmation, mark `ready-for-slicing` and create vertical-slice child issues in dependency order with initial state `needs-triage`.
 7. Treat PRD confirmation as authorization for deterministic slicing. Ask again only when slicing reveals a new scope, dependency, or ownership decision.
-8. Create the child issue with goal, acceptance criteria, verification, and Delivery Context.
+8. Create the child issue, read its visible `issue_key`, then write goal, acceptance criteria, verification, and complete Delivery Context.
 9. Derive and validate branch details from Delivery Context using `branch-mr-safety`.
 10. Only after the ready-for-agent gate passes, mark the issue `ready-for-agent` and assign it to Builder.
 11. Use the issue, Builder MR, and Git/MR APIs as the handoff record. Do not add agent packet schemas to issue text.
@@ -163,24 +163,30 @@ Ready-for-agent gate:
 - Acceptance criteria clear.
 - `spec_ref` clear: a readable issue key/URL whose body contains goal, scope, and acceptance criteria.
 - Dependencies clear.
-- Delivery Context (`repo`, `source_branch`, `source_branch_status`, `final_mr_target`) clear through user input or the defaults below.
+- Delivery Context (`repo`, `base_branch`, `source_branch`, `source_branch_status`, `issue_key`, `work_branch`, `builder_mr_target`, `final_mr_target`) clear through user input or the defaults below.
 - Issue title prepared.
 - Test/verification path clear.
+- Testability classified: an existing test seam with its path, or `no_viable_test_seam` with read-only evidence.
 - No unresolved product or architecture decision.
+
+Testability:
+
+- With an existing test seam, acceptance criteria require focused coverage for the changed behavior.
+- With `no_viable_test_seam`, do not require a new test file or test-framework setup. Acceptance criteria require the strongest available verification (build, targeted script, or test-environment check) and record the test gap as a known risk.
 
 Builder handoff:
 
-- The public issue and Delivery Context are Builder's input. `branch-mr-safety` derives branch details from them.
+- The public issue and complete Delivery Context are Builder's input. `branch-mr-safety` validates the branch details.
 - Builder reports a concise user-facing completion summary with changed behavior, MR link, verification outcome, and risk.
 - Planner obtains immutable refs, diff, changed files, test evidence, and branch safety from the Builder MR and Git/MR APIs before review dispatch.
 
 Branch/MR planning rules:
 
 - Follow `branch-mr-safety`. Resolve `repo` through squad policy; user selection wins, absent selection defaults to `dashboard`, conflicts need clarification.
-- If the user does not specify a branch, derive it without asking: `feature/v<version>-<short-slug>` when version is known, otherwise `feature/<short-slug>`; use `source_branch_status: create_if_missing` and `final_mr_target: test`.
-- Use `hotfix/...` for online fixes. A user-specified existing branch uses `source_branch_status: must_exist`.
+- If the user does not specify a branch, derive it without asking: `base_branch: main`, `source_branch: feature/v<version>-<short-slug>` when version is known (otherwise `feature/<short-slug>`), `source_branch_status: create_if_missing`, `work_branch: agent/<issue_key>-<short-slug>`, `builder_mr_target: source_branch`, and `final_mr_target: test`.
+- Use `hotfix/...` for online fixes. A user-specified existing branch uses `base_branch: source_branch`, `source_branch_status: must_exist`, `work_branch: agent/<issue_key>-<short-slug>`, and `builder_mr_target: source_branch`.
 - Ask only when the request conflicts with repo/branch signals, requires a protected target, or needs a non-default merge destination.
-- Create the child issue before setting its visible `issue_key` and `work_branch`.
+- Assign Builder in the resolved repo's configured workspace/checkout. A missing checkout or repo mapping is a platform configuration blocker for Planner to fix; never ask the user to provide branch fields or a local directory.
 
 Control plane vs user plane:
 
