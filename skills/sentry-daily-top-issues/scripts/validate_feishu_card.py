@@ -9,9 +9,11 @@ sends a message and never prints secret values.
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import re
 import sys
+from copy import deepcopy
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -138,6 +140,88 @@ def is_issue_title(element: Any) -> bool:
     )
 
 
+def validate_header_style(
+    header: dict[str, Any],
+    validator: CardValidation,
+) -> None:
+    if header.get("template") != "red":
+        validator.add(
+            "invalid_header_template",
+            "告警卡片 header.template 必须为 red",
+            "$.header.template",
+        )
+
+    title = header.get("title")
+    if (
+        not isinstance(title, dict)
+        or title.get("tag") != "plain_text"
+        or not non_empty_string(title.get("content"))
+    ):
+        validator.add(
+            "invalid_header_title",
+            "卡片标题必须使用非空 plain_text",
+            "$.header.title",
+        )
+
+
+def validate_candidate_visual_style(
+    element: dict[str, Any],
+    validator: CardValidation,
+    path: str,
+    *,
+    is_title: bool = False,
+) -> None:
+    content = text_content(element)
+    tag = element.get("tag")
+
+    if is_title:
+        return
+
+    if content.startswith(("初判：", "建议：")):
+        if tag != "markdown":
+            validator.add(
+                "invalid_analysis_element",
+                "初判和建议必须使用 markdown 元素",
+                path,
+            )
+
+
+def validate_context_text_style(
+    element: dict[str, Any],
+    validator: CardValidation,
+    path: str,
+) -> None:
+    if element.get("tag") != "div":
+        validator.add(
+            "invalid_context_element",
+            "项目/归因/版本/路由上下文必须使用 div 元素",
+            path,
+        )
+        return
+
+    text = element.get("text")
+    if not isinstance(text, dict) or text.get("tag") != "plain_text":
+        validator.add(
+            "invalid_context_text",
+            "项目/归因/版本/路由上下文必须使用 div + plain_text",
+            f"{path}.text",
+        )
+        return
+
+    expected_style = {
+        "text_color": "grey",
+        "text_size": "notation",
+        "text_align": "left",
+    }
+    for field, expected in expected_style.items():
+        if text.get(field) != expected:
+            validator.add(
+                "invalid_context_text_style",
+                f"上下文文本 {field} 必须为 {expected}",
+                f"{path}.text.{field}",
+            )
+
+
 def is_sensitive_key(key: str) -> bool:
     normalized = re.sub(r"[^a-z0-9_]", "_", key.lower())
     return normalized in SENSITIVE_KEYS
@@ -158,6 +242,21 @@ def validate_sensitive_content(
     card: Any,
     validator: CardValidation,
 ) -> None:
+    def validate_markdown_fields(value: Any, path: str) -> None:
+        if isinstance(value, dict):
+            if value.get("tag") == "markdown" and "text_color" in value:
+                validator.add(
+                    "unsupported_markdown_field",
+                    "Card 2.0 的 markdown 元素不支持 text_color 字段",
+                    f"{path}.text_color",
+                )
+            for key, child in value.items():
+                validate_markdown_fields(child, f"{path}.{key}")
+        elif isinstance(value, list):
+            for index, child in enumerate(value):
+                validate_markdown_fields(child, f"{path}[{index}]")
+
+    validate_markdown_fields(card, "$")
     for path, key, value in walk(card):
         if is_sensitive_key(key):
             validator.add(
@@ -211,35 +310,87 @@ def resolve_inspection_url(
         )
         return None
 
-    if "[" in template or "](" in template:
+    # Autopilot descriptions are Markdown. Normalize one serialization layer
+    # before validating the canonical raw HTTPS prefix or legacy template.
+    template = html.unescape(template)
+
+    markdown_match = re.fullmatch(r"\[([^\]]+)\]\(([^)]+)\)", template)
+    if markdown_match:
+        label, target = markdown_match.groups()
+        if label != target:
+            validator.add(
+                "markdown_inspection_template",
+                "inspection_url_template 不能使用显示文本和目标不一致的 Markdown 链接",
+                "$.inspection_url_template",
+                decision="needs-info",
+            )
+        else:
+            # Some editors serialize a plain URL as [URL](URL). Normalize one
+            # identical wrapper without accepting hidden or rewritten targets.
+            template = target
+    elif "[" in template or "](" in template:
         validator.add(
             "markdown_inspection_template",
             "inspection_url_template 必须是原始 URL，不能是 Markdown 链接",
             "$.inspection_url_template",
             decision="needs-info",
         )
-    if not valid_https_url(template.replace("<Issue-ID>", "placeholder")):
-        validator.add(
-            "invalid_inspection_template",
-            "inspection_url_template 必须是合法 HTTPS URL",
-            "$.inspection_url_template",
-            decision="needs-info",
-        )
-    if "<Issue-ID>" not in template:
-        validator.add(
-            "missing_issue_placeholder",
-            "inspection_url_template 必须包含 <Issue-ID>",
-            "$.inspection_url_template",
-            decision="needs-info",
-        )
+
     placeholders = PLACEHOLDER_RE.findall(template)
-    if any(placeholder != "<Issue-ID>" for placeholder in placeholders):
+    issue_placeholder_count = placeholders.count("<Issue-ID>")
+    has_legacy_template = issue_placeholder_count == 1 and not any(
+        placeholder != "<Issue-ID>" for placeholder in placeholders
+    )
+    if issue_placeholder_count > 1:
+        validator.add(
+            "duplicate_issue_placeholder",
+            "inspection_url_template 必须只包含一个 <Issue-ID> 占位符",
+            "$.inspection_url_template",
+            decision="needs-info",
+        )
+    if placeholders and not has_legacy_template:
         validator.add(
             "unknown_url_placeholder",
-            "inspection_url_template 只能使用 <Issue-ID> 占位符",
+            "inspection_url_template 只能使用前缀模式或一个 <Issue-ID> 占位符",
             "$.inspection_url_template",
             decision="needs-info",
         )
+    if not placeholders and ("<" in template or ">" in template):
+        validator.add(
+            "invalid_inspection_template",
+            "inspection_url_template 包含未识别的尖括号内容",
+            "$.inspection_url_template",
+            decision="needs-info",
+        )
+
+    if has_legacy_template:
+        url_for_validation = template.replace("<Issue-ID>", "placeholder")
+    else:
+        url_for_validation = template
+        parsed = urlparse(template)
+        if not parsed.path.endswith("/"):
+            validator.add(
+                "invalid_inspection_prefix",
+                "inspection_url_template 前缀必须以 / 结尾",
+                "$.inspection_url_template",
+                decision="needs-info",
+            )
+        if parsed.query or parsed.fragment:
+            validator.add(
+                "invalid_inspection_prefix",
+                "inspection_url_template 前缀不能包含 query 或 fragment",
+                "$.inspection_url_template",
+                decision="needs-info",
+            )
+
+    if not valid_https_url(url_for_validation):
+        validator.add(
+            "invalid_inspection_template",
+            "inspection_url_template 必须是合法 HTTPS URL 或 HTTPS 前缀",
+            "$.inspection_url_template",
+            decision="needs-info",
+        )
+
     if not non_empty_string(inspection_issue_id):
         validator.add(
             "missing_inspection_issue_id",
@@ -257,7 +408,11 @@ def resolve_inspection_url(
         )
         return None
 
-    resolved = template.replace("<Issue-ID>", inspection_issue_id)
+    resolved = (
+        template.replace("<Issue-ID>", inspection_issue_id)
+        if has_legacy_template
+        else f"{template}{inspection_issue_id}"
+    )
     if "<" in resolved or ">" in resolved or not valid_https_url(resolved):
         validator.add(
             "unresolvable_inspection_url",
@@ -553,6 +708,172 @@ def validate_inspection_button(
         )
 
 
+def top_level_button_indices(card: Any) -> list[int]:
+    if not isinstance(card, dict):
+        return []
+    body = card.get("body")
+    elements = body.get("elements") if isinstance(body, dict) else None
+    if not isinstance(elements, list):
+        return []
+    return [
+        index
+        for index, element in enumerate(elements)
+        if isinstance(element, dict) and element.get("tag") == "button"
+    ]
+
+
+def card_without_top_level_buttons(card: Any) -> Any:
+    normalized = deepcopy(card)
+    if not isinstance(normalized, dict):
+        return normalized
+    body = normalized.get("body")
+    elements = body.get("elements") if isinstance(body, dict) else None
+    if isinstance(elements, list):
+        body["elements"] = [
+            element
+            for element in elements
+            if not (isinstance(element, dict) and element.get("tag") == "button")
+        ]
+    return normalized
+
+
+def validate_card_update(
+    previous_card: Any,
+    card: Any,
+    validator: CardValidation,
+) -> None:
+    if not isinstance(previous_card, dict) or not isinstance(card, dict):
+        return
+    previous_elements = (
+        previous_card.get("body", {}).get("elements")
+        if isinstance(previous_card.get("body"), dict)
+        else None
+    )
+    elements = (
+        card.get("body", {}).get("elements")
+        if isinstance(card.get("body"), dict)
+        else None
+    )
+    if not isinstance(previous_elements, list) or not isinstance(elements, list):
+        return
+
+    previous_button_indices = top_level_button_indices(previous_card)
+    button_indices = top_level_button_indices(card)
+    if previous_button_indices != button_indices:
+        validator.add(
+            "card_button_slots_changed",
+            "状态更新不得改变顶层按钮位置或数量",
+            "$.body.elements",
+        )
+
+    if card_without_top_level_buttons(previous_card) != card_without_top_level_buttons(
+        card
+    ):
+        validator.add(
+            "card_non_button_structure_changed",
+            "状态更新只能替换按钮，不得重建或改变非按钮卡片结构",
+            "$",
+        )
+
+
+def validate_candidate_separators(
+    elements: list[Any],
+    title_indexes: list[int],
+    candidate_count: int,
+    validator: CardValidation,
+) -> None:
+    separator_indices = [
+        index
+        for index, element in enumerate(elements)
+        if isinstance(element, dict) and element.get("tag") == "hr"
+    ]
+    expected_separator_count = max(candidate_count - 1, 0)
+    if len(separator_indices) != expected_separator_count:
+        validator.add(
+            "candidate_separator_count",
+            f"候选分隔符数量为 {len(separator_indices)}，预期 {expected_separator_count}",
+            "$.body.elements",
+        )
+
+    if len(title_indexes) != candidate_count:
+        return
+
+    for candidate_index in range(candidate_count - 1):
+        start = title_indexes[candidate_index]
+        end = title_indexes[candidate_index + 1]
+        solution_buttons = [
+            index
+            for index, element in enumerate(elements[start:end], start)
+            if (
+                isinstance(element, dict)
+                and element.get("tag") == "button"
+                and element.get("width") == "default"
+            )
+        ]
+        if len(solution_buttons) != 1:
+            continue
+
+        separator_index = solution_buttons[0] + 1
+        if (
+            separator_index >= end
+            or not isinstance(elements[separator_index], dict)
+            or elements[separator_index].get("tag") != "hr"
+        ):
+            validator.add(
+                "missing_candidate_separator",
+                "相邻候选之间必须有独立 hr 分隔符，且分隔符必须紧跟上一条解决单按钮",
+                f"$.body.elements[{separator_index}]",
+            )
+            continue
+        if separator_index + 1 != end:
+            validator.add(
+                "invalid_candidate_separator_order",
+                "候选 hr 分隔符必须紧邻下一条候选标题",
+                f"$.body.elements[{separator_index}]",
+            )
+
+
+def validate_compact_layout(
+    elements: list[Any],
+    validator: CardValidation,
+) -> None:
+    expected_margins = {
+        "markdown": "0px",
+        "div": "0px",
+        "button": "0px",
+        "hr": "4px 0px",
+    }
+    for index, element in enumerate(elements):
+        if not isinstance(element, dict):
+            continue
+        tag = element.get("tag")
+        expected_margin = expected_margins.get(tag)
+        if expected_margin is None:
+            continue
+        if element.get("margin") != expected_margin:
+            validator.add(
+                "invalid_compact_margin",
+                f"{tag} 元素 margin 必须为 {expected_margin}",
+                f"$.body.elements[{index}].margin",
+            )
+        if tag == "hr":
+            continue
+
+        content = text_content(element)
+        if not content.strip():
+            validator.add(
+                "empty_body_element",
+                f"{tag} 元素不得为空",
+                f"$.body.elements[{index}]",
+            )
+        if content.startswith("\n") or content.endswith("\n") or "\n\n" in content:
+            validator.add(
+                "excessive_body_spacing",
+                f"{tag} 元素不得包含首尾空行或连续空行",
+                f"$.body.elements[{index}]",
+            )
+
+
 def validate_card(
     card: Any,
     validator: CardValidation,
@@ -568,6 +889,8 @@ def validate_card(
         validator.add("invalid_schema", '根对象 schema 必须是 "2.0"', "$.schema")
     if not isinstance(card.get("header"), dict):
         validator.add("missing_header", "根对象必须包含 header 对象", "$.header")
+    else:
+        validate_header_style(card["header"], validator)
     body = card.get("body")
     elements = body.get("elements") if isinstance(body, dict) else None
     if not isinstance(elements, list):
@@ -617,6 +940,14 @@ def validate_card(
             "$.candidate_ids",
             decision="needs-info",
         )
+
+    validate_candidate_separators(
+        elements,
+        title_indexes,
+        candidate_count,
+        validator,
+    )
+    validate_compact_layout(elements, validator)
 
     top_level_buttons = [
         (index, element)
@@ -682,6 +1013,36 @@ def validate_card(
             f"$.body.elements[{button_index}]",
             candidate_ids,
         )
+        content_elements = [
+            (index, element)
+            for index, element in enumerate(elements[title_index:segment_end], title_index)
+            if not (isinstance(element, dict) and element.get("tag") == "button")
+        ]
+        for content_index, content_element in content_elements:
+            if isinstance(content_element, dict):
+                validate_candidate_visual_style(
+                    content_element,
+                    validator,
+                    f"$.body.elements[{content_index}]",
+                    is_title=content_index == title_index,
+                )
+        context_elements = [
+            (index, element)
+            for index, element in content_elements
+            if isinstance(element, dict) and element.get("tag") == "div"
+        ]
+        if not context_elements:
+            validator.add(
+                "missing_context_element",
+                "每条候选必须包含带固定视觉样式的上下文 div",
+                f"$.body.elements[{title_index}:{segment_end}]",
+            )
+        for context_index, context_element in context_elements:
+            validate_context_text_style(
+                context_element,
+                validator,
+                f"$.body.elements[{context_index}]",
+            )
         segment_text = " ".join(text_content(element) for element in elements[title_index:segment_end])
         if "初判：" not in segment_text:
             validator.add(
@@ -754,6 +1115,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--resolution-enabled", required=True, type=parse_bool)
     parser.add_argument("--inspection-issue-id")
+    parser.add_argument(
+        "--previous-card",
+        help="状态更新前的 Card JSON；传入后只允许按钮状态变化",
+    )
     return parser
 
 
@@ -791,6 +1156,11 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     card = read_json(args.card, validator, "Card JSON")
+    previous_card = (
+        read_json(args.previous_card, validator, "更新前 Card JSON")
+        if args.previous_card
+        else None
+    )
     if card is not None:
         validate_card(
             card,
@@ -800,6 +1170,8 @@ def main(argv: list[str] | None = None) -> int:
             args.resolution_enabled,
             expected_url,
         )
+        if args.previous_card and previous_card is not None:
+            validate_card_update(previous_card, card, validator)
 
     report = {
         "status": "valid" if not validator.errors else "invalid",
@@ -810,6 +1182,7 @@ def main(argv: list[str] | None = None) -> int:
             "resolution_enabled": args.resolution_enabled,
             "inspection_button_required": expected_url is not None,
             "inspection_url": expected_url,
+            "previous_card_checked": bool(args.previous_card),
         },
     }
     print(json.dumps(report, ensure_ascii=False, separators=(",", ":")))

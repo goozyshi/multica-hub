@@ -7,9 +7,9 @@ description: 通过 Sentry MCP 列表查询生成按 Autopilot 分组配置汇�
 
 ## Autopilot 配置解析
 
-Autopilot 描述采用 Markdown 分组格式。固定系统字段位于“基本信息”，业务参数位于“查询配置”“项目分组”“展示配置”“动作配置”“发送配置”；执行逻辑位于 Skill。解析每个配置区块中形如 `- key: value` 的键值，以及“项目分组”表格中的三列 `分组`、`项目`、`Top N`。表格的分隔线行不是数据。`Top N`、`display_top_n`、时间窗口和项目名称必须来自当前 Autopilot；Skill 不提供业务数量或名称默认值。
+Autopilot 描述采用 Markdown 分组格式。固定系统字段位于“基本信息”，业务参数位于“查询配置”“项目分组”“展示配置”“动作配置”“发送配置”；执行逻辑位于 Skill。解析每个配置区块中形如 `- key: value` 的键值，以及“项目分组”表格中的三列 `分组`、`项目`、`Top N`。表格的分隔线行不是数据。`Top N`、`display_top_n`、时间窗口和项目名称必须来自当前 Autopilot；Skill 不提供业务数量或名称默认值。读取 Markdown 描述中的 `inspection_url_template` 时，按原始 HTTPS 基础 URL 前缀解析，发送时拼接当前巡检 Issue ID；历史配置可兼容一个 `<Issue-ID>` 占位符，也可还原编辑器产生的同值 `[URL](URL)` 包装，但不得接受隐藏或改写后的目标。
 
-执行前严格校验：拒绝未知区块或未知字段；拒绝缺失必填项、重复项目、空分组、非正整数、非法枚举和无效 IANA 时区。`display_top_n` 是最终展示数量；各组 `Top N` 只用于组内候选数，二者不可混用。`resolution_enabled: true` 时必须有有效 `resolution_autopilot` 和 `dedupe_key`。发送配置的通道校验见 [飞书卡片与发送 Reference](references/feishu-card-delivery.md)。校验失败时输出字段级错误，结果为 `needs-info`，不得发起 Sentry 查询或发送消息。
+执行前严格校验：拒绝未知区块或未知字段；拒绝缺失必填项、重复项目、空分组、非正整数、非法枚举和无效 IANA 时区。`display_top_n` 是最终展示数量；各组 `Top N` 只用于组内候选数，二者不可混用。`resolution_enabled: true` 时必须有有效 `resolution_autopilot` 和 `dedupe_key`。发送配置的通道校验见 [飞书卡片与发送 Reference](references/feishu-card-delivery.md)。模板配置阶段不要求预先存在具体巡检 Issue ID；发送前必须取得当前巡检 Issue ID，并按 Reference 将其传入 validator 完成最终 URL 解析。校验失败时输出字段级错误，结果为 `needs-info`，不得发起 Sentry 查询或发送消息。
 
 触发器、订阅者、Autopilot agent、执行模式和项目范围由 Multica Autopilot 字段管理，不复制到人工配置区；修改周报频率只调整 schedule trigger，不修改 Skill。
 
@@ -45,7 +45,9 @@ Autopilot 描述采用 Markdown 分组格式。固定系统字段位于“基本
 
 ## 飞书输出与发送
 
-需要生成或发送飞书消息时，读取 [飞书卡片与发送 Reference](references/feishu-card-delivery.md)。该 Reference 定义通道配置校验、`global_top_n_markdown_v1` Card 2.0 结构、按钮状态、回调载荷、发送前一致性校验和发送命令。未通过 Reference 中的校验时，保留巡检结果并按规定返回 `needs-info` 或 `blocked`，不得发送消息。
+需要生成或发送飞书消息时，读取 [飞书卡片与发送 Reference](references/feishu-card-delivery.md)。该 Reference 定义通道配置校验、首次创建的告警颜色与视觉层级、`global_top_n_markdown_v1` Card 2.0 结构、按钮状态、回调载荷、发送前一致性校验和发送命令。未通过 Reference 中的校验时，保留巡检结果并按规定返回 `needs-info` 或 `blocked`，不得发送消息。
+
+卡片状态更新同样读取该 Reference：基于已发送 Card JSON 只替换对应按钮，使用 `--previous-card` 校验非按钮结构和视觉样式未变化；校验失败不得调用 Lark 更新接口。
 
 ## 解决单动作与幂等
 
