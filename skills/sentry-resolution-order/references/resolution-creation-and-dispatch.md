@@ -1,16 +1,16 @@
 # Sentry 解决单创建与派发 Reference
 
-仅在当前回调需要创建或复用 Sentry 解决单时读取本 Reference。它定义通用安全校验、幂等去重、详情复核、解决单内容和目标派发协议；业务范围、目标 UUID、快照时效和观测策略必须从来源巡检 Autopilot 服务端回读，不得从解决单 Autopilot、callback 或本文示例取得默认值。
+仅在当前回调需要创建或复用 Sentry 解决单时读取本 Reference。它定义通用安全校验、幂等去重、详情复核、解决单内容和目标派发协议；目标 UUID 和 Sentry 事实必须从已验证 callback 读取，不得从本文示例取得默认值。
 
 ## 业务配置传递协议
 
-callback 必须包含 `resolution_autopilot`、`source_inspection_autopilot_id`、`inspection_issue_id` 和 `resolution_config_version: business_resolution_config_v1`。先确认 `resolution_autopilot` 等于当前解决单 Autopilot ID，再回读来源巡检 Autopilot。来源必须属于当前 workspace、状态为 `active`，并包含 `inspection_type: sentry-daily-top-issues`、`profile_mode: skill-backed`、`profile_ref: skill:sentry-daily-top-issues`、`resolution_enabled: true`、当前解决单 Autopilot 引用、规范“巡检配置”区块和“解决单配置（business_resolution_config_v1）”区块。解析 Markdown 描述时允许先还原一层 `\_` 字段名转义；不得接受其他隐藏或改写后的配置。
+callback 必须包含 `resolution_autopilot`、`target_assignee_type`、`target_assignee` 和 `resolution_config_version: business_resolution_config_v1`。先确认 `resolution_autopilot` 等于当前解决单 Autopilot ID，再校验飞书签名、目标 UUID 和 callback 结构。解析 Markdown 描述时允许先还原一层 `\_` 字段名转义；不得接受其他隐藏或改写后的配置。
 
-从来源 Autopilot 的“巡检配置 -> Sentry 查询”读取 `sentry_org`，从“解决单配置（business_resolution_config_v1）”读取 `allowed_projects`、优先级映射、`target_assignee_type`、`target_assignee`、快照策略和影响趋势观测配置。callback 中的 Sentry 字段只作为事实快照；callback 直接携带的目标、白名单或流程开关不得覆盖来源配置。来源缺失、引用不回指、配置不完整或解析失败时返回 `needs-info` 或 `dispatch blocked`，不得创建解决单。
+从已验证 callback 读取 `sentry_org`、`project`、`target_assignee_type`、`target_assignee`、优先级、快照和影响趋势观测配置。callback 直接携带的目标必须通过 UUID 格式、workspace 可指派性和飞书签名校验；配置缺失、配置不完整或解析失败时返回 `needs-info` 或 `dispatch blocked`，不得创建解决单。
 
 ## 安全与去重
 
-- 仅接受通过飞书回调签名校验、且项目位于来源巡检 Autopilot 的 `allowed_projects` 的请求。
+- 仅接受通过飞书回调签名校验、且 callback 的目标类型和目标 UUID 通过校验的请求。
 - 以 `project + sentry_issue_id` 为去重键；存在未关闭解决单时不得重复创建，返回已有单据。
 - 不得把完整堆栈、IP、用户标识写入单据。
 - 新建解决单必须写入可查询元数据：`sentry_dedupe_key`、`sentry_project`、`sentry_issue_id`。
@@ -29,7 +29,7 @@ callback 必须包含 `resolution_autopilot`、`source_inspection_autopilot_id`�
 
 `execution_mode=create_issue` 时，Autopilot 平台会在 Skill 开始执行前创建当前运行 Issue。该 Issue 是本次流程的根父单，通常由 Autopilot 配置的 Coordinator Agent 执行；它不是需要再次创建的解决单，也不要求通过后置 `issue assign` 改派给目标 Squad。
 
-创建实际 Sentry 解决单时，必须把当前运行单 UUID 作为 `parent`，并在同一个创建请求中绑定来源巡检 Autopilot 配置的目标：
+创建实际 Sentry 解决单时，必须把当前运行单 UUID 作为 `parent`，并在同一个创建请求中绑定 callback 提供的目标：
 
 ```bash
 multica issue create ... \
@@ -57,7 +57,7 @@ multica issue create ... --assignee-id <target_assignee>
 
 回调中的列表快照和 `detail_snapshot` 是来源巡检阶段的触发上下文。Coordinator 不应无条件重复调用 Sentry MCP：
 
-- `detail_snapshot` 完整、`detail_fetched_at` 在来源巡检 Autopilot 配置的有效时间内、Issue 状态未变化且 `sentry_issue_id` / fingerprint 一致时，直接复用详情证据和 `analysis_summary`；
+- `detail_snapshot` 完整、`detail_fetched_at` 在当前解决单 Autopilot 配置的有效时间内、Issue 状态未变化且 `sentry_issue_id` / fingerprint 一致时，直接复用详情证据和 `analysis_summary`；
 - 快照缺失、超过有效时间、Issue 状态变化、fingerprint 不一致或 `analysis_confidence` 为低时，才使用自身已配置的 Sentry MCP（`get_sentry_resource`）重新读取 Issue 详情及代表性事件；
 - 无论是否复用，都要在建单前校验 Issue 当前状态和去重键；快照不能替代幂等校验；
 - 详情读取失败或权限不足：仍可基于已验证快照建单，但明确记录“证据不足，需人工在 Sentry 复核”，不得编造根因或代码位置；
@@ -160,7 +160,7 @@ multica issue get <solution_issue_id> --output json
 
 ## 实际解决单
 
-实际解决单负责 Sentry 事实、去重、证据、基线和整体状态。创建时直接绑定来源巡检 Autopilot 配置的 `target_assignee`；目标 Agent 或 Squad 接手后，自行决定后续分析、修复、验证和协作方式。Resolver 不创建额外 Builder 子单。
+实际解决单负责 Sentry 事实、去重、证据、基线和整体状态。创建时直接绑定 callback 提供的 `target_assignee`；目标 Agent 或 Squad 接手后，自行决定后续分析、修复、验证和协作方式。
 
 ```bash
 multica issue create ... \

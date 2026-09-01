@@ -75,9 +75,15 @@ multica skill list --output json
 
 `sentry_org` 固定为 `mico`。使用 `mico` organization 的只读 Sentry 查询能力获取该 organization 下的 project 列表。Sentry project 只从此列表产生，不从 Multica project、Repo 名称、slug 或描述推断。
 
-展示 Sentry project 的名称和标识，要求用户独立选择。查询不可用、权限不足或结果为空时，返回 `needs-info` 或 `blocked`，不得猜测 Sentry project。
+使用 `scope_hint` 对 `mico` 的 Sentry project 列表独立匹配名称或 slug：
 
-完成条件：每个巡检分组都有用户确认的 Sentry project；Sentry project 已确认属于 `mico`。
+- 一个精确匹配：确认该 Sentry project 存在，再展示名称、slug 和标识。
+- 没有匹配：返回 `needs-info`，明确说明 `mico` 中未找到该 Sentry project；不能仅凭 Multica project 名称继续。
+- 多个匹配：返回 `needs-info`，列出候选名称、slug 和标识，要求用户选择。
+
+展示 Sentry project 的名称和标识，要求用户独立选择。查询不可用、权限不足或结果为空时，返回 `needs-info` 或 `blocked`，不得猜测 Sentry project。Multica project 资源发现成功，不代表 Sentry project 已存在。
+
+完成条件：已获得 `mico` 的 Sentry project 查询结果，且每个巡检分组都有用户确认并经列表验证的 Sentry project；仅完成 Multica 资源发现时不得进入配置确认。
 
 ### 3. 发现飞书群
 
@@ -100,49 +106,75 @@ lark-cli --profile sentry-notify im +chat-list --as bot --types group --page-all
 
 完成条件：得到一个状态为 `normal` 的用户确认群组，或明确标记 `resource_discovery: partial` / `needs-info`。
 
-### 4. 收集配置
+### 4. 分批收集配置
 
-使用以下表单向用户提问；已由默认值覆盖的字段不再提问：
+按字段依赖关系分轮提问。同一轮内，当前答案不影响后续问题的字段必须合并询问；禁止按字段逐个追问。已由默认值覆盖的字段不再提问。
+
+#### 第 1 轮：基础字段与分支选择
+
+一次询问以下字段：
 
 ```text
 业务名称：
 Multica project scope：
 巡检频率/cron：
 订阅者：
+通知渠道：feishu_webhook | feishu_app
+resolution_enabled: true | false
+```
 
-巡检配置：
-### Sentry 查询
-- sentry_org：mico（固定）
-- source：
-- time_window：
-- filter：
-- environment：
-- sort：
-### 项目分组
-| 分组 | Sentry project（来自 mico） | Multica Repo | Top N |
+`Multica project scope` 会影响 Repo 和 Autopilot 发现；`通知渠道` 会决定后续通知参数；`resolution_enabled` 会决定是否收集解决单目标。第 1 轮结束后，执行已确定 scope 的 Multica 资源筛选，并准备 `mico` organization 的 Sentry project 列表。
+
+#### 第 2 轮：独立资源与条件字段
+
+基于第 1 轮结果，一次询问所有已具备候选或已满足前置条件的字段：
+
+```text
+巡检配置
+
+Sentry 查询
+| 字段 | 值 |
+| --- | --- |
+| organization | mico（固定） |
+| source | search_issues |
+| time_window | 24h |
+| filter | is:unresolved level:error |
+| environment | 待确认 |
+| sort | freq |
+
+项目分组
+| 分组 | Sentry project（mico 中已验证） | Multica Repo | Top N |
 | --- | --- | --- | --- |
-### 展示配置
-- layout：
-- display_top_n：
-- timezone：
+| 待确认 | 待选择 | 待选择 | 3 |
 
-解决单配置（business_resolution_config_v1）：
-- resolution_enabled: true | false
-### 解决单授权与目标（启用时）
+展示配置
+| 字段 | 值 |
+| --- | --- |
+| layout | global_top_n_markdown_v1 |
+| display_top_n | 3 |
+| timezone | Asia/Shanghai |
+```
+
+当 `resolution_enabled: true` 时，在同一轮询问：
+
+```text
+解决单授权与目标：
 - allowed_projects：
 - target_assignee_type: agent | squad
 - target_assignee：目标 Agent/Squad UUID
-
-通知渠道：feishu_webhook | feishu_app
+- priority_mapping：
+- impact_trend_observation: enabled | disabled
+- observation_timeout_days：
+- post_fix_observation_days：
 ```
 
-当 `feishu_webhook` 时补充：
+当第 1 轮选择 `feishu_webhook` 时，在同一轮询问：
 
 ```text
 webhook_url：HTTPS URL
 ```
 
-当 `feishu_app` 时，固定使用以下绑定，不向用户追加应用 ID/profile 参数；仅从查询结果选择目标群：
+当第 1 轮选择 `feishu_app` 时，先执行群聊发现，再在同一轮询问群聊选择。固定使用以下绑定，不向用户追加应用 ID/profile 参数：
 
 ```text
 app_id: cli_aa1a82ab6d785cc2
@@ -150,21 +182,15 @@ profile: sentry-notify
 chat_id：oc_...
 ```
 
-当 `resolution_enabled: true` 时，读取已有解决单 Autopilot 描述并收集缺失业务字段：
-
-```text
-target_assignee_type: agent | squad
-target_assignee: 目标 Agent/Squad UUID
-allowed_projects：
-priority_mapping：
-impact_trend_observation: enabled | disabled
-observation_timeout_days：
-post_fix_observation_days：
-```
+如果第 1 轮未提供 `Multica project scope`，先完成 scope 选择，再执行依赖该 scope 的 Repo 筛选。不能把不影响当前轮其他答案的字段拆成多轮。
 
 目标 UUID、权限和项目白名单属于业务决策，不使用默认值。解决单直接派发给该 Agent/Squad；不创建 Builder 子流程。
 
 Sentry project 与 Multica Repo 是两个独立选择。若配置需要 project-repo 映射，必须逐项由用户确认；不能用名称相似度、slug 或已有描述自动补全。
+
+完成条件：每轮问题一次性发出；第 2 轮结束后，所有已启用分支的字段齐全，Sentry project 与 Multica Repo 已分别选择并完成映射。
+
+询问卡片必须使用分段标题和 Markdown 表格。项目分组必须使用 `| 分组 | Sentry project | Multica Repo | Top N |` 表格；禁止把配置字段渲染成连续编号列表、裸文本字段清单或未对齐的伪表格。表格无法渲染时，改用每行一条的结构化字段，不使用编号列表。
 
 ## Phase 2：规范化与方案
 
@@ -182,7 +208,7 @@ Sentry project 与 Multica Repo 是两个独立选择。若配置需要 project-
 - [日报 Skill](../sentry-daily-top-issues/SKILL.md)
 - [解决单 Skill](../sentry-resolution-order/SKILL.md)
 
-两个 Autopilot 都只引用上述现有 Skill。业务名称、scope、项目分组、发送配置、解决单目标和流程开关全部写入对应 Autopilot；不得为单个业务复制、改写或新建 Sentry Skill。
+两个 Autopilot 都只引用上述现有 Skill。业务名称、scope、项目分组、发送配置和解决单目标写入巡检 Autopilot；通用解决单 Autopilot 不绑定业务目标，目标由飞书卡片 callback 传递。
 
 ### 解决单 Autopilot 复用判定
 
@@ -190,10 +216,9 @@ Sentry project 与 Multica Repo 是两个独立选择。若配置需要 project-
 
 - `profile_ref: skill:sentry-resolution-order`
 - `execution_mode`
-- Multica project scope
-- Sentry organization 固定为 `mico`，以及 `allowed_projects`
-- `target_assignee_type` 与 `target_assignee`
-- 安全校验、去重键和趋势观测策略
+- Multica project scope 不作为解决单 Autopilot 的兼容条件
+- `profile_ref`、`execution_mode` 和 webhook trigger
+- 通用 callback 校验能力
 
 不兼容时创建新的解决单 Autopilot；不得静默修改已有业务 Autopilot。`resolution_enabled: false` 时不创建也不绑定解决单 Autopilot。
 
@@ -202,16 +227,39 @@ Sentry project 与 Multica Repo 是两个独立选择。若配置需要 project-
 确认前展示完整方案：
 
 ```text
-业务：
-巡检 Autopilot：新建 / 目标 project / Inspector / create_issue / schedule / subscriber
-profile_ref：skill:sentry-daily-top-issues
-巡检配置：Sentry organization=mico + 已确认的 Sentry project + 独立确认的 Multica Repo 映射 + 展示配置
-解决单配置：路由、授权、目标、趋势观测
-发送配置：channel、profile/chat_id 或 webhook_url（Webhook 只显示已配置，不回显密钥）
-解决单 Autopilot：复用 ID / 新建；直接派发目标类型与 UUID；趋势观测
+业务方案
+| 字段 | 值 |
+| --- | --- |
+| 业务名称 | <业务名称> |
+| Multica project | <project-id> |
+| 巡检 Autopilot | 新建 |
+| 解决单 Autopilot | 复用 <id> / 新建 / 跳过 |
+
+巡检配置
+| 分组 | Sentry project（mico 中已验证） | Multica Repo | Top N |
+| --- | --- | --- | --- |
+| <分组> | <sentry-project> | <repo> | <n> |
+
+触发与通知
+| 字段 | 值 |
+| --- | --- |
+| cron / timezone | <cron> / <iana-timezone> |
+| subscriber | <subscriber> |
+| channel | feishu_app / feishu_webhook |
+| chat_id 或 webhook | <chat_id> / 已配置（不回显 URL） |
+
+解决单配置
+| 字段 | 值 |
+| --- | --- |
+| enabled | true / false |
+| target | <agent-or-squad> |
+| allowed_projects | <projects> |
+| trend observation | enabled / disabled |
 ```
 
 只对业务字段要求明确确认。没有确认时返回 `needs-info`，不执行任何创建、更新、触发或发送命令。
+
+方案卡片不得使用连续编号列表、裸字段清单或伪表格；所有候选、映射和待确认值都必须落在对应表格中。没有 Sentry project 查询结果或验证失败时，只展示阻塞原因，不展示“已完成资源发现”方案。
 
 ## Phase 3：确认后创建
 
@@ -252,8 +300,9 @@ multica autopilot trigger-add <autopilot-id> \
 ### 复用或创建解决单 Autopilot
 
 - 复用：保存现有 ID，不更新其配置。
-- 新建：使用 `profile_ref: skill:sentry-resolution-order`、当前业务 scope、用户确认的目标和 `--mode create_issue`。
+- 新建：使用 `profile_ref: skill:sentry-resolution-order`、workspace 通用 scope 和 `--mode create_issue`；不得写入业务项目或固定 Agent/Squad。
 - 解决单 Autopilot 使用 webhook trigger；不要把飞书 Webhook 或 App Secret 写入描述。
+- 巡检 Autopilot 的解决单配置必须在生成卡片时传入 `target_assignee_type` 和 `target_assignee`。
 - 创建失败时停止后续操作，报告已完成与未完成项；不自动回滚已成功创建的 Autopilot。
 
 ## Phase 4：回读验证

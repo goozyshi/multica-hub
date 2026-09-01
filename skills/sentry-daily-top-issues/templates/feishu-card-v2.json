@@ -76,9 +76,9 @@
               "group": "{{group}}",
               "dedupe_key": "{{project}}:{{issue_id}}",
               "resolution_autopilot": "{{resolution_autopilot}}",
-              "source_inspection_autopilot_id": "{{source_inspection_autopilot_id}}",
-              "resolution_config_version": "business_resolution_config_v1",
-              "inspection_issue_id": "{{inspection_issue_id}}"
+              "target_assignee_type": "{{target_assignee_type}}",
+              "target_assignee": "{{target_assignee}}",
+              "resolution_config_version": "business_resolution_config_v1"
             }
           }
         ],

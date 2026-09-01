@@ -5,8 +5,8 @@
 ## Autopilot 配置
 
 - 解决单 Autopilot 设置 `impact_trend_observation: enabled` 时，用户点击创建或复用解决单后建立基线；字段缺失或值不是 `enabled` 时跳过基线。
-- `observation_timeout_days` 必须是正整数，用于限制未出现修复信号或人工确认时的最长自动采样周期；必须由来源巡检 Autopilot 提供。出现修复信号后，仍按 `post_fix_observation_days` 完成观察。
-- `post_fix_observation_days` 必须由来源巡检 Autopilot 提供，且为正整数。
+- `observation_timeout_days` 必须是正整数，用于限制未出现修复信号或人工确认时的最长自动采样周期；必须由当前解决单 Autopilot 提供。出现修复信号后，仍按 `post_fix_observation_days` 完成观察。
+- `post_fix_observation_days` 必须由当前解决单 Autopilot 提供，且为正整数。
 - 这些字段属于解决单 Autopilot 配置，不属于日报 Autopilot 的 `resolution_enabled`；仅写入 `observation_timeout_days` 不会启用基线。
 
 ## 目标与边界
@@ -19,7 +19,7 @@
 ## 关联键与数据来源
 
 - 唯一关联键：`project:issue_id`，与既有 `sentry_dedupe_key` 完全一致。
-- 优先复用已验证卡片快照中的 `project`、`issue_id`、`event_count`、`user_count`、`first_seen`、`last_seen`、`release`、`environment`、`snapshot_at`、`inspection_issue_id`、`evidence_source` 和 `detail_fetched_at`。
+- 优先复用已验证卡片快照中的 `project`、`issue_id`、`event_count`、`user_count`、`first_seen`、`last_seen`、`release`、`environment`、`snapshot_at`、`evidence_source` 和 `detail_fetched_at`。
 - 基线必须记录精确的 `window_start`、`window_end`、查询条件和采集时间，不能只记录“当天”。
 - 建议增加 `baseline_source: card_snapshot`；若因快照过期而重新查询，改为 `baseline_source: fresh_query` 并同时保留卡片快照时间。
 
@@ -113,11 +113,11 @@ repair_signal_detail
 ## 观测停止与解决单状态（不新增状态机）
 
 - `todo`、`in_progress`、`blocked`、`in_review` 都表示解决单仍在处理中，继续按相同口径每日观测。`in_review` 只表示代码评审，不是修复节点。
-- 出现明确修复信号后，记录 `repair_signal_*`，并设置 `post_fix_observation_started_at` 与 `post_fix_observation_until`。观测周期使用来源巡检 Autopilot 的 `post_fix_observation_days`；此期间解决单不能提前标记为 `done`。
+- 出现明确修复信号后，记录 `repair_signal_*`，并设置 `post_fix_observation_started_at` 与 `post_fix_observation_until`。观测周期使用当前解决单 Autopilot 的 `post_fix_observation_days`；此期间解决单不能提前标记为 `done`。
 - 只有后续观测窗口完成，且用户/人工确认修复，才将解决单标记为 `done`，写入 `observation_result`、`observation_stopped_at` 和 `observation_stop_reason: verified_done`，随后停止观测。
 - 窗口内仍有异常或趋势不可比时，不得标记为 `done`；保持处理中或由人工重新打开/建立后续解决单。观测结果是证据，不自动驱动状态转换。
 - `cancelled` 立即停止观测，写入 `observation_stop_reason: cancelled`；取消不代表已修复。后续重新处理时建立新的 `baseline_generation`。
-- 超过来源巡检 Autopilot 配置的 `observation_timeout_days` 仍没有修复信号或人工确认时，可停止自动采样并写入 `observation_stop_reason: timeout_manual_confirmation`；结果标记为待确认/未知，不得标记为已修复。
+- 超过当前解决单 Autopilot 配置的 `observation_timeout_days` 仍没有修复信号或人工确认时，可停止自动采样并写入 `observation_stop_reason: timeout_manual_confirmation`；结果标记为待确认/未知，不得标记为已修复。
 - 若历史流程在观测窗口完成前已写入 `done`，将 `done_at` 视为候选人工信号，继续完成观测；若仍有异常，标记状态语义冲突并交由人工决定是否重新打开，不自动回写状态。
 
 ## 安全与兼容性

@@ -23,7 +23,7 @@ ISSUE_TITLE_RE = re.compile(
     r"^\*\*\[(?P<title>[^\]]+)\]\((?P<url>https://[^)\s]+)\)\*\*$"
 )
 CHAT_ID_RE = re.compile(r"^oc_[A-Za-z0-9]+$")
-AUTOPILOT_ID_RE = re.compile(
+UUID_RE = re.compile(
     r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
     re.IGNORECASE,
 )
@@ -46,7 +46,8 @@ REQUIRED_CALLBACK_FIELDS = (
     "group",
     "dedupe_key",
     "resolution_autopilot",
-    "source_inspection_autopilot_id",
+    "target_assignee_type",
+    "target_assignee",
     "resolution_config_version",
 )
 
@@ -675,12 +676,17 @@ def validate_callback_payload(
             "action 必须是 create_sentry_resolution",
             f"{path}.behaviors[0].value.action",
         )
-    source_autopilot_id = value.get("source_inspection_autopilot_id")
-    if not AUTOPILOT_ID_RE.fullmatch(str(source_autopilot_id or "")):
+    if value.get("target_assignee_type") not in {"agent", "squad"}:
         validator.add(
-            "invalid_source_inspection_autopilot_id",
-            "source_inspection_autopilot_id 必须是有效的 Autopilot UUID",
-            f"{path}.behaviors[0].value.source_inspection_autopilot_id",
+            "invalid_target_assignee_type",
+            "target_assignee_type 必须是 agent 或 squad",
+            f"{path}.behaviors[0].value.target_assignee_type",
+        )
+    if not UUID_RE.fullmatch(str(value.get("target_assignee") or "")):
+        validator.add(
+            "invalid_target_assignee",
+            "target_assignee 必须是有效的 Agent 或 Squad UUID",
+            f"{path}.behaviors[0].value.target_assignee",
         )
     if value.get("resolution_config_version") != "business_resolution_config_v1":
         validator.add(

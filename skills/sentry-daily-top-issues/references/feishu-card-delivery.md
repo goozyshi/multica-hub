@@ -53,7 +53,7 @@ python3 skills/sentry-daily-top-issues/scripts/validate_feishu_card.py \
 5. 详情 `culprit`
 6. `错误标题缺失`
 
-`metadata.value`、`_fingerprint_info.client_fingerprint`、函数名、堆栈文件名和路由字段只用于证据或上下文，不得抢占前面的标题优先级。若 `exception.values[0].value` 存在，即使同时存在 `title`，也必须使用异常值；例如 `exception.values[0].value` 为 `Event \`ProgressEvent\` (type=error) captured as exception`、`title` 为 `o.onerror` 时，卡片标题必须是前者。
+`metadata.value`、`_fingerprint_info.client_fingerprint`、函数名、堆栈文件名和路由字段只用于证据或上下文，不得抢占前面的标题优先级。若 `exception.values[0].value` 存在，即使同时存在 `title`，也必须使用异常值；例如 `exception.values[0].value` 为 `Event \`ProgressEvent\` (type=error) captured as exception`、`title`为`o.onerror` 时，卡片标题必须是前者。
 
 展示时仅对 `resolved_issue_title` 生成 HTML 转义后的 `issue_title_markdown`；callback 的 `issue_title` 保留同一标题的原始值。最终 Card 标题、callback `issue_title` 和 `resolved_issue_title` 必须一致，否则返回 `blocked`。
 
@@ -141,8 +141,7 @@ python3 skills/sentry-daily-top-issues/scripts/validate_feishu_card.py \
               "last_seen": "{{last_seen}}",
               "group": "{{group}}",
               "dedupe_key": "{{project}}:{{issue_id}}",
-              "resolution_autopilot": "{{resolution_autopilot}}",
-              "inspection_issue_id": "{{inspection_issue_id}}"
+              "resolution_autopilot": "{{resolution_autopilot}}"
             }
           }
         ],
@@ -188,9 +187,9 @@ python3 skills/sentry-daily-top-issues/scripts/validate_feishu_card.py \
 
 ## 解决单动作载荷
 
-每个“创建解决单”按钮的 `value` 必须包含 `action: create_sentry_resolution`、`sentry_org`、`project`、`issue_id`、`issue_title`、`issue_url`、`event_count`、`user_count`、`first_seen`、`last_seen`、`group`、`resolution_autopilot`、`source_inspection_autopilot_id`、`inspection_issue_id`、`resolution_config_version` 和按 `dedupe_key` 生成的去重键。`resolution_config_version` 固定为 `business_resolution_config_v1`。`source_inspection_autopilot_id` 必须是本次运行上下文中的当前巡检 Autopilot UUID，不得由模型猜测。飞书自建应用补充 `actor` 后转发给 `resolution_autopilot`；“查看解决单”按钮只携带已存在解决单的 URL。
+每个“创建解决单”按钮的 `value` 必须包含 `action: create_sentry_resolution`、`sentry_org`、`project`、`issue_id`、`issue_title`、`issue_url`、`event_count`、`user_count`、`first_seen`、`last_seen`、`group`、`resolution_autopilot`、`target_assignee_type`、`target_assignee`、`resolution_config_version` 和按 `dedupe_key` 生成的去重键。`target_assignee_type` 和 `target_assignee` 必须来自当前 Autopilot 的已确认解决单配置；`target_assignee` 必须是对应 Agent 或 Squad 的 UUID。`event_count`、`user_count` 使用本次已按 Autopilot `time_window`、`filter` 和 `environment` 执行的 `search_issues` 返回值，统一记录为当前查询窗口统计；不要求返回字段重复携带 `24h` 或 `7d` 标记。`resolution_config_version` 固定为 `business_resolution_config_v1`。飞书自建应用补充 `actor` 后转发给 `resolution_autopilot`；“查看解决单”按钮只携带已存在解决单的 URL。
 
-为便于 Coordinator 建单时复核，创建按钮值应一并携带列表快照中可用的 `culprit`、`release`、`environment`、`fingerprint`、`risk_score`、`evidence_summary`、`evidence_source`、`snapshot_at`、`detail_snapshot`、`detail_fetched_at`、`analysis_summary`、`analysis_confidence` 和 `inspection_issue_id`；不可用字段省略，不得填造。`evidence_summary` 只保留脱敏、短文本事实，不放完整堆栈、IP 或用户标识。快照只是触发上下文，不是已确认根因；Coordinator 仅在快照无效时使用自己的 Sentry MCP 对对应 Issue 读取详情/代表性事件后再写入解决单。详情不可用时保留快照并标记“证据不足”。
+为便于 Coordinator 建单时复核，创建按钮值应一并携带列表快照中可用的 `culprit`、`release`、`environment`、`fingerprint`、`risk_score`、`evidence_summary`、`evidence_source`、`snapshot_at`、`detail_snapshot`、`detail_fetched_at`、`analysis_summary` 和 `analysis_confidence`；不可用字段省略，不得填造。`evidence_summary` 只保留脱敏、短文本事实，不放完整堆栈、IP 或用户标识。快照只是触发上下文，不是已确认根因；Coordinator 仅在快照无效时使用自己的 Sentry MCP 对对应 Issue 读取详情/代表性事件后再写入解决单。详情不可用时保留快照并标记“证据不足”。
 
 ## 发送前一致性校验
 
