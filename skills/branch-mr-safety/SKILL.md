@@ -16,7 +16,7 @@ base_branch -> source_branch -> work_branch
 ```
 
 - `base_branch`: baseline branch. Default: `main`.
-- `source_branch`: feature or hotfix branch that collects work.
+- `source_branch`: feature, fix, hotfix, or other integration branch that collects work.
 - `work_branch`: Builder-owned branch where code changes happen.
 
 MRs use two stages:
@@ -58,8 +58,8 @@ If the workspace or issue context exposes exactly one configured project/reposit
 
 Allowed `source_branch_status` values:
 
-- `create_if_missing`: new feature or hotfix branch. If remote `source_branch` does not exist, Builder must create it from latest `base_branch`.
-- `must_exist`: existing integration, feature, or hotfix branch. If remote `source_branch` does not exist, Builder must stop and report a blocker.
+- `create_if_missing`: new feature, fix, or hotfix branch. If remote `source_branch` does not exist, Builder must create it from latest `base_branch`.
+- `must_exist`: existing integration, feature, fix, or hotfix branch. If remote `source_branch` does not exist, Builder must stop and report a blocker.
 
 ## Visibility Rules
 
@@ -74,14 +74,21 @@ Branch/MR fields are internal control-plane data.
 
 ## Branch Naming
 
-New feature work:
+Feature work:
 
 ```text
 feature/<short-slug>
 feature/v<version>-<short-slug>
 ```
 
-Production or online hotfix:
+Bug-fix work:
+
+```text
+fix/<short-slug>
+fix/v<version>-<short-slug>
+```
+
+Production emergency fix:
 
 ```text
 hotfix/<short-slug>
@@ -114,6 +121,38 @@ feature/v<version>-<issue-key>-<short-slug>
 hotfix/v<version>-<issue-key>-<short-slug>
 ```
 
+## Change Classification
+
+Choose the branch from the requested outcome, not from the tool or alert source.
+
+```text
+Sentry Issue
+├─ analysis, evidence, or routing only → no branch
+├─ ordinary code bug fix              → fix/<issue-key>-<short-slug>
+├─ urgent production repair           → hotfix/<issue-key>-<short-slug>
+└─ new capability or behavior         → feature/<issue-key>-<short-slug>
+```
+
+Use `hotfix/` only when the request indicates production urgency, an active impact, or an expedited release. Use `fix/` for a normal Sentry regression or defect, including `Prod` issues without an urgent-release decision. Use `feature/` only when the implementation adds a new capability rather than correcting an existing behavior.
+
+For Sentry work, classify with the available evidence in this order:
+
+1. A resolution or inspection-only request creates no branch.
+2. An explicit urgent production-release request, active outage, or severe ongoing impact selects `hotfix/`.
+3. A confirmed defect or regression selects `fix/`.
+4. A new behavior request selects `feature/`.
+5. If code-change intent or urgency is unresolved, ask one focused question before creating a branch; do not infer urgency from the error title alone.
+
+Use the visible Multica issue key in the source branch. Do not use a Sentry issue ID, Autopilot ID, UUID, error title, or `unknown` placeholder as the branch identity.
+
+Examples:
+
+```text
+fix/MIC-1750-mobile-filter-null
+hotfix/MIC-1750-mobile-filter-null
+feature/MIC-1750-sentry-filter-guard
+```
+
 ## Planner Rules
 
 Planner decides branch fields before assigning Builder.
@@ -123,7 +162,7 @@ If user does not specify a branch:
 ```md
 repo: <repo name or remote URL>
 base_branch: main
-source_branch: feature/<short-slug> or feature/v<version>-<short-slug>
+source_branch: fix/<issue-key>-<short-slug>, hotfix/<issue-key>-<short-slug>, or feature/<issue-key>-<short-slug>
 source_branch_status: create_if_missing
 issue_key: <visible issue key>
 work_branch: agent/<issue-key>-<short-slug>
@@ -131,12 +170,12 @@ builder_mr_target: same as source_branch
 final_mr_target: test
 ```
 
-If user specifies an existing feature/hotfix branch:
+If user specifies an existing feature/fix/hotfix branch:
 
 ```md
 repo: <repo name or remote URL>
-base_branch: <existing feature/hotfix branch>
-source_branch: <existing feature/hotfix branch>
+base_branch: <existing feature/fix/hotfix branch>
+source_branch: <existing feature/fix/hotfix branch>
 source_branch_status: must_exist
 issue_key: <visible issue key>
 work_branch: agent/<issue-key>-<short-slug>
