@@ -7,9 +7,15 @@ description: 通过 Sentry MCP 列表查询生成按 Autopilot 分组配置汇�
 
 ## Autopilot 配置解析
 
-Autopilot 描述采用 Markdown 分组格式。固定系统字段位于“基本信息”，业务参数位于“查询配置”“项目分组”“展示配置”“动作配置”“发送配置”；执行逻辑位于 Skill。解析每个配置区块中形如 `- key: value` 的键值，以及“项目分组”表格中的三列 `分组`、`项目`、`Top N`。表格的分隔线行不是数据。`Top N`、`display_top_n`、时间窗口和项目名称必须来自当前 Autopilot；Skill 不提供业务数量或名称默认值。读取 Markdown 描述中的 `inspection_url_template` 时，按原始 HTTPS 基础 URL 前缀解析，发送时拼接当前巡检 Issue ID；历史配置可兼容一个 `<Issue-ID>` 占位符，也可还原编辑器产生的同值 `[URL](URL)` 包装，但不得接受隐藏或改写后的目标。
+Autopilot 描述采用 Markdown 分组格式。固定系统字段位于“基本信息”，业务参数的规范分区为“巡检配置”“解决单配置（business_resolution_config_v1）”“发送配置”；执行逻辑位于 Skill。只解析规范分区中形如 `- key: value` 的键值，以及“项目分组”表格的三列 `分组`、`项目`、`Top N`；规范分区之外的配置一律视为未知并拒绝。表格的分隔线行不是数据。`Top N`、`display_top_n`、时间窗口和项目名称必须来自当前 Autopilot；Skill 不提供业务数量或名称默认值。读取 Markdown 描述中的 `inspection_url_template` 时，按原始 HTTPS 基础 URL 前缀解析，发送时拼接当前巡检 Issue ID；历史配置可兼容一个 `<Issue-ID>` 占位符，也可还原编辑器产生的同值 `[URL](URL)` 包装，但不得接受隐藏或改写后的目标。
 
-执行前严格校验：拒绝未知区块或未知字段；拒绝缺失必填项、重复项目、空分组、非正整数、非法枚举和无效 IANA 时区。`display_top_n` 是最终展示数量；各组 `Top N` 只用于组内候选数，二者不可混用。`resolution_enabled: true` 时必须有有效 `resolution_autopilot` 和 `dedupe_key`。发送配置的通道校验见 [飞书卡片与发送 Reference](references/feishu-card-delivery.md)。模板配置阶段不要求预先存在具体巡检 Issue ID；发送前必须取得当前巡检 Issue ID，并按 Reference 将其传入 validator 完成最终 URL 解析。校验失败时输出字段级错误，结果为 `needs-info`，不得发起 Sentry 查询或发送消息。
+当前巡检 Autopilot 的 UUID 必须从本次运行上下文取得，不得由模型猜测。`resolution_enabled: true` 时，Autopilot 必须包含“解决单配置（business_resolution_config_v1）”区块；该区块只承载本业务的解决单路由、白名单、目标、优先级、快照、父子流程和影响趋势配置，供通用解决单 Autopilot 服务端回读。
+
+规范配置关系固定为：`巡检配置 -> Sentry 查询` 提供 `sentry_org`，`解决单配置 -> 解决单授权与目标` 提供 `allowed_projects`、目标和解决单策略；两者均为来源 Autopilot 的业务配置，不从 callback 覆盖。
+
+执行前严格校验：拒绝未知区块或未知字段；拒绝缺失必填项、重复项目、空分组、非正整数、非法枚举和无效 IANA 时区。`display_top_n` 是最终展示数量；各组 `Top N` 只用于组内候选数，二者不可混用。`resolution_enabled: true` 时必须有有效 `resolution_autopilot`、`dedupe_key` 和 `business_resolution_config_v1`。发送配置的通道校验见 [飞书卡片与发送 Reference](references/feishu-card-delivery.md)。模板配置阶段不要求预先存在具体巡检 Issue ID；发送前必须取得当前巡检 Issue ID，并按 Reference 将其传入 validator 完成最终 URL 解析。校验失败时输出字段级错误，结果为 `needs-info`，不得发起 Sentry 查询或发送消息。
+
+`business_resolution_config_v1` 允许的业务字段为：`allowed_projects`、`priority_mapping`、`target_assignee_type`、`target_assignee`、`snapshot_max_age`、`impact_trend_observation`、`observation_timeout_days`、`post_fix_observation_days`。`sentry_org` 只在“巡检配置 -> Sentry 查询”中定义，解决单读取同一来源值。这些字段只写入当前巡检 Autopilot，解决单 Autopilot 只负责通用入口并直接派发目标。
 
 触发器、订阅者、Autopilot agent、执行模式和项目范围由 Multica Autopilot 字段管理，不复制到人工配置区；修改周报频率只调整 schedule trigger，不修改 Skill。
 
@@ -35,7 +41,7 @@ Autopilot 描述采用 Markdown 分组格式。固定系统字段位于“基本
 
 详情读取成功后，为每条最终候选生成脱敏 `detail_snapshot`，至少包含异常类型、代表性堆栈位置、路由/接口、`culprit`、版本、环境、详情读取时间 `detail_fetched_at`、证据来源 `evidence_source: sentry_detail` 和简短事实摘要。完整堆栈、IP、用户标识和原始标签不得进入快照。
 
-需要生成飞书动作时，读取 [飞书卡片与发送 Reference](references/feishu-card-delivery.md)，按其中的载荷规则携带列表快照、`detail_snapshot`、`detail_fetched_at`、`evidence_source`、`analysis_summary`、`analysis_confidence` 和 `inspection_issue_id`。快照用于解决 Agent 复用，不能替代其幂等和状态校验。
+需要生成飞书动作时，读取 [飞书卡片与发送 Reference](references/feishu-card-delivery.md)，按其中的载荷规则携带 `source_inspection_autopilot_id`、`resolution_config_version: business_resolution_config_v1`、列表快照、`detail_snapshot`、`detail_fetched_at`、`evidence_source`、`analysis_summary`、`analysis_confidence` 和 `inspection_issue_id`。快照用于解决 Agent 复用，不能替代其幂等和状态校验。
 
 ## 解决单状态与页面定位
 

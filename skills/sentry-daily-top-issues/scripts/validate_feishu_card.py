@@ -23,6 +23,10 @@ ISSUE_TITLE_RE = re.compile(
     r"^\*\*\[(?P<title>[^\]]+)\]\((?P<url>https://[^)\s]+)\)\*\*$"
 )
 CHAT_ID_RE = re.compile(r"^oc_[A-Za-z0-9]+$")
+AUTOPILOT_ID_RE = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+    re.IGNORECASE,
+)
 PLACEHOLDER_RE = re.compile(r"<[^>]+>")
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\([^)]+\)")
 RAW_HTML_TAG_RE = re.compile(r"</?[A-Za-z][^>]*>")
@@ -42,6 +46,8 @@ REQUIRED_CALLBACK_FIELDS = (
     "group",
     "dedupe_key",
     "resolution_autopilot",
+    "source_inspection_autopilot_id",
+    "resolution_config_version",
 )
 
 SENSITIVE_KEYS = {
@@ -668,6 +674,19 @@ def validate_callback_payload(
             "invalid_callback_action",
             "action 必须是 create_sentry_resolution",
             f"{path}.behaviors[0].value.action",
+        )
+    source_autopilot_id = value.get("source_inspection_autopilot_id")
+    if not AUTOPILOT_ID_RE.fullmatch(str(source_autopilot_id or "")):
+        validator.add(
+            "invalid_source_inspection_autopilot_id",
+            "source_inspection_autopilot_id 必须是有效的 Autopilot UUID",
+            f"{path}.behaviors[0].value.source_inspection_autopilot_id",
+        )
+    if value.get("resolution_config_version") != "business_resolution_config_v1":
+        validator.add(
+            "invalid_resolution_config_version",
+            "resolution_config_version 必须是 business_resolution_config_v1",
+            f"{path}.behaviors[0].value.resolution_config_version",
         )
     if not valid_https_url(value.get("issue_url")):
         validator.add(

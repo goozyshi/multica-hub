@@ -1,10 +1,16 @@
 # Sentry 解决单创建与派发 Reference
 
-仅在当前回调需要创建或复用 Sentry 解决单时读取本 Reference。它定义通用安全校验、幂等去重、详情复核、解决单内容、目标派发和后续实现协议；业务范围、目标 UUID、快照时效、父子流程和实现目标必须从当前 Autopilot 读取，不得使用本文示例或内置默认值。
+仅在当前回调需要创建或复用 Sentry 解决单时读取本 Reference。它定义通用安全校验、幂等去重、详情复核、解决单内容和目标派发协议；业务范围、目标 UUID、快照时效和观测策略必须从来源巡检 Autopilot 服务端回读，不得从解决单 Autopilot、callback 或本文示例取得默认值。
+
+## 业务配置传递协议
+
+callback 必须包含 `resolution_autopilot`、`source_inspection_autopilot_id`、`inspection_issue_id` 和 `resolution_config_version: business_resolution_config_v1`。先确认 `resolution_autopilot` 等于当前解决单 Autopilot ID，再回读来源巡检 Autopilot。来源必须属于当前 workspace、状态为 `active`，并包含 `inspection_type: sentry-daily-top-issues`、`profile_mode: skill-backed`、`profile_ref: skill:sentry-daily-top-issues`、`resolution_enabled: true`、当前解决单 Autopilot 引用、规范“巡检配置”区块和“解决单配置（business_resolution_config_v1）”区块。解析 Markdown 描述时允许先还原一层 `\_` 字段名转义；不得接受其他隐藏或改写后的配置。
+
+从来源 Autopilot 的“巡检配置 -> Sentry 查询”读取 `sentry_org`，从“解决单配置（business_resolution_config_v1）”读取 `allowed_projects`、优先级映射、`target_assignee_type`、`target_assignee`、快照策略和影响趋势观测配置。callback 中的 Sentry 字段只作为事实快照；callback 直接携带的目标、白名单或流程开关不得覆盖来源配置。来源缺失、引用不回指、配置不完整或解析失败时返回 `needs-info` 或 `dispatch blocked`，不得创建解决单。
 
 ## 安全与去重
 
-- 仅接受通过飞书回调签名校验、且项目位于 `allowed_projects` 的请求。
+- 仅接受通过飞书回调签名校验、且项目位于来源巡检 Autopilot 的 `allowed_projects` 的请求。
 - 以 `project + sentry_issue_id` 为去重键；存在未关闭解决单时不得重复创建，返回已有单据。
 - 不得把完整堆栈、IP、用户标识写入单据。
 - 新建解决单必须写入可查询元数据：`sentry_dedupe_key`、`sentry_project`、`sentry_issue_id`。
@@ -15,7 +21,7 @@
 - `runtime_issue_id`：`create_issue` 模式下由 Autopilot 自动生成的当前运行单 UUID；
 - `solution_issue_id`、`solution_issue_url`：实际 Sentry 解决单；
 - `user_visible_issue_id`、`user_visible_issue_url`：用户从飞书进入的入口；`create_issue` 模式使用运行根单，`run_only` 模式使用实际解决单；
-- 当前解决单状态及 Builder 子单 ID（如果已创建）。
+- 当前解决单状态及平台 assignee。
 
 用户可见入口与实际解决单必须同时保留，不能用运行根单 ID 覆盖 `solution_issue_id`。
 
@@ -23,7 +29,7 @@
 
 `execution_mode=create_issue` 时，Autopilot 平台会在 Skill 开始执行前创建当前运行 Issue。该 Issue 是本次流程的根父单，通常由 Autopilot 配置的 Coordinator Agent 执行；它不是需要再次创建的解决单，也不要求通过后置 `issue assign` 改派给目标 Squad。
 
-创建实际 Sentry 解决单时，必须把当前运行单 UUID 作为 `parent`，并在同一个创建请求中绑定 Autopilot 配置的目标：
+创建实际 Sentry 解决单时，必须把当前运行单 UUID 作为 `parent`，并在同一个创建请求中绑定来源巡检 Autopilot 配置的目标：
 
 ```bash
 multica issue create ... \
@@ -49,9 +55,9 @@ multica issue create ... --assignee-id <target_assignee>
 
 ## 详情复核与快照复用
 
-回调中的列表快照和 `detail_snapshot` 是巡检阶段的触发上下文。Coordinator 不应无条件重复调用 Sentry MCP：
+回调中的列表快照和 `detail_snapshot` 是来源巡检阶段的触发上下文。Coordinator 不应无条件重复调用 Sentry MCP：
 
-- `detail_snapshot` 完整、`detail_fetched_at` 在当前 Autopilot 配置的有效时间内、Issue 状态未变化且 `sentry_issue_id` / fingerprint 一致时，直接复用详情证据和 `analysis_summary`；
+- `detail_snapshot` 完整、`detail_fetched_at` 在来源巡检 Autopilot 配置的有效时间内、Issue 状态未变化且 `sentry_issue_id` / fingerprint 一致时，直接复用详情证据和 `analysis_summary`；
 - 快照缺失、超过有效时间、Issue 状态变化、fingerprint 不一致或 `analysis_confidence` 为低时，才使用自身已配置的 Sentry MCP（`get_sentry_resource`）重新读取 Issue 详情及代表性事件；
 - 无论是否复用，都要在建单前校验 Issue 当前状态和去重键；快照不能替代幂等校验；
 - 详情读取失败或权限不足：仍可基于已验证快照建单，但明确记录“证据不足，需人工在 Sentry 复核”，不得编造根因或代码位置；
@@ -152,22 +158,9 @@ multica issue get <solution_issue_id> --output json
 
 `assigned`、`started`、`deferred` 和 `blocked` 不得混写为“已触发执行”。对于 Squad，至少先确认 Issue 的平台 assignee 为该 Squad；leader 何时 claim 或开始执行，单独依据执行记录判断。
 
-## 实际解决单与 Builder 父子流程
+## 实际解决单
 
-实际解决单负责 Sentry 事实、去重、证据、基线和整体状态。`create_issue` 模式下，它是运行根单的直接子单；`run_only` 模式下，它是流程根单。
-
-只有当前 Autopilot 同时配置以下条件，才允许创建执行 sub-issue：
-
-- `post_resolution_flow: coordinator_validated_builder`；
-- `enabled: true`；
-- `implementation_child: true`；
-- 独立且可解析的 `implementation_target_type` / `implementation_target`；
-- `implementation_target_type` 只能是 `agent` 或 `squad`，目标必须是对应对象的 UUID；
-- `auto_dispatch_after_gate: true` 时，门禁通过后在本次流程中创建并指派子单。
-
-`implementation_target` 必须独立配置，不得从父单的 `target_assignee` 推断 Builder 或其他执行者。
-
-### 实际解决单
+实际解决单负责 Sentry 事实、去重、证据、基线和整体状态。创建时直接绑定来源巡检 Autopilot 配置的 `target_assignee`；目标 Agent 或 Squad 接手后，自行决定后续分析、修复、验证和协作方式。Resolver 不创建额外 Builder 子单。
 
 ```bash
 multica issue create ... \
@@ -175,37 +168,6 @@ multica issue create ... \
   --assignee-id <target_assignee>
 ```
 
-上例适用于 `create_issue` 模式；`run_only` 模式省略 `--parent`。创建后回读并确认父子关系（如适用）和平台 assignee 与目标一致。实际解决单创建或指派未确认时，不创建 Builder 子单。
+上例适用于 `create_issue` 模式；`run_only` 模式省略 `--parent`。创建后回读并确认父子关系（如适用）和平台 assignee 与目标一致。
 
-### 执行子单
-
-完成需求、repo、分支、Delivery Context 和 testability 门禁后，创建带父单关系的执行子单：
-
-```bash
-multica issue create ... \
-  --parent <solution_issue_id> \
-  --assignee-id <implementation_target>
-```
-
-子单必须：
-
-- `parent_issue_id` 等于 `solution_issue_id`；
-- assignee 等于独立配置的 `implementation_target`；
-- 记录项目、仓库、分支、验收标准、验证路径和实际解决单链接；
-- 使用 `<project>:<sentry_issue_id>:implementation` 做执行子单幂等键；
-- 不重复写入创建基线，不替代实际解决单的 Sentry 去重。
-
-子单创建后必须回读 `parent_issue_id`、`assignee_type` 和 `assignee_id`。任一不匹配时，保留已创建 Issue，返回 `dispatch blocked`，不得报告已派发或已开始执行。
-
-### 状态与失败处理
-
-- `child_created`：子单已创建，但尚未完成平台 assignee 回读；
-- `child_assigned`：父子关系和平台 assignee 均已回读匹配；
-- `child_started`：存在目标 Agent/Squad 的执行记录；
-- `child_blocked`：子单创建、指派或回读失败。
-
-实际解决单在执行子单完成、结果回传且完成验收前保持处理中。子单失败时保留运行根单、实际解决单和证据，返回 `child_blocked`，不得创建无 parent 的替代执行单。
-
-当前 Autopilot 未启用自动派发或配置缺失时，只完成实际解决单流程并明确返回 `child_pending`；不得把实际解决单已归属目标误报为执行子单已启动。
-
-无论是否启用父子流程，Coordinator 都不修改代码、不自动合并、发布或关闭 Sentry Issue。后续实现、评审、合并和验收由执行子单的目标 Agent 或 Squad 按其工作协议负责。
+目标 Agent 或 Squad 后续自行处理解决单。Coordinator 不修改代码、不自动合并、发布或关闭 Sentry Issue。
