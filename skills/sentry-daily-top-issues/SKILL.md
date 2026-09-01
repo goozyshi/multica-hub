@@ -1,6 +1,6 @@
 ---
 name: sentry-daily-top-issues
-description: 通过 Sentry MCP 列表查询生成按 Autopilot 分组配置汇总的 Error Issue 简报，使用可读的 Markdown 卡片布局，并提供可控的一键解决单动作。用于日报、周报或其他 Top N 巡检。
+description: 通过 Sentry MCP 列表查询生成按 Autopilot 分组配置汇总的 Error Issue 简报，使用可读的 Markdown 卡片布局，并在启用时提供一键解决单动作。用于日报、周报或其他 Top N 巡检。
 ---
 
 # Sentry Top Issue 简报
@@ -11,11 +11,11 @@ Autopilot 描述采用 Markdown 分组格式。固定系统字段位于“基本
 
 `resolution_enabled: true` 时，Autopilot 必须包含有效 `resolution_autopilot` 和解决单配置；解决单配置中的 `target_assignee_type`、`target_assignee` 必须在生成卡片时原样传入 callback。
 
-规范配置关系固定为：`巡检配置 -> Sentry 查询` 提供查询参数，`解决单配置 -> 解决单授权与目标` 提供本次巡检的解决单动作参数；卡片传递 Sentry 事实快照和用户确认的派发目标，不传递巡检身份。
+规范配置关系固定为：`巡检配置 -> Sentry 查询` 提供查询参数，`解决单配置 -> 解决单授权与目标` 提供本次巡检的解决单动作参数；卡片必须传递 Sentry 事实快照、来源巡检标识、用户确认的派发目标和影响趋势观测参数，禁止由 Lark bridge 裁剪。
 
 执行前严格校验：拒绝未知区块或未知字段；拒绝缺失必填项、重复项目、空分组、非正整数、非法枚举和无效 IANA 时区。`display_top_n` 是最终展示数量；各组 `Top N` 只用于组内候选数，二者不可混用。`resolution_enabled: true` 时必须有有效 `resolution_autopilot`、`dedupe_key` 和 `business_resolution_config_v1`。发送配置的通道校验见 [飞书卡片与发送 Reference](references/feishu-card-delivery.md)。模板配置阶段不要求预先存在具体巡检 Issue ID；发送前必须取得当前巡检 Issue ID，并按 Reference 将其传入 validator 完成最终 URL 解析。校验失败时输出字段级错误，结果为 `needs-info`，不得发起 Sentry 查询或发送消息。
 
-解决单配置允许的业务字段为：`sentry_org`、`allowed_projects`、`priority_mapping`、`target_assignee_type`、`target_assignee`、`snapshot_max_age`、`impact_trend_observation`、`observation_timeout_days`、`post_fix_observation_days`。其中 `target_assignee_type` 和 `target_assignee` 必须进入 callback；其他字段由日报流程使用或随事实快照传递，解决单 Autopilot 不保存业务默认值。
+解决单配置允许的业务字段为：`sentry_org`、`allowed_projects`、`priority_mapping`、`target_assignee_type`、`target_assignee`、`snapshot_max_age`、`impact_trend_observation`、`observation_timeout_days`、`post_fix_observation_days`。其中 `target_assignee_type`、`target_assignee`、`source_inspection_autopilot_id` 和 `inspection_issue_id` 必须进入 callback；启用影响趋势时，`impact_trend_observation`、`observation_timeout_days`、`post_fix_observation_days` 也必须原样进入 callback。解决单 Autopilot 只消费已验证 callback，不使用 Skill 内置默认值。
 
 触发器、订阅者、Autopilot agent、执行模式和项目范围由 Multica Autopilot 字段管理，不复制到人工配置区；修改周报频率只调整 schedule trigger，不修改 Skill。
 
@@ -55,6 +55,8 @@ Autopilot 描述采用 Markdown 分组格式。固定系统字段位于“基本
 
 需要生成或发送飞书消息时，读取 [飞书卡片与发送 Reference](references/feishu-card-delivery.md)，并直接读取 `templates/feishu-card-v2.json` 作为固定结构。AI 只填充查询结果、分析文案和按钮状态；不得重新推理或重建 Card JSON。动态文本插入 Markdown 前必须按该 Reference 完成 HTML 字符转义。该 Reference 定义通道配置校验、首次创建的视觉层级、`global_top_n_markdown_v1` Card 2.0 结构、按钮状态、回调载荷、发送前一致性校验和发送命令。未通过 Reference 中的校验时，保留巡检结果并按规定返回 `needs-info` 或 `blocked`，不得发送消息。
 
+`resolution_enabled: false`（包括只读 Webhook 场景）时，卡片仍展示候选的 Sentry 链接、指标、初判和建议，但不生成解决单按钮，也不向 validator 传入 `candidate-id`；只有 `resolution_enabled: true` 才加载解决单按钮和 callback 载荷契约。
+
 卡片状态更新同样读取该 Reference：持久化已发送的完整 Card JSON，复制原卡片后只替换对应按钮，使用 `--operation update --previous-card` 校验非按钮结构和视觉样式未变化；缺少旧卡片或校验失败不得调用 Lark 更新接口。
 
 ## 解决单动作与幂等
@@ -66,3 +68,15 @@ Autopilot 描述采用 Markdown 分组格式。固定系统字段位于“基本
 ## 结果
 
 按通用结果包结束。`result: executed` 表示配置校验、所有分组查询和飞书消息发送均成功；校验、查询或发送失败均为 `blocked`。
+
+## Callback 透传契约（business_resolution_config_v1）
+
+每个“创建解决单”按钮都必须把当前巡检 Autopilot 的来源和解决单配置传给 `sentry-resolution-order`，不得只传 Sentry 基础快照。固定字段为：
+
+- `resolution_autopilot`
+- `resolution_config_version: business_resolution_config_v1`
+- `target_assignee_type`、`target_assignee`
+- `source_inspection_autopilot_id`、`inspection_issue_id`
+- `impact_trend_observation`、`observation_timeout_days`、`post_fix_observation_days`（配置启用时必填）
+
+Sentry 事实和可比性上下文至少保留 `sentry_org`、`project`、`issue_id`、`issue_title`、`issue_url`、`event_count`、`user_count`、`first_seen`、`last_seen`、`group`、`dedupe_key`、`environment`、`release`、`time_window`、`filter`、`window_start`、`window_end`；详情证据字段按可用性传递。旧卡片缺少固定字段时不得静默降级转发，应阻断并提示重新生成日报卡片。

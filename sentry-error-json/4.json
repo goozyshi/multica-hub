@@ -1,0 +1,784 @@
+{
+  "event_id": "38eaf08aac9641c68b3418915184b321",
+  "project": 64,
+  "release": "maidocha-mobile-2.44.0",
+  "dist": null,
+  "platform": "javascript",
+  "message": "",
+  "datetime": "2026-09-01T06:05:06.378000+00:00",
+  "tags": [
+    ["browser", "Chrome Mobile 151.0.7922"],
+    ["browser.name", "Chrome Mobile"],
+    ["environment", "Prod"],
+    ["handled", "no"],
+    ["level", "error"],
+    ["mechanism", "auto.browser.global_handlers.onunhandledrejection"],
+    ["os", "Android 11"],
+    ["os.name", "Android"],
+    ["page_host", "m.dopalive.com"],
+    ["release", "maidocha-mobile-2.44.0"],
+    ["user", "ip:149.102.237.121"],
+    ["subDomain", "maidocha-mobile"],
+    ["transaction", "/vip/index.html"],
+    ["url", "https://m.dopalive.com/vip/index.html"],
+    ["versionFromMicoPage", "not exist"]
+  ],
+  "_dsc": {
+    "environment": "Prod",
+    "public_key": "f90b5e23b7170bcc8163711600c82343",
+    "release": "maidocha-mobile-2.44.0",
+    "replay_id": null,
+    "sample_rand": "0.6584887410865539",
+    "sample_rate": "0.1",
+    "sampled": false,
+    "trace_id": "445fd1db9ff74b889f14b17d36a2aa2d",
+    "transaction": null
+  },
+  "_fingerprint_info": {
+    "client_fingerprint": [
+      "Unknown Error",
+      "JSBridge: android webview do not define obj WebViewJavascriptBridge",
+      "/vip/index.html"
+    ]
+  },
+  "_metrics": { "bytes.ingested.event": 6916, "bytes.stored.event": 29201 },
+  "breadcrumbs": {
+    "values": [
+      {
+        "timestamp": 1788242659.134,
+        "type": "default",
+        "category": "console",
+        "level": "info",
+        "message": "======== total input element:total 0",
+        "data": {
+          "arguments": ["======== total input element:total 0"],
+          "logger": "console"
+        }
+      },
+      {
+        "timestamp": 1788242659.135,
+        "type": "default",
+        "category": "console",
+        "level": "info",
+        "message": "========== no target auto fill form ==========",
+        "data": {
+          "arguments": ["========== no target auto fill form =========="],
+          "logger": "console"
+        }
+      },
+      {
+        "timestamp": 1788242659.267,
+        "type": "default",
+        "category": "console",
+        "level": "info",
+        "message": ">>>> page scores:0",
+        "data": { "arguments": [">>>> page scores:0"], "logger": "console" }
+      },
+      {
+        "timestamp": 1788242659.322,
+        "type": "default",
+        "category": "console",
+        "level": "info",
+        "message": ">>>> page scores:0",
+        "data": { "arguments": [">>>> page scores:0"], "logger": "console" }
+      },
+      {
+        "timestamp": 1788242659.456,
+        "type": "default",
+        "category": "console",
+        "level": "info",
+        "message": "======== total input element:total 0",
+        "data": {
+          "arguments": ["======== total input element:total 0"],
+          "logger": "console"
+        }
+      },
+      {
+        "timestamp": 1788242659.456,
+        "type": "default",
+        "category": "console",
+        "level": "info",
+        "message": "========== no target auto fill form ==========",
+        "data": {
+          "arguments": ["========== no target auto fill form =========="],
+          "logger": "console"
+        }
+      },
+      {
+        "timestamp": 1788242659.675,
+        "type": "default",
+        "category": "console",
+        "level": "info",
+        "message": ">>>> page scores:0",
+        "data": { "arguments": [">>>> page scores:0"], "logger": "console" }
+      },
+      {
+        "timestamp": 1788242659.679,
+        "type": "default",
+        "category": "console",
+        "level": "info",
+        "message": ">>>> page scores:0",
+        "data": { "arguments": [">>>> page scores:0"], "logger": "console" }
+      },
+      {
+        "timestamp": 1788242659.862,
+        "type": "default",
+        "category": "console",
+        "level": "info",
+        "message": "======== total input element:total 0",
+        "data": {
+          "arguments": ["======== total input element:total 0"],
+          "logger": "console"
+        }
+      },
+      {
+        "timestamp": 1788242659.862,
+        "type": "default",
+        "category": "console",
+        "level": "info",
+        "message": "========== no target auto fill form ==========",
+        "data": {
+          "arguments": ["========== no target auto fill form =========="],
+          "logger": "console"
+        }
+      },
+      {
+        "timestamp": 1788242660.268,
+        "type": "default",
+        "category": "console",
+        "level": "info",
+        "message": ">>>> page scores:0",
+        "data": { "arguments": [">>>> page scores:0"], "logger": "console" }
+      },
+      {
+        "timestamp": 1788242660.324,
+        "type": "default",
+        "category": "console",
+        "level": "info",
+        "message": ">>>> page scores:0",
+        "data": { "arguments": [">>>> page scores:0"], "logger": "console" }
+      },
+      {
+        "timestamp": 1788242660.679,
+        "type": "default",
+        "category": "console",
+        "level": "info",
+        "message": ">>>> page scores:0",
+        "data": { "arguments": [">>>> page scores:0"], "logger": "console" }
+      },
+      {
+        "timestamp": 1788242660.683,
+        "type": "default",
+        "category": "console",
+        "level": "info",
+        "message": ">>>> page scores:0",
+        "data": { "arguments": [">>>> page scores:0"], "logger": "console" }
+      },
+      {
+        "timestamp": 1788242661.781,
+        "type": "default",
+        "category": "console",
+        "level": "info",
+        "message": ">>>> page scores:0",
+        "data": { "arguments": [">>>> page scores:0"], "logger": "console" }
+      },
+      {
+        "timestamp": 1788242661.828,
+        "type": "default",
+        "category": "console",
+        "level": "info",
+        "message": ">>>> page scores:0",
+        "data": { "arguments": [">>>> page scores:0"], "logger": "console" }
+      },
+      {
+        "timestamp": 1788242662.212,
+        "type": "default",
+        "category": "console",
+        "level": "info",
+        "message": ">>>> page scores:0",
+        "data": { "arguments": [">>>> page scores:0"], "logger": "console" }
+      },
+      {
+        "timestamp": 1788242662.216,
+        "type": "default",
+        "category": "console",
+        "level": "info",
+        "message": ">>>> page scores:0",
+        "data": { "arguments": [">>>> page scores:0"], "logger": "console" }
+      },
+      {
+        "timestamp": 1788242705.645,
+        "type": "default",
+        "category": "sentry.event",
+        "level": "error",
+        "message": "Unknown Error: JSBridge: android webview do not define obj WebViewJavascriptBridge",
+        "event_id": "dcaa088f93654f25899c2e767bb702f0"
+      },
+      {
+        "timestamp": 1788242705.878,
+        "type": "default",
+        "category": "sentry.transaction",
+        "level": "info",
+        "message": "0070e09911554219b7af2b3d4c3f5745",
+        "event_id": "0070e09911554219b7af2b3d4c3f5745"
+      },
+      {
+        "timestamp": 1788242705.922,
+        "type": "default",
+        "category": "navigation",
+        "level": "info",
+        "data": {
+          "from": "/vip/index.html#/overview?selectedLevel=10)&source=ins#sbfbuc10",
+          "to": "/#/overview?selectedLevel=10)&source=ins#sbfbuc10"
+        }
+      }
+    ]
+  },
+  "contexts": {
+    "Error": { "type": "Error" },
+    "appInfo": {
+      "currentUrl": "https://m.dopalive.com/vip/index.html#/overview?selectedLevel=10)&source=ins#sbfbuc10",
+      "type": "appInfo"
+    },
+    "browser": {
+      "browser": "Chrome Mobile 151.0.7922",
+      "name": "Chrome Mobile",
+      "version": "151.0.7922",
+      "type": "browser"
+    },
+    "device": {
+      "cookieEnabled": true,
+      "platform": "Linux aarch64",
+      "userAgent": "Mozilla/5.0 (Linux; Android 11; CPH2061 Build/RKQ1.200903.002) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.7922.199 Mobile Safari/537.36",
+      "type": "device"
+    },
+    "network": {
+      "downlink": 9.4,
+      "effectiveType": "4g",
+      "online": true,
+      "rtt": 0,
+      "saveData": false,
+      "type": "network",
+      "userAgent": "Mozilla/5.0 (Linux; Android 11; CPH2061 Build/RKQ1.200903.002) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.7922.199 Mobile Safari/537.36"
+    },
+    "os": {
+      "os": "Android 11",
+      "name": "Android",
+      "version": "11",
+      "type": "os"
+    },
+    "trace": {
+      "trace_id": "445fd1db9ff74b889f14b17d36a2aa2d",
+      "span_id": "9536c53ae73a3800",
+      "status": "unknown",
+      "client_sample_rate": 0.1,
+      "sampled": false,
+      "type": "trace"
+    }
+  },
+  "culprit": "/vip/index.html",
+  "environment": "Prod",
+  "exception": {
+    "values": [
+      {
+        "type": "Unknown Error",
+        "value": "JSBridge: android webview do not define obj WebViewJavascriptBridge",
+        "stacktrace": {
+          "frames": [
+            {
+              "function": "Zt",
+              "module": "vip/js/dopalive/index",
+              "filename": "/vip/js/dopalive/index-0fe3ea34.js",
+              "abs_path": "https://m.dopalive.com/vip/js/dopalive/index-0fe3ea34.js",
+              "lineno": 18,
+              "colno": 1894,
+              "pre_context": [
+                "{snip} i,n)?s(r.get(n)):o.call(i,a)?s(r.get(a)):void(r!==i&&r.get(n))},get size(){const t=this.__v_raw;return!e&&Ce(gt(t),0,Te),t.size},has(t){cons {snip}",
+                "/**",
+                "* @vue/runtime-core v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT"
+              ],
+              "context_line": "{snip} th;$t++){const e=zt[$t];e&&(e.flags&=-2)}$t=-1,zt.length=0,Kt(),Wt=null,(zt.length||Ft.length)&&Zt()}}let Qt=null,en=null;function tn(e){con {snip}",
+              "post_context": [
+                "{snip} ,n=r){const{immediate:i,deep:o,flush:s,once:l}=n,u=c({},n),d=t&&i||!t&&\"post\"!==s;let p;if(ia)if(\"sync\"===s){const e=Fr();p=e.__watcherHandl {snip}",
+                "/**",
+                "* @vue/runtime-dom v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "Kt",
+              "module": "vip/js/dopalive/index",
+              "filename": "/vip/js/dopalive/index-0fe3ea34.js",
+              "abs_path": "https://m.dopalive.com/vip/js/dopalive/index-0fe3ea34.js",
+              "lineno": 18,
+              "colno": 1587,
+              "pre_context": [
+                "{snip} =new Ge,qe=new Ye,Ke=new Ge(!0),Je=e=>e,Ze=e=>Reflect.getPrototypeOf(e);function Qe(e){return function(...t){return\"delete\"!==e&&(\"clear\"=== {snip}",
+                "/**",
+                "* @vue/runtime-core v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT"
+              ],
+              "context_line": "{snip} h;Bt++){const e=jt[Bt];4&e.flags&&(e.flags&=-2),8&e.flags||e(),e.flags&=-2}jt=null,Bt=0}}const Jt=e=>null==e.id?2&e.flags?-1:1/0:e.id;functi {snip}",
+              "post_context": [
+                "{snip} ll==r.parent||r.ce?r.vnode.appContext&&r.vnode.appContext.provides:r.parent.provides:void 0;if(i&&e in i)return i[e];if(arguments.length>1)r {snip}",
+                "/**",
+                "* @vue/runtime-dom v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "Gn.t.__weh.t.__weh",
+              "module": "vip/js/dopalive/index",
+              "filename": "/vip/js/dopalive/index-0fe3ea34.js",
+              "abs_path": "https://m.dopalive.com/vip/js/dopalive/index-0fe3ea34.js",
+              "lineno": 18,
+              "colno": 12213,
+              "pre_context": [
+                "{snip} t r in e)Nt(e[r],t,n);for(const r of Object.getOwnPropertySymbols(e))Object.prototype.propertyIsEnumerable.call(e,r)&&Nt(e[r],t,n)}return e}",
+                "/**",
+                "* @vue/runtime-core v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT"
+              ],
+              "context_line": "{snip} n[e]=[]),a=t.__weh||(t.__weh=(...r)=>{ye();const i=ea(n),a=Vt(t,n,e,r);return i(),be(),a});return r?i.unshift(a):i.push(a),a}}const Yn=e=>(t {snip}",
+              "post_context": [
+                "{snip} );const{setup:r}=n;if(r){ye();const n=e.setupContext=r.length>1?la(e):null,i=ea(e),a=Dt(r,e,0,[e.props,n]),o=b(a);if(be(),i(),!o&&!e.sp||zn( {snip}",
+                "/**",
+                "* @vue/runtime-dom v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "Vt",
+              "module": "vip/js/dopalive/index",
+              "filename": "/vip/js/dopalive/index-0fe3ea34.js",
+              "abs_path": "https://m.dopalive.com/vip/js/dopalive/index-0fe3ea34.js",
+              "lineno": 18,
+              "colno": 108,
+              "pre_context": [
+                "{snip} guments\"!==e&&\"caller\"!==e).map(e=>Symbol[e]).filter(g));function We(e){g(e)||(e=String(e));const t=gt(this);return Ce(t,0,e),t.hasOwnProper {snip}",
+                "/**",
+                "* @vue/runtime-core v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT"
+              ],
+              "context_line": "{snip} }catch(i){Mt(i,t,n)}}function Vt(e,t,n,r){if(m(e)){const i=Dt(e,t,n,r);return i&&b(i)&&i.catch(e=>{Mt(e,t,n)}),i}if(f(e)){const i=[];for(let {snip}",
+              "post_context": [
+                "{snip} nction Rr(){return{app:null,config:{isNativeTag:o,performance:!1,globalProperties:{},optionMergeStrategies:{},errorHandler:void 0,warnHandle {snip}",
+                "/**",
+                "* @vue/runtime-dom v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "Dt",
+              "module": "vip/js/dopalive/index",
+              "filename": "/vip/js/dopalive/index-0fe3ea34.js",
+              "abs_path": "https://m.dopalive.com/vip/js/dopalive/index-0fe3ea34.js",
+              "lineno": 18,
+              "colno": 38,
+              "pre_context": [
+                "Object.getOwnPropertyNames(Symbol).filter(e=>\"arguments\"!==e&&\"caller\"!==e).map(e=>Symbol[e]).filter(g));function We(e){g(e)||(e=String(e)); {snip}",
+                "/**",
+                "* @vue/runtime-core v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT"
+              ],
+              "context_line": "**/function Dt(e,t,n,r){try{return r?e(...r):e()}catch(i){Mt(i,t,n)}}function Vt(e,t,n,r){if(m(e)){const i=Dt(e,t,n,r);return i&&b(i)&&i.cat {snip}",
+              "post_context": [
+                "Object.create(null),br(e),br(null!=t?t:{})):t}function Rr(){return{app:null,config:{isNativeTag:o,performance:!1,globalProperties:{},optionM {snip}",
+                "/**",
+                "* @vue/runtime-dom v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "module": "vip/js/dopalive/index",
+              "filename": "/vip/js/dopalive/index-0fe3ea34.js",
+              "abs_path": "https://m.dopalive.com/vip/js/dopalive/index-0fe3ea34.js",
+              "lineno": 18,
+              "colno": 12330,
+              "pre_context": [
+                "{snip} t r in e)Nt(e[r],t,n);for(const r of Object.getOwnPropertySymbols(e))Object.prototype.propertyIsEnumerable.call(e,r)&&Nt(e[r],t,n)}return e}",
+                "/**",
+                "* @vue/runtime-core v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT"
+              ],
+              "context_line": "{snip} sh(a),a}}const Yn=e=>(t,n=Ki)=>{ia&&\"sp\"!==e||Gn(e,(...e)=>t(...e),n)},Xn=Yn(\"bm\"),qn=Yn(\"m\"),Kn=Yn(\"bu\"),Jn=Yn(\"u\"),Zn=Yn(\"bum\"),Qn=Yn(\"um\" {snip}",
+              "post_context": [
+                "{snip} be(),i(),!o&&!e.sp||zn(e)||Rn(e),o){if(a.then(ta,ta),t)return a.then(n=>{aa(e,n,t)}).catch(t=>{Mt(t,e,0)});e.asyncDep=a}else aa(e,a,t)}else  {snip}",
+                "/**",
+                "* @vue/runtime-dom v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "module": "vip/js/dopalive/index",
+              "filename": "/vip/js/dopalive/index-d2abd53b.js",
+              "abs_path": "https://m.dopalive.com/vip/js/dopalive/index-d2abd53b.js",
+              "lineno": 1,
+              "colno": 37356,
+              "context_line": "{snip} bject.keys(De).forEach(e=>{De[e]=!1}),ge.value={},_e.value=void 0,Ee(T.value)});return P(()=>{Ye(),z({eventName:\"trade_vip_center_enter\",ext {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "module": "vip/js/dopalive/index",
+              "filename": "/vip/js/dopalive/index-0fe3ea34.js",
+              "abs_path": "https://m.dopalive.com/vip/js/dopalive/index-0fe3ea34.js",
+              "lineno": 25,
+              "colno": 13604,
+              "pre_context": [
+                "/**",
+                "* @vue/runtime-dom v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT",
+                "**/"
+              ],
+              "context_line": "{snip} droid webview do not define method callHandler\")}return xo.log(\"android webview do not define obj WebViewJavascriptBridge\")}if(Ao){const i=n {snip}",
+              "post_context": [
+                "/*!",
+                " * vue-router v4.6.4",
+                " * (c) 2025 Eduardo San Martin Morote",
+                " * @license MIT",
+                "{snip} olve())}return D}({history:((bc=location.host?bc||location.pathname+location.search:\"\").includes(\"#\")||(bc+=\"#\"),jl(bc)),routes:gc});var bc;"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "xo.log",
+              "module": "vip/js/dopalive/index",
+              "filename": "/vip/js/dopalive/index-0fe3ea34.js",
+              "abs_path": "https://m.dopalive.com/vip/js/dopalive/index-0fe3ea34.js",
+              "lineno": 25,
+              "colno": 14186,
+              "pre_context": [
+                "/**",
+                "* @vue/runtime-dom v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT",
+                "**/"
+              ],
+              "context_line": "{snip} (e),window.JSBridge=xo}static log(e){return Promise.reject(new Error(\"JSBridge: \"+e))}static initIOSJsBridge(e){!function(e){if(Ao){if(windo {snip}",
+              "post_context": [
+                "/*!",
+                " * vue-router v4.6.4",
+                " * (c) 2025 Eduardo San Martin Morote",
+                " * @license MIT",
+                "{snip} olve())}return D}({history:((bc=location.host?bc||location.pathname+location.search:\"\").includes(\"#\")||(bc+=\"#\"),jl(bc)),routes:gc});var bc;"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            }
+          ]
+        },
+        "raw_stacktrace": {
+          "frames": [
+            {
+              "function": "Zt",
+              "filename": "/vip/js/dopalive/index-0fe3ea34.js",
+              "abs_path": "https://m.dopalive.com/vip/js/dopalive/index-0fe3ea34.js",
+              "lineno": 18,
+              "colno": 1894,
+              "pre_context": [
+                "{snip} i,n)?s(r.get(n)):o.call(i,a)?s(r.get(a)):void(r!==i&&r.get(n))},get size(){const t=this.__v_raw;return!e&&Ce(gt(t),0,Te),t.size},has(t){cons {snip}",
+                "/**",
+                "* @vue/runtime-core v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT"
+              ],
+              "context_line": "{snip} th;$t++){const e=zt[$t];e&&(e.flags&=-2)}$t=-1,zt.length=0,Kt(),Wt=null,(zt.length||Ft.length)&&Zt()}}let Qt=null,en=null;function tn(e){con {snip}",
+              "post_context": [
+                "{snip} ,n=r){const{immediate:i,deep:o,flush:s,once:l}=n,u=c({},n),d=t&&i||!t&&\"post\"!==s;let p;if(ia)if(\"sync\"===s){const e=Fr();p=e.__watcherHandl {snip}",
+                "/**",
+                "* @vue/runtime-dom v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "Kt",
+              "filename": "/vip/js/dopalive/index-0fe3ea34.js",
+              "abs_path": "https://m.dopalive.com/vip/js/dopalive/index-0fe3ea34.js",
+              "lineno": 18,
+              "colno": 1587,
+              "pre_context": [
+                "{snip} =new Ge,qe=new Ye,Ke=new Ge(!0),Je=e=>e,Ze=e=>Reflect.getPrototypeOf(e);function Qe(e){return function(...t){return\"delete\"!==e&&(\"clear\"=== {snip}",
+                "/**",
+                "* @vue/runtime-core v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT"
+              ],
+              "context_line": "{snip} h;Bt++){const e=jt[Bt];4&e.flags&&(e.flags&=-2),8&e.flags||e(),e.flags&=-2}jt=null,Bt=0}}const Jt=e=>null==e.id?2&e.flags?-1:1/0:e.id;functi {snip}",
+              "post_context": [
+                "{snip} ll==r.parent||r.ce?r.vnode.appContext&&r.vnode.appContext.provides:r.parent.provides:void 0;if(i&&e in i)return i[e];if(arguments.length>1)r {snip}",
+                "/**",
+                "* @vue/runtime-dom v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "Gn.t.__weh.t.__weh",
+              "filename": "/vip/js/dopalive/index-0fe3ea34.js",
+              "abs_path": "https://m.dopalive.com/vip/js/dopalive/index-0fe3ea34.js",
+              "lineno": 18,
+              "colno": 12213,
+              "pre_context": [
+                "{snip} t r in e)Nt(e[r],t,n);for(const r of Object.getOwnPropertySymbols(e))Object.prototype.propertyIsEnumerable.call(e,r)&&Nt(e[r],t,n)}return e}",
+                "/**",
+                "* @vue/runtime-core v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT"
+              ],
+              "context_line": "{snip} n[e]=[]),a=t.__weh||(t.__weh=(...r)=>{ye();const i=ea(n),a=Vt(t,n,e,r);return i(),be(),a});return r?i.unshift(a):i.push(a),a}}const Yn=e=>(t {snip}",
+              "post_context": [
+                "{snip} );const{setup:r}=n;if(r){ye();const n=e.setupContext=r.length>1?la(e):null,i=ea(e),a=Dt(r,e,0,[e.props,n]),o=b(a);if(be(),i(),!o&&!e.sp||zn( {snip}",
+                "/**",
+                "* @vue/runtime-dom v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "Vt",
+              "filename": "/vip/js/dopalive/index-0fe3ea34.js",
+              "abs_path": "https://m.dopalive.com/vip/js/dopalive/index-0fe3ea34.js",
+              "lineno": 18,
+              "colno": 108,
+              "pre_context": [
+                "{snip} guments\"!==e&&\"caller\"!==e).map(e=>Symbol[e]).filter(g));function We(e){g(e)||(e=String(e));const t=gt(this);return Ce(t,0,e),t.hasOwnProper {snip}",
+                "/**",
+                "* @vue/runtime-core v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT"
+              ],
+              "context_line": "{snip} }catch(i){Mt(i,t,n)}}function Vt(e,t,n,r){if(m(e)){const i=Dt(e,t,n,r);return i&&b(i)&&i.catch(e=>{Mt(e,t,n)}),i}if(f(e)){const i=[];for(let {snip}",
+              "post_context": [
+                "{snip} nction Rr(){return{app:null,config:{isNativeTag:o,performance:!1,globalProperties:{},optionMergeStrategies:{},errorHandler:void 0,warnHandle {snip}",
+                "/**",
+                "* @vue/runtime-dom v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "Dt",
+              "filename": "/vip/js/dopalive/index-0fe3ea34.js",
+              "abs_path": "https://m.dopalive.com/vip/js/dopalive/index-0fe3ea34.js",
+              "lineno": 18,
+              "colno": 38,
+              "pre_context": [
+                "Object.getOwnPropertyNames(Symbol).filter(e=>\"arguments\"!==e&&\"caller\"!==e).map(e=>Symbol[e]).filter(g));function We(e){g(e)||(e=String(e)); {snip}",
+                "/**",
+                "* @vue/runtime-core v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT"
+              ],
+              "context_line": "**/function Dt(e,t,n,r){try{return r?e(...r):e()}catch(i){Mt(i,t,n)}}function Vt(e,t,n,r){if(m(e)){const i=Dt(e,t,n,r);return i&&b(i)&&i.cat {snip}",
+              "post_context": [
+                "Object.create(null),br(e),br(null!=t?t:{})):t}function Rr(){return{app:null,config:{isNativeTag:o,performance:!1,globalProperties:{},optionM {snip}",
+                "/**",
+                "* @vue/runtime-dom v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "filename": "/vip/js/dopalive/index-0fe3ea34.js",
+              "abs_path": "https://m.dopalive.com/vip/js/dopalive/index-0fe3ea34.js",
+              "lineno": 18,
+              "colno": 12330,
+              "pre_context": [
+                "{snip} t r in e)Nt(e[r],t,n);for(const r of Object.getOwnPropertySymbols(e))Object.prototype.propertyIsEnumerable.call(e,r)&&Nt(e[r],t,n)}return e}",
+                "/**",
+                "* @vue/runtime-core v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT"
+              ],
+              "context_line": "{snip} sh(a),a}}const Yn=e=>(t,n=Ki)=>{ia&&\"sp\"!==e||Gn(e,(...e)=>t(...e),n)},Xn=Yn(\"bm\"),qn=Yn(\"m\"),Kn=Yn(\"bu\"),Jn=Yn(\"u\"),Zn=Yn(\"bum\"),Qn=Yn(\"um\" {snip}",
+              "post_context": [
+                "{snip} be(),i(),!o&&!e.sp||zn(e)||Rn(e),o){if(a.then(ta,ta),t)return a.then(n=>{aa(e,n,t)}).catch(t=>{Mt(t,e,0)});e.asyncDep=a}else aa(e,a,t)}else  {snip}",
+                "/**",
+                "* @vue/runtime-dom v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "filename": "/vip/js/dopalive/index-d2abd53b.js",
+              "abs_path": "https://m.dopalive.com/vip/js/dopalive/index-d2abd53b.js",
+              "lineno": 1,
+              "colno": 37356,
+              "context_line": "{snip} bject.keys(De).forEach(e=>{De[e]=!1}),ge.value={},_e.value=void 0,Ee(T.value)});return P(()=>{Ye(),z({eventName:\"trade_vip_center_enter\",ext {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "filename": "/vip/js/dopalive/index-0fe3ea34.js",
+              "abs_path": "https://m.dopalive.com/vip/js/dopalive/index-0fe3ea34.js",
+              "lineno": 25,
+              "colno": 13604,
+              "pre_context": [
+                "/**",
+                "* @vue/runtime-dom v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT",
+                "**/"
+              ],
+              "context_line": "{snip} droid webview do not define method callHandler\")}return xo.log(\"android webview do not define obj WebViewJavascriptBridge\")}if(Ao){const i=n {snip}",
+              "post_context": [
+                "/*!",
+                " * vue-router v4.6.4",
+                " * (c) 2025 Eduardo San Martin Morote",
+                " * @license MIT",
+                "{snip} olve())}return D}({history:((bc=location.host?bc||location.pathname+location.search:\"\").includes(\"#\")||(bc+=\"#\"),jl(bc)),routes:gc});var bc;"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "xo.log",
+              "filename": "/vip/js/dopalive/index-0fe3ea34.js",
+              "abs_path": "https://m.dopalive.com/vip/js/dopalive/index-0fe3ea34.js",
+              "lineno": 25,
+              "colno": 14186,
+              "pre_context": [
+                "/**",
+                "* @vue/runtime-dom v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT",
+                "**/"
+              ],
+              "context_line": "{snip} (e),window.JSBridge=xo}static log(e){return Promise.reject(new Error(\"JSBridge: \"+e))}static initIOSJsBridge(e){!function(e){if(Ao){if(windo {snip}",
+              "post_context": [
+                "/*!",
+                " * vue-router v4.6.4",
+                " * (c) 2025 Eduardo San Martin Morote",
+                " * @license MIT",
+                "{snip} olve())}return D}({history:((bc=location.host?bc||location.pathname+location.search:\"\").includes(\"#\")||(bc+=\"#\"),jl(bc)),routes:gc});var bc;"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true }
+            }
+          ]
+        },
+        "mechanism": {
+          "type": "auto.browser.global_handlers.onunhandledrejection",
+          "handled": false
+        }
+      }
+    ]
+  },
+  "fingerprint": [
+    "Unknown Error",
+    "JSBridge: android webview do not define obj WebViewJavascriptBridge",
+    "/vip/index.html"
+  ],
+  "grouping_config": {
+    "enhancements": "KLUv_SAd6QAAkwORuGFsbC1wbGF0Zm9ybXM6MjAyNi0wMS0yMJA#KLUv_SAd6QAAkwORuGFsbC1wbGF0Zm9ybXM6MjAyNi0wMS0yMJA#KLUv_SAd6QAAkwORuGFsbC1wbGF0Zm9ybXM6MjAyNi0wMS0yMJA",
+    "id": "newstyle:2026-01-20"
+  },
+  "hashes": ["12da022efc991ea6b8063603622a504a"],
+  "key_id": "64",
+  "level": "error",
+  "location": "/vip/js/dopalive/index-0fe3ea34.js",
+  "logger": "",
+  "metadata": {
+    "filename": "/vip/js/dopalive/index-0fe3ea34.js",
+    "function": "xo.log",
+    "in_app_frame_mix": "in-app-only",
+    "type": "Unknown Error",
+    "value": "JSBridge: android webview do not define obj WebViewJavascriptBridge"
+  },
+  "nodestore_insert": 1788242710.162563,
+  "received": 1788242707.544528,
+  "request": {
+    "url": "https://m.dopalive.com/vip/index.html",
+    "fragment": "/overview?selectedLevel=10)&source=ins#sbfbuc10",
+    "headers": [
+      ["Referer", "https://m.dopalive.com/vip/index.html"],
+      [
+        "User-Agent",
+        "Mozilla/5.0 (Linux; Android 11; CPH2061 Build/RKQ1.200903.002) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.7922.199 Mobile Safari/537.36"
+      ]
+    ]
+  },
+  "scraping_attempts": [
+    {
+      "status": "success",
+      "url": "https://m.dopalive.com/vip/js/dopalive/index-0fe3ea34.js"
+    },
+    {
+      "status": "success",
+      "url": "https://m.dopalive.com/vip/js/dopalive/index-d2abd53b.js"
+    }
+  ],
+  "sdk": {
+    "name": "sentry.javascript.vue",
+    "version": "10.37.0",
+    "integrations": [
+      "InboundFilters",
+      "FunctionToString",
+      "ConversationId",
+      "BrowserApiErrors",
+      "Breadcrumbs",
+      "GlobalHandlers",
+      "LinkedErrors",
+      "Dedupe",
+      "HttpContext",
+      "BrowserSession",
+      "Vue",
+      "BrowserTracing",
+      "CaptureConsole",
+      "ExtraErrorData"
+    ],
+    "packages": [{ "name": "npm:@sentry/vue", "version": "10.37.0" }],
+    "settings": { "infer_ip": "auto" }
+  },
+  "symbolicated_in_app": false,
+  "timestamp": 1788242706.378,
+  "title": "Unknown Error: JSBridge: android webview do not define obj WebViewJavascriptBridge",
+  "transaction": "/vip/index.html",
+  "type": "error",
+  "user": {
+    "ip_address": "149.102.237.121",
+    "sentry_user": "ip:149.102.237.121"
+  },
+  "version": "7"
+}

@@ -48,7 +48,14 @@ REQUIRED_CALLBACK_FIELDS = (
     "resolution_autopilot",
     "target_assignee_type",
     "target_assignee",
+    "source_inspection_autopilot_id",
+    "inspection_issue_id",
     "resolution_config_version",
+    "impact_trend_observation",
+    "time_window",
+    "filter",
+    "window_start",
+    "window_end",
 )
 
 SENSITIVE_KEYS = {
@@ -566,6 +573,13 @@ def validate_send_config(
                 "$.webhook_url",
                 decision="needs-info",
             )
+        if send_config.get("resolution_enabled") is True:
+            validator.add(
+                "webhook_resolution_unsupported",
+                "feishu_webhook 是只读通道，resolution_enabled 必须为 false",
+                "$.resolution_enabled",
+                decision="needs-info",
+            )
     elif channel == "feishu_app":
         required_app_fields = {
             "transport": "lark_cli",
@@ -653,6 +667,40 @@ def validate_callback_payload(
                 f"创建解决单 payload 缺少 {field}",
                 f"{path}.behaviors[0].value.{field}",
             )
+    observation = value.get("impact_trend_observation")
+    if observation == "enabled":
+        for field in ("observation_timeout_days", "post_fix_observation_days"):
+            raw = value.get(field)
+            valid_positive = (
+                isinstance(raw, int)
+                and not isinstance(raw, bool)
+                and raw > 0
+            ) or (
+                isinstance(raw, str)
+                and raw.isdigit()
+                and int(raw) > 0
+            )
+            if not valid_positive:
+                validator.add(
+                    "invalid_observation_field",
+                    f"{field} 必须是正整数（影响趋势观测已启用）",
+                    f"{path}.behaviors[0].value.{field}",
+                )
+    elif observation == "disabled" and any(
+        value.get(field) not in ("", None, [])
+        for field in ("observation_timeout_days", "post_fix_observation_days")
+    ):
+        validator.add(
+            "invalid_observation_config",
+            "未启用影响趋势观测时不得携带观测窗口字段",
+            f"{path}.behaviors[0].value.impact_trend_observation",
+        )
+    elif observation not in {None, "enabled", "disabled"}:
+        validator.add(
+            "invalid_observation_config",
+            "impact_trend_observation 必须为 enabled 或 disabled",
+            f"{path}.behaviors[0].value.impact_trend_observation",
+        )
     issue_id = value.get("issue_id")
     if candidate_ids and issue_id not in candidate_ids:
         validator.add(
@@ -924,6 +972,7 @@ def validate_candidate_separators(
     candidate_count: int,
     validator: CardValidation,
     *,
+    resolution_enabled: bool,
     reject_internal_separators: bool,
 ) -> None:
     expected_separator_count = max(candidate_count - 1, 0)
@@ -936,40 +985,57 @@ def validate_candidate_separators(
         if isinstance(element, dict) and element.get("tag") == "hr"
     ]
     candidate_separator_indices: list[int] = []
-    for candidate_index in range(candidate_count - 1):
-        start = title_indexes[candidate_index]
-        end = title_indexes[candidate_index + 1]
-        solution_buttons = [
-            index
-            for index, element in enumerate(elements[start:end], start)
-            if (
-                isinstance(element, dict)
-                and element.get("tag") == "button"
-                and element.get("width") == "default"
-            )
-        ]
-        if len(solution_buttons) != 1:
-            continue
+    if resolution_enabled:
+        for candidate_index in range(candidate_count - 1):
+            start = title_indexes[candidate_index]
+            end = title_indexes[candidate_index + 1]
+            solution_buttons = [
+                index
+                for index, element in enumerate(elements[start:end], start)
+                if (
+                    isinstance(element, dict)
+                    and element.get("tag") == "button"
+                    and element.get("width") == "default"
+                )
+            ]
+            if len(solution_buttons) != 1:
+                continue
 
-        separator_index = solution_buttons[0] + 1
-        if (
-            separator_index >= end
-            or not isinstance(elements[separator_index], dict)
-            or elements[separator_index].get("tag") != "hr"
-        ):
-            validator.add(
-                "missing_candidate_separator",
-                "相邻候选之间必须有独立 hr 分隔符，且分隔符必须紧跟上一条解决单按钮",
-                f"$.body.elements[{separator_index}]",
-            )
-            continue
-        candidate_separator_indices.append(separator_index)
-        if separator_index + 1 != end:
-            validator.add(
-                "invalid_candidate_separator_order",
-                "候选 hr 分隔符必须紧邻下一条候选标题",
-                f"$.body.elements[{separator_index}]",
-            )
+            separator_index = solution_buttons[0] + 1
+            if (
+                separator_index >= end
+                or not isinstance(elements[separator_index], dict)
+                or elements[separator_index].get("tag") != "hr"
+            ):
+                validator.add(
+                    "missing_candidate_separator",
+                    "相邻候选之间必须有独立 hr 分隔符，且分隔符必须紧跟上一条解决单按钮",
+                    f"$.body.elements[{separator_index}]",
+                )
+                continue
+            candidate_separator_indices.append(separator_index)
+            if separator_index + 1 != end:
+                validator.add(
+                    "invalid_candidate_separator_order",
+                    "候选 hr 分隔符必须紧邻下一条候选标题",
+                    f"$.body.elements[{separator_index}]",
+                )
+    else:
+        for candidate_index in range(candidate_count - 1):
+            end = title_indexes[candidate_index + 1]
+            separator_index = end - 1
+            if (
+                separator_index < 0
+                or not isinstance(elements[separator_index], dict)
+                or elements[separator_index].get("tag") != "hr"
+            ):
+                validator.add(
+                    "missing_candidate_separator",
+                    "Webhook 只读候选之间必须有独立 hr 分隔符，且分隔符必须紧邻下一条候选标题",
+                    f"$.body.elements[{separator_index}]",
+                )
+                continue
+            candidate_separator_indices.append(separator_index)
 
     if len(candidate_separator_indices) != expected_separator_count:
         validator.add(
@@ -1089,10 +1155,18 @@ def validate_card(
             "无候选项时必须输出明确空态",
             "$.body.elements",
         )
-    if len(candidate_ids) != candidate_count:
+    if resolution_enabled:
+        if len(candidate_ids) != candidate_count:
+            validator.add(
+                "candidate_ids_mismatch",
+                "启用解决单时，candidate_id 数量必须等于候选项数量",
+                "$.candidate_ids",
+                decision="needs-info",
+            )
+    elif candidate_ids:
         validator.add(
-            "candidate_ids_mismatch",
-            "candidate_id 数量必须等于候选项数量",
+            "unexpected_candidate_ids",
+            "Webhook 只读模式不得传入 candidate_id",
             "$.candidate_ids",
             decision="needs-info",
         )
@@ -1102,6 +1176,7 @@ def validate_card(
         title_indexes,
         candidate_count,
         validator,
+        resolution_enabled=resolution_enabled,
         reject_internal_separators=require_create_visual_style,
     )
     validate_compact_layout(elements, validator)
@@ -1156,31 +1231,39 @@ def validate_card(
             for index, button in solution_buttons
             if title_index < index < segment_end
         ]
-        if len(segment_buttons) != 1:
-            validator.add(
-                "candidate_button_count",
-                "每条候选必须有且仅有一个解决单按钮",
-                f"$.body.elements[{title_index}:{segment_end}]",
-            )
-            continue
-        button_index, button = segment_buttons[0]
-        solution_button_kind = validate_solution_button(
-            button,
-            validator,
-            f"$.body.elements[{button_index}]",
-            candidate_ids,
-        )
-        if (
-            require_create_visual_style
-            and solution_button_kind == "create"
-            and isinstance(elements[title_index], dict)
-            and isinstance(button, dict)
-        ):
-            validate_title_callback_consistency(
-                elements[title_index],
+        if resolution_enabled:
+            if len(segment_buttons) != 1:
+                validator.add(
+                    "candidate_button_count",
+                    "启用解决单时，每条候选必须有且仅有一个解决单按钮",
+                    f"$.body.elements[{title_index}:{segment_end}]",
+                )
+                continue
+            button_index, button = segment_buttons[0]
+            solution_button_kind = validate_solution_button(
                 button,
                 validator,
                 f"$.body.elements[{button_index}]",
+                candidate_ids,
+            )
+            if (
+                require_create_visual_style
+                and solution_button_kind == "create"
+                and isinstance(elements[title_index], dict)
+                and isinstance(button, dict)
+            ):
+                validate_title_callback_consistency(
+                    elements[title_index],
+                    button,
+                    validator,
+                    f"$.body.elements[{button_index}]",
+                )
+        elif segment_buttons:
+            validator.add(
+                "unexpected_solution_button",
+                "Webhook 只读模式不得生成解决单按钮",
+                f"$.body.elements[{segment_buttons[0][0]}]",
+                decision="needs-info",
             )
         content_elements = [
             (index, element)
