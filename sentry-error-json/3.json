@@ -1,0 +1,914 @@
+{
+  "event_id": "ebc3d0fa27e94d71b7858d4667eadc24",
+  "project": 64,
+  "release": "maidocha-mobile-2.44.0",
+  "dist": null,
+  "platform": "javascript",
+  "message": "",
+  "datetime": "2026-09-01T05:27:17.785000+00:00",
+  "tags": [
+    ["_uid", "571735562719488"],
+    ["browser", "Chrome Mobile WebView 119.0.6045"],
+    ["browser.name", "Chrome Mobile WebView"],
+    ["device", "F3212"],
+    ["environment", "Prod"],
+    ["handled", "no"],
+    ["level", "error"],
+    ["mechanism", "auto.browser.browserapierrors.requestAnimationFrame"],
+    ["os", "Android 7.0"],
+    ["os.name", "Android"],
+    ["page_host", "m.dopalive.com"],
+    ["release", "maidocha-mobile-2.44.0"],
+    ["user", "id:571735562719488"],
+    ["subDomain", "maidocha-mobile"],
+    ["transaction", "/lucky-olympus/index.html"],
+    ["url", "https://m.dopalive.com/lucky-olympus/index.html"],
+    ["versionFromMicoPage", "not exist"]
+  ],
+  "_dsc": {
+    "environment": "Prod",
+    "public_key": "f90b5e23b7170bcc8163711600c82343",
+    "release": "maidocha-mobile-2.44.0",
+    "replay_id": null,
+    "sample_rand": "0.8250500208999398",
+    "sample_rate": "1.0",
+    "sampled": true,
+    "trace_id": "0f210fbb208340028cbf89e09fbb7f64",
+    "transaction": null
+  },
+  "_fingerprint_info": {
+    "client_fingerprint": [
+      "Unknown Error",
+      "Failed to execute 'shaderSource' on 'WebGL2RenderingContext': parameter 1 is not of type 'WebGLShader'.",
+      "/lucky-olympus/index.html"
+    ]
+  },
+  "_metrics": { "bytes.ingested.event": 7918, "bytes.stored.event": 37897 },
+  "breadcrumbs": {
+    "values": [
+      {
+        "timestamp": 1788240431.251,
+        "type": "http",
+        "category": "fetch",
+        "level": "info",
+        "data": {
+          "__span": "928b3aab9e8517a1",
+          "method": "GET",
+          "status_code": 200,
+          "url": "https://m.dopalive.com/lucky-olympus/npmAssets/spine/Olympus_eliminate.761c09fc.atlas"
+        }
+      },
+      {
+        "timestamp": 1788240431.33,
+        "type": "http",
+        "category": "fetch",
+        "level": "info",
+        "data": {
+          "__span": "b4b58b7dbb854523",
+          "method": "GET",
+          "status_code": 200,
+          "url": "https://m.dopalive.com/lucky-olympus/npmAssets/spine/Olympus_icon.ad7fa522.atlas"
+        }
+      },
+      {
+        "timestamp": 1788240431.334,
+        "type": "http",
+        "category": "fetch",
+        "level": "info",
+        "data": {
+          "__span": "bf05ce17d82da399",
+          "method": "GET",
+          "status_code": 200,
+          "url": "https://m.dopalive.com/lucky-olympus/npmAssets/spine/Olympus_kuang.a2634900.json"
+        }
+      },
+      {
+        "timestamp": 1788240431.338,
+        "type": "http",
+        "category": "fetch",
+        "level": "info",
+        "data": {
+          "__span": "85dc5400707f1456",
+          "method": "GET",
+          "status_code": 200,
+          "url": "https://m.dopalive.com/lucky-olympus/npmAssets/spine/Olympus_kuang.7ac05c1b.atlas"
+        }
+      },
+      {
+        "timestamp": 1788240431.342,
+        "type": "http",
+        "category": "fetch",
+        "level": "info",
+        "data": {
+          "__span": "896f2a378fbe03ec",
+          "method": "GET",
+          "status_code": 200,
+          "url": "https://m.dopalive.com/lucky-olympus/npmAssets/spine/olympus_button.5ef526b2.json"
+        }
+      },
+      {
+        "timestamp": 1788240431.346,
+        "type": "http",
+        "category": "fetch",
+        "level": "info",
+        "data": {
+          "__span": "bf66781178ccec43",
+          "method": "GET",
+          "status_code": 200,
+          "url": "https://m.dopalive.com/lucky-olympus/npmAssets/spine/olympus_button.4e98590f.atlas"
+        }
+      },
+      {
+        "timestamp": 1788240431.35,
+        "type": "http",
+        "category": "fetch",
+        "level": "info",
+        "data": {
+          "__span": "b45036ef14b7ea36",
+          "method": "GET",
+          "status_code": 200,
+          "url": "https://m.dopalive.com/lucky-olympus/npmAssets/spine/olympus_hero_act.a8e573ff.atlas"
+        }
+      },
+      {
+        "timestamp": 1788240431.408,
+        "type": "http",
+        "category": "fetch",
+        "level": "info",
+        "data": {
+          "__span": "ace520b7dfc41e8b",
+          "method": "GET",
+          "status_code": 200,
+          "url": "https://m.dopalive.com/lucky-olympus/npmAssets/spine/Olympus_icon.3fc2668d.json"
+        }
+      },
+      {
+        "timestamp": 1788240431.43,
+        "type": "http",
+        "category": "fetch",
+        "level": "info",
+        "data": {
+          "__span": "b0ab2b038e8691d9",
+          "method": "GET",
+          "status_code": 200,
+          "url": "https://m.dopalive.com/lucky-olympus/npmAssets/spine/Olympus_jackpot1.8d10f52c.atlas"
+        }
+      },
+      {
+        "timestamp": 1788240431.435,
+        "type": "http",
+        "category": "fetch",
+        "level": "info",
+        "data": {
+          "__span": "be664487464af4e0",
+          "method": "GET",
+          "status_code": 200,
+          "url": "https://m.dopalive.com/lucky-olympus/npmAssets/spine/Olympus_jackpot1.9ebf86a9.json"
+        }
+      },
+      {
+        "timestamp": 1788240431.45,
+        "type": "http",
+        "category": "fetch",
+        "level": "info",
+        "data": {
+          "__span": "88d8c145c6f93bcd",
+          "method": "GET",
+          "status_code": 200,
+          "url": "https://m.dopalive.com/lucky-olympus/npmAssets/spine/olympus_hero_act.f9e1b6d4.json"
+        }
+      },
+      {
+        "timestamp": 1788240431.715,
+        "type": "http",
+        "category": "fetch",
+        "level": "info",
+        "data": {
+          "__span": "b815cd04743d6226",
+          "method": "GET",
+          "status_code": 200,
+          "url": "https://m.dopalive.com/lucky-olympus/npmAssets/spine/Olympus_eliminate.5e0d768c.json"
+        }
+      }
+    ]
+  },
+  "contexts": {
+    "TypeError": { "type": "TypeError" },
+    "appInfo": {
+      "currentUrl": "https://m.dopalive.com/lucky-olympus/index.html?urlType=3&lang=ar&name=Lucky%20Olympus&half=0&source=2&gameId=12&isBCGame=1&luckyDrop=1",
+      "lang": "ar",
+      "locale": "ar_EG",
+      "roomId": "69235046",
+      "timezone": "3",
+      "type": "appInfo",
+      "version": "2.44.0"
+    },
+    "browser": {
+      "browser": "Chrome Mobile WebView 119.0.6045",
+      "name": "Chrome Mobile WebView",
+      "version": "119.0.6045",
+      "type": "browser"
+    },
+    "device": {
+      "name": "Xperia XA Ultra",
+      "model": "F3212",
+      "cookieEnabled": true,
+      "did": "f469f64df7290bc",
+      "os": "2",
+      "os-version": "24_android-7.0-F3212",
+      "platform": "Linux aarch64",
+      "userAgent": "Mozilla/5.0 (Linux; Android 7.0; F3212 Build/36.1.A.1.112; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/119.0.6045.193 Mobile Safari/537.36",
+      "type": "device"
+    },
+    "network": {
+      "downlink": 10,
+      "effectiveType": "4g",
+      "online": true,
+      "rtt": 0,
+      "saveData": false,
+      "type": "network",
+      "userAgent": "Mozilla/5.0 (Linux; Android 7.0; F3212 Build/36.1.A.1.112; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/119.0.6045.193 Mobile Safari/537.36"
+    },
+    "os": {
+      "os": "Android 7.0",
+      "name": "Android",
+      "version": "7.0",
+      "type": "os"
+    },
+    "trace": {
+      "trace_id": "0f210fbb208340028cbf89e09fbb7f64",
+      "span_id": "b709c766183afc06",
+      "status": "unknown",
+      "client_sample_rate": 1.0,
+      "sampled": false,
+      "type": "trace"
+    }
+  },
+  "culprit": "/lucky-olympus/index.html",
+  "environment": "Prod",
+  "exception": {
+    "values": [
+      {
+        "type": "Unknown Error",
+        "value": "Failed to execute 'shaderSource' on 'WebGL2RenderingContext': parameter 1 is not of type 'WebGLShader'.",
+        "stacktrace": {
+          "frames": [
+            {
+              "function": "n",
+              "module": "lucky-olympus/js/dopalive/index",
+              "filename": "/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "lineno": 25,
+              "colno": 133216,
+              "pre_context": [
+                "/**",
+                "* @vue/runtime-dom v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT",
+                "**/"
+              ],
+              "context_line": "{snip} .tags,extra:{url:c||i,api_path:Wg(c||i||\"unknown\"),status:s,...jg(t)?{method:zg(l.config),axios_message:l.message}:{}}})}const iv=Yh;let sv= {snip}",
+              "post_context": [
+                "/*!",
+                " * pinia v2.1.7",
+                " * (c) 2023 Eduardo San Martin Morote",
+                " * @license MIT",
+                "{snip} obal:typeof self<\"u\"?self:{};function Hk(t){return t&&t.__esModule&&Object.prototype.hasOwnProperty.call(t,\"default\")?t.default:t}var qk={};"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "_tick",
+              "module": "lucky-olympus/js/dopalive/index",
+              "filename": "/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "lineno": 51,
+              "colno": 147733,
+              "pre_context": [
+                "   *  (c) 2013-2020, James Simpson of GoldFire Studios",
+                "   *  goldfirestudios.com",
+                "   *",
+                "   *  MIT License",
+                "   */"
+              ],
+              "context_line": "{snip} MS,this._tick=t=>{this._requestId=null,this.started&&(this.update(t),this.started&&null===this._requestId&&this._head.next&&(this._requestId {snip}",
+              "post_context": [
+                "/**",
+                " * tiny-lru",
+                " *",
+                " * @copyright 2026 Jason Mulligan <jason.mulligan@avoidwork.com>",
+                " * @license BSD-3-Clause"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "t.update",
+              "module": "lucky-olympus/js/dopalive/index",
+              "filename": "/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "lineno": 51,
+              "colno": 149379,
+              "pre_context": [
+                "   *  (c) 2013-2020, James Simpson of GoldFire Studios",
+                "   *  goldfirestudios.com",
+                "   *",
+                "   *  MIT License",
+                "   */"
+              ],
+              "context_line": "{snip} S*t.targetFPMS;const i=this._head;let s=i.next;for(;s;)s=s.emit(this);i.next||this._cancelIfNeeded()}else this.deltaTime=this.deltaMS=this.e {snip}",
+              "post_context": [
+                "/**",
+                " * tiny-lru",
+                " *",
+                " * @copyright 2026 Jason Mulligan <jason.mulligan@avoidwork.com>",
+                " * @license BSD-3-Clause"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "bF.emit",
+              "module": "lucky-olympus/js/dopalive/index",
+              "filename": "/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "lineno": 51,
+              "colno": 146935,
+              "pre_context": [
+                "   *  (c) 2013-2020, James Simpson of GoldFire Studios",
+                "   *  goldfirestudios.com",
+                "   *",
+                "   *  MIT License",
+                "   */"
+              ],
+              "context_line": "{snip} his._context===e}emit(t){this._fn&&(this._context?this._fn.call(this._context,t):this._fn(t));const e=this.next;return this._once&&this.dest {snip}",
+              "post_context": [
+                "/**",
+                " * tiny-lru",
+                " *",
+                " * @copyright 2026 Jason Mulligan <jason.mulligan@avoidwork.com>",
+                " * @license BSD-3-Clause"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "t.render",
+              "module": "lucky-olympus/js/dopalive/index",
+              "filename": "/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "lineno": 51,
+              "colno": 204305,
+              "pre_context": [
+                "   *  (c) 2013-2020, James Simpson of GoldFire Studios",
+                "   *  goldfirestudios.com",
+                "   *",
+                "   *  MIT License",
+                "   */"
+              ],
+              "context_line": "{snip} s.forEach(t=>{t.init.call(this,e)})}render(){this.renderer.render({container:this.stage})}get canvas(){return this.renderer.canvas}get view( {snip}",
+              "post_context": [
+                "/**",
+                " * tiny-lru",
+                " *",
+                " * @copyright 2026 Jason Mulligan <jason.mulligan@avoidwork.com>",
+                " * @license BSD-3-Clause"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "rt.render",
+              "module": "lucky-olympus/js/dopalive/index",
+              "filename": "/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "lineno": 51,
+              "colno": 197611,
+              "pre_context": [
+                "   *  (c) 2013-2020, James Simpson of GoldFire Studios",
+                "   *  goldfirestudios.com",
+                "   *",
+                "   *  MIT License",
+                "   */"
+              ],
+              "context_line": "{snip} it(n),this.runners.renderStart.emit(n),this.runners.render.emit(n),this.runners.renderEnd.emit(n),this.runners.postrender.emit(n))}resize(t, {snip}",
+              "post_context": [
+                "/**",
+                " * tiny-lru",
+                " *",
+                " * @copyright 2026 Jason Mulligan <jason.mulligan@avoidwork.com>",
+                " * @license BSD-3-Clause"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "tB.emit",
+              "module": "lucky-olympus/js/dopalive/index",
+              "filename": "/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "lineno": 51,
+              "colno": 195324,
+              "pre_context": [
+                "   *  (c) 2013-2020, James Simpson of GoldFire Studios",
+                "   *  goldfirestudios.com",
+                "   *",
+                "   *  MIT License",
+                "   */"
+              ],
+              "context_line": "{snip} name:l,items:c}=this;for(let u=0,h=c.length;u<h;u++)c[u][l](t,e,n,i,s,r,a,o);return this}add(t){return t[this._name]&&(this.remove(t),this.i {snip}",
+              "post_context": [
+                "/**",
+                " * tiny-lru",
+                " *",
+                " * @copyright 2026 Jason Mulligan <jason.mulligan@avoidwork.com>",
+                " * @license BSD-3-Clause"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "fe.render",
+              "module": "lucky-olympus/js/dopalive/RenderTargetSystem-CbduNoIW",
+              "filename": "/lucky-olympus/js/dopalive/RenderTargetSystem-CbduNoIW-ccf5312a.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/RenderTargetSystem-CbduNoIW-ccf5312a.js",
+              "lineno": 1,
+              "colno": 21109,
+              "context_line": "{snip} .worldTransform,worldColor:e.renderGroup.worldColorAlpha}),re(e.renderGroup,i),i.uniformBatch&&i.uniformBatch.renderEnd(),t&&e.renderGroup.l {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "re",
+              "module": "lucky-olympus/js/dopalive/RenderTargetSystem-CbduNoIW",
+              "filename": "/lucky-olympus/js/dopalive/RenderTargetSystem-CbduNoIW-ccf5312a.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/RenderTargetSystem-CbduNoIW-ccf5312a.js",
+              "lineno": 1,
+              "colno": 14152,
+              "context_line": "{snip} =0;s<r.instructionSize;s++){const e=n[s];t[e.renderPipeId].execute(e)}}te.extension={type:[e.WebGLPipes,e.WebGPUPipes,e.CanvasPipes],name:\"c {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "e.execute",
+              "module": "lucky-olympus/js/dopalive/RenderTargetSystem-CbduNoIW",
+              "filename": "/lucky-olympus/js/dopalive/RenderTargetSystem-CbduNoIW-ccf5312a.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/RenderTargetSystem-CbduNoIW-ccf5312a.js",
+              "lineno": 1,
+              "colno": 7698,
+              "context_line": "{snip} n){const t=e.batcher,r=t.geometry,n=t.shader;this._adaptor.start(this,r,n)}this._adaptor.execute(this,e)}destroy(){this.state=null,this.rend {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "w.start",
+              "module": "lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX",
+              "filename": "/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "lineno": 1,
+              "colno": 704,
+              "context_line": "{snip} ){const n=e.renderer,s=this._didUploadHash[r.uid];n.shader.bind(r,s),s||(this._didUploadHash[r.uid]=!0),n.shader.updateUniformGroup(n.global {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "Be.bind",
+              "module": "lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX",
+              "filename": "/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "lineno": 1,
+              "colno": 35143,
+              "context_line": "{snip} ct.create(null),this._activeProgram=null}bind(e,t){if(this._setProgram(e.glProgram),t)return;Ae.textureCount=0,Ae.blockIndex=0;let r=this._s {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "Be._setProgram",
+              "module": "lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX",
+              "filename": "/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "lineno": 1,
+              "colno": 36194,
+              "context_line": "{snip} ctiveProgram===e)return;this._activeProgram=e;const t=this._getProgramData(e);this._gl.useProgram(t.program)}_getProgramData(e){return this. {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "Be._getProgramData",
+              "module": "lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX",
+              "filename": "/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "lineno": 1,
+              "colno": 36306,
+              "context_line": "{snip} tProgramData(e){return this._programDataHash[e._key]||this._createProgramData(e)}_createProgramData(e){const t=e._key;return this._programDa {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "Be._createProgramData",
+              "module": "lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX",
+              "filename": "/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "lineno": 1,
+              "colno": 36397,
+              "context_line": "{snip} gramData(e){const t=e._key;return this._programDataHash[t]=ve(this._gl,e),this._programDataHash[t]}destroy(){for(const e of Object.keys(this {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "ve",
+              "module": "lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX",
+              "filename": "/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "lineno": 1,
+              "colno": 32727,
+              "context_line": "{snip} x\")});const o=r.join(\"\\n\");a[0]=o}function ve(e,t){const r=ge(e,e.VERTEX_SHADER,t.vertex),n=ge(e,e.FRAGMENT_SHADER,t.fragment),s=e.createPro {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "ge",
+              "module": "lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX",
+              "filename": "/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "lineno": 1,
+              "colno": 30332,
+              "context_line": "{snip} ull}}function ge(e,t,r){const n=e.createShader(t);return e.shaderSource(n,r),e.compileShader(n),n}function me(e){const t=new Array(e);for(le {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            }
+          ]
+        },
+        "raw_stacktrace": {
+          "frames": [
+            {
+              "function": "n",
+              "filename": "/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "lineno": 25,
+              "colno": 133216,
+              "pre_context": [
+                "/**",
+                "* @vue/runtime-dom v3.5.25",
+                "* (c) 2018-present Yuxi (Evan) You and Vue contributors",
+                "* @license MIT",
+                "**/"
+              ],
+              "context_line": "{snip} .tags,extra:{url:c||i,api_path:Wg(c||i||\"unknown\"),status:s,...jg(t)?{method:zg(l.config),axios_message:l.message}:{}}})}const iv=Yh;let sv= {snip}",
+              "post_context": [
+                "/*!",
+                " * pinia v2.1.7",
+                " * (c) 2023 Eduardo San Martin Morote",
+                " * @license MIT",
+                "{snip} obal:typeof self<\"u\"?self:{};function Hk(t){return t&&t.__esModule&&Object.prototype.hasOwnProperty.call(t,\"default\")?t.default:t}var qk={};"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "_tick",
+              "filename": "/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "lineno": 51,
+              "colno": 147733,
+              "pre_context": [
+                "   *  (c) 2013-2020, James Simpson of GoldFire Studios",
+                "   *  goldfirestudios.com",
+                "   *",
+                "   *  MIT License",
+                "   */"
+              ],
+              "context_line": "{snip} MS,this._tick=t=>{this._requestId=null,this.started&&(this.update(t),this.started&&null===this._requestId&&this._head.next&&(this._requestId {snip}",
+              "post_context": [
+                "/**",
+                " * tiny-lru",
+                " *",
+                " * @copyright 2026 Jason Mulligan <jason.mulligan@avoidwork.com>",
+                " * @license BSD-3-Clause"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "t.update",
+              "filename": "/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "lineno": 51,
+              "colno": 149379,
+              "pre_context": [
+                "   *  (c) 2013-2020, James Simpson of GoldFire Studios",
+                "   *  goldfirestudios.com",
+                "   *",
+                "   *  MIT License",
+                "   */"
+              ],
+              "context_line": "{snip} S*t.targetFPMS;const i=this._head;let s=i.next;for(;s;)s=s.emit(this);i.next||this._cancelIfNeeded()}else this.deltaTime=this.deltaMS=this.e {snip}",
+              "post_context": [
+                "/**",
+                " * tiny-lru",
+                " *",
+                " * @copyright 2026 Jason Mulligan <jason.mulligan@avoidwork.com>",
+                " * @license BSD-3-Clause"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "bF.emit",
+              "filename": "/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "lineno": 51,
+              "colno": 146935,
+              "pre_context": [
+                "   *  (c) 2013-2020, James Simpson of GoldFire Studios",
+                "   *  goldfirestudios.com",
+                "   *",
+                "   *  MIT License",
+                "   */"
+              ],
+              "context_line": "{snip} his._context===e}emit(t){this._fn&&(this._context?this._fn.call(this._context,t):this._fn(t));const e=this.next;return this._once&&this.dest {snip}",
+              "post_context": [
+                "/**",
+                " * tiny-lru",
+                " *",
+                " * @copyright 2026 Jason Mulligan <jason.mulligan@avoidwork.com>",
+                " * @license BSD-3-Clause"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "t.render",
+              "filename": "/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "lineno": 51,
+              "colno": 204305,
+              "pre_context": [
+                "   *  (c) 2013-2020, James Simpson of GoldFire Studios",
+                "   *  goldfirestudios.com",
+                "   *",
+                "   *  MIT License",
+                "   */"
+              ],
+              "context_line": "{snip} s.forEach(t=>{t.init.call(this,e)})}render(){this.renderer.render({container:this.stage})}get canvas(){return this.renderer.canvas}get view( {snip}",
+              "post_context": [
+                "/**",
+                " * tiny-lru",
+                " *",
+                " * @copyright 2026 Jason Mulligan <jason.mulligan@avoidwork.com>",
+                " * @license BSD-3-Clause"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "rt.render",
+              "filename": "/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "lineno": 51,
+              "colno": 197611,
+              "pre_context": [
+                "   *  (c) 2013-2020, James Simpson of GoldFire Studios",
+                "   *  goldfirestudios.com",
+                "   *",
+                "   *  MIT License",
+                "   */"
+              ],
+              "context_line": "{snip} it(n),this.runners.renderStart.emit(n),this.runners.render.emit(n),this.runners.renderEnd.emit(n),this.runners.postrender.emit(n))}resize(t, {snip}",
+              "post_context": [
+                "/**",
+                " * tiny-lru",
+                " *",
+                " * @copyright 2026 Jason Mulligan <jason.mulligan@avoidwork.com>",
+                " * @license BSD-3-Clause"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "tB.emit",
+              "filename": "/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/index-2d69a1a1.js",
+              "lineno": 51,
+              "colno": 195324,
+              "pre_context": [
+                "   *  (c) 2013-2020, James Simpson of GoldFire Studios",
+                "   *  goldfirestudios.com",
+                "   *",
+                "   *  MIT License",
+                "   */"
+              ],
+              "context_line": "{snip} name:l,items:c}=this;for(let u=0,h=c.length;u<h;u++)c[u][l](t,e,n,i,s,r,a,o);return this}add(t){return t[this._name]&&(this.remove(t),this.i {snip}",
+              "post_context": [
+                "/**",
+                " * tiny-lru",
+                " *",
+                " * @copyright 2026 Jason Mulligan <jason.mulligan@avoidwork.com>",
+                " * @license BSD-3-Clause"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "fe.render",
+              "filename": "/lucky-olympus/js/dopalive/RenderTargetSystem-CbduNoIW-ccf5312a.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/RenderTargetSystem-CbduNoIW-ccf5312a.js",
+              "lineno": 1,
+              "colno": 21109,
+              "context_line": "{snip} .worldTransform,worldColor:e.renderGroup.worldColorAlpha}),re(e.renderGroup,i),i.uniformBatch&&i.uniformBatch.renderEnd(),t&&e.renderGroup.l {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "re",
+              "filename": "/lucky-olympus/js/dopalive/RenderTargetSystem-CbduNoIW-ccf5312a.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/RenderTargetSystem-CbduNoIW-ccf5312a.js",
+              "lineno": 1,
+              "colno": 14152,
+              "context_line": "{snip} =0;s<r.instructionSize;s++){const e=n[s];t[e.renderPipeId].execute(e)}}te.extension={type:[e.WebGLPipes,e.WebGPUPipes,e.CanvasPipes],name:\"c {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "e.execute",
+              "filename": "/lucky-olympus/js/dopalive/RenderTargetSystem-CbduNoIW-ccf5312a.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/RenderTargetSystem-CbduNoIW-ccf5312a.js",
+              "lineno": 1,
+              "colno": 7698,
+              "context_line": "{snip} n){const t=e.batcher,r=t.geometry,n=t.shader;this._adaptor.start(this,r,n)}this._adaptor.execute(this,e)}destroy(){this.state=null,this.rend {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "w.start",
+              "filename": "/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "lineno": 1,
+              "colno": 704,
+              "context_line": "{snip} ){const n=e.renderer,s=this._didUploadHash[r.uid];n.shader.bind(r,s),s||(this._didUploadHash[r.uid]=!0),n.shader.updateUniformGroup(n.global {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "Be.bind",
+              "filename": "/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "lineno": 1,
+              "colno": 35143,
+              "context_line": "{snip} ct.create(null),this._activeProgram=null}bind(e,t){if(this._setProgram(e.glProgram),t)return;Ae.textureCount=0,Ae.blockIndex=0;let r=this._s {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "Be._setProgram",
+              "filename": "/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "lineno": 1,
+              "colno": 36194,
+              "context_line": "{snip} ctiveProgram===e)return;this._activeProgram=e;const t=this._getProgramData(e);this._gl.useProgram(t.program)}_getProgramData(e){return this. {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "Be._getProgramData",
+              "filename": "/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "lineno": 1,
+              "colno": 36306,
+              "context_line": "{snip} tProgramData(e){return this._programDataHash[e._key]||this._createProgramData(e)}_createProgramData(e){const t=e._key;return this._programDa {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "Be._createProgramData",
+              "filename": "/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "lineno": 1,
+              "colno": 36397,
+              "context_line": "{snip} gramData(e){const t=e._key;return this._programDataHash[t]=ve(this._gl,e),this._programDataHash[t]}destroy(){for(const e of Object.keys(this {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "ve",
+              "filename": "/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "lineno": 1,
+              "colno": 32727,
+              "context_line": "{snip} x\")});const o=r.join(\"\\n\");a[0]=o}function ve(e,t){const r=ge(e,e.VERTEX_SHADER,t.vertex),n=ge(e,e.FRAGMENT_SHADER,t.fragment),s=e.createPro {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "ge",
+              "filename": "/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "abs_path": "https://m.dopalive.com/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+              "lineno": 1,
+              "colno": 30332,
+              "context_line": "{snip} ull}}function ge(e,t,r){const n=e.createShader(t);return e.shaderSource(n,r),e.compileShader(n),n}function me(e){const t=new Array(e);for(le {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true }
+            }
+          ]
+        },
+        "mechanism": {
+          "type": "auto.browser.browserapierrors.requestAnimationFrame",
+          "handled": false,
+          "data": { "handler": "requestAnimationFrame" }
+        }
+      }
+    ]
+  },
+  "extra": { "arguments": [14364.094] },
+  "fingerprint": [
+    "Unknown Error",
+    "Failed to execute 'shaderSource' on 'WebGL2RenderingContext': parameter 1 is not of type 'WebGLShader'.",
+    "/lucky-olympus/index.html"
+  ],
+  "grouping_config": {
+    "enhancements": "KLUv_SAd6QAAkwORuGFsbC1wbGF0Zm9ybXM6MjAyNi0wMS0yMJA#KLUv_SAd6QAAkwORuGFsbC1wbGF0Zm9ybXM6MjAyNi0wMS0yMJA#KLUv_SAd6QAAkwORuGFsbC1wbGF0Zm9ybXM6MjAyNi0wMS0yMJA",
+    "id": "newstyle:2026-01-20"
+  },
+  "hashes": ["491c9cf2951a4b89cb91e26bc98720fa"],
+  "key_id": "64",
+  "level": "error",
+  "location": "/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+  "logger": "",
+  "metadata": {
+    "filename": "/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js",
+    "function": "ge",
+    "in_app_frame_mix": "in-app-only",
+    "type": "Unknown Error",
+    "value": "Failed to execute 'shaderSource' on 'WebGL2RenderingContext': parameter 1 is not of type 'WebGLShader'."
+  },
+  "nodestore_insert": 1788240435.605921,
+  "received": 1788240431.601145,
+  "request": {
+    "url": "https://m.dopalive.com/lucky-olympus/index.html",
+    "query_string": [
+      ["urlType", "3"],
+      ["lang", "ar"],
+      ["name", "Lucky Olympus"],
+      ["half", "0"],
+      ["source", "2"],
+      ["gameId", "12"],
+      ["isBCGame", "1"],
+      ["luckyDrop", "1"]
+    ],
+    "headers": [
+      [
+        "User-Agent",
+        "Mozilla/5.0 (Linux; Android 7.0; F3212 Build/36.1.A.1.112; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/119.0.6045.193 Mobile Safari/537.36"
+      ]
+    ]
+  },
+  "scraping_attempts": [
+    {
+      "status": "success",
+      "url": "https://m.dopalive.com/lucky-olympus/js/dopalive/RenderTargetSystem-CbduNoIW-ccf5312a.js"
+    },
+    {
+      "status": "success",
+      "url": "https://m.dopalive.com/lucky-olympus/js/dopalive/WebGLRenderer-BaRJvpYX-e2f17745.js"
+    },
+    {
+      "status": "success",
+      "url": "https://m.dopalive.com/lucky-olympus/js/dopalive/index-2d69a1a1.js"
+    }
+  ],
+  "sdk": {
+    "name": "sentry.javascript.vue",
+    "version": "10.37.0",
+    "integrations": [
+      "InboundFilters",
+      "FunctionToString",
+      "ConversationId",
+      "BrowserApiErrors",
+      "Breadcrumbs",
+      "GlobalHandlers",
+      "LinkedErrors",
+      "Dedupe",
+      "HttpContext",
+      "BrowserSession",
+      "Vue",
+      "BrowserTracing",
+      "CaptureConsole",
+      "ExtraErrorData"
+    ],
+    "packages": [{ "name": "npm:@sentry/vue", "version": "10.37.0" }],
+    "settings": { "infer_ip": "auto" }
+  },
+  "symbolicated_in_app": false,
+  "timestamp": 1788240437.785,
+  "title": "Unknown Error: Failed to execute 'shaderSource' on 'WebGL2RenderingContext': parameter 1 is not of type 'WebGLShader'.",
+  "transaction": "/lucky-olympus/index.html",
+  "type": "error",
+  "user": {
+    "id": "571735562719488",
+    "ip_address": "178.52.31.252",
+    "username": "571735562719488",
+    "sentry_user": "id:571735562719488"
+  },
+  "version": "7"
+}

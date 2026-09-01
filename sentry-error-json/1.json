@@ -1,0 +1,787 @@
+{
+  "event_id": "4e246f55e06849a782e8ea78ef6ddd20",
+  "project": 64,
+  "release": "maidocha-mobile-2.45.0",
+  "dist": null,
+  "platform": "javascript",
+  "message": "",
+  "datetime": "2026-08-31T18:45:00.426000+00:00",
+  "tags": [
+    ["_uid", "552123005477120"],
+    ["browser", "Chrome Mobile WebView 151.0.7922"],
+    ["browser.name", "Chrome Mobile WebView"],
+    ["device", "YAL-L21"],
+    ["environment", "Prod"],
+    ["handled", "no"],
+    ["level", "error"],
+    ["mechanism", "auto.function.vue.error_handler"],
+    ["os", "Android 10"],
+    ["os.name", "Android"],
+    ["page_host", "m.soulstarapp.com"],
+    ["release", "maidocha-mobile-2.45.0"],
+    ["user", "id:552123005477120"],
+    ["subDomain", "maidocha-mobile"],
+    ["transaction", "/multiplayer-fishing/index.html"],
+    ["url", "https://m.soulstarapp.com/multiplayer-fishing/index.html"],
+    ["versionFromMicoPage", "not exist"]
+  ],
+  "_dsc": {
+    "environment": "Prod",
+    "public_key": "f90b5e23b7170bcc8163711600c82343",
+    "release": "maidocha-mobile-2.45.0",
+    "replay_id": null,
+    "sample_rand": "0.10839396823961722",
+    "sample_rate": "1.0",
+    "sampled": true,
+    "trace_id": "a71b220722864b0e87d4e9e2d6b23c64",
+    "transaction": null
+  },
+  "_fingerprint_info": {
+    "client_fingerprint": [
+      "Unknown Error",
+      "[Loader.load] Failed to load /multiplayer-fishing/static/dopalive/yu_19-303643a1.json.\nTypeError: Failed to fetch",
+      "/multiplayer-fishing/index.html"
+    ]
+  },
+  "_metrics": { "bytes.ingested.event": 9219, "bytes.stored.event": 23571 },
+  "breadcrumbs": {
+    "values": [
+      {
+        "timestamp": 1788201893.626,
+        "type": "default",
+        "category": "sentry.transaction",
+        "level": "info",
+        "message": "57d8e7e485ce4722a80fb5f4bccb07a2",
+        "event_id": "57d8e7e485ce4722a80fb5f4bccb07a2"
+      },
+      {
+        "timestamp": 1788201894.308,
+        "type": "default",
+        "category": "ui.click",
+        "level": "info",
+        "message": "body > div.scene-loading > div.loading-content > div.loading-banner"
+      },
+      {
+        "timestamp": 1788201894.496,
+        "type": "http",
+        "category": "xhr",
+        "level": "info",
+        "data": {
+          "method": "GET",
+          "status_code": 200,
+          "url": "https://m.soulstarapp.com/multiplayer-fishing/static/dopalive/ball-579a1779.mp3"
+        }
+      },
+      {
+        "timestamp": 1788201896.526,
+        "type": "http",
+        "category": "xhr",
+        "level": "info",
+        "data": {
+          "method": "GET",
+          "status_code": 200,
+          "url": "https://m.soulstarapp.com/multiplayer-fishing/static/dopalive/money-3f84a418.mp3"
+        }
+      },
+      {
+        "timestamp": 1788201896.998,
+        "type": "http",
+        "category": "fetch",
+        "level": "info",
+        "data": {
+          "__span": "9ec405db637f5a07",
+          "method": "GET",
+          "status_code": 200,
+          "url": "https://m.soulstarapp.com/multiplayer-fishing/static/dopalive/yu_18-f3ce5b79.atlas"
+        }
+      },
+      {
+        "timestamp": 1788201897.008,
+        "type": "http",
+        "category": "fetch",
+        "level": "info",
+        "data": {
+          "__span": "a258ab08246bddf2",
+          "method": "GET",
+          "status_code": 200,
+          "url": "https://m.soulstarapp.com/multiplayer-fishing/static/dopalive/yu_16-18c1ab1c.atlas"
+        }
+      },
+      {
+        "timestamp": 1788201897.298,
+        "type": "http",
+        "category": "fetch",
+        "level": "info",
+        "data": {
+          "__span": "bd98a88d3beec686",
+          "method": "GET",
+          "status_code": 200,
+          "url": "https://m.soulstarapp.com/multiplayer-fishing/static/dopalive/shoushang-29ad348d.json"
+        }
+      },
+      {
+        "timestamp": 1788201898.009,
+        "type": "http",
+        "category": "xhr",
+        "level": "info",
+        "data": {
+          "method": "GET",
+          "status_code": 200,
+          "url": "https://m.soulstarapp.com/multiplayer-fishing/static/dopalive/ball-579a1779.mp3"
+        }
+      },
+      {
+        "timestamp": 1788201898.376,
+        "type": "http",
+        "category": "fetch",
+        "level": "info",
+        "data": {
+          "__span": "a22ff9d018984788",
+          "method": "GET",
+          "status_code": 200,
+          "url": "https://m.soulstarapp.com/multiplayer-fishing/static/dopalive/shoushang-b16c4900.atlas"
+        }
+      },
+      {
+        "timestamp": 1788201898.441,
+        "type": "http",
+        "category": "fetch",
+        "level": "info",
+        "data": {
+          "__span": "9cc8084f83cc4fec",
+          "method": "GET",
+          "status_code": 200,
+          "url": "https://m.soulstarapp.com/multiplayer-fishing/static/dopalive/yu_19-303643a1.json"
+        }
+      },
+      {
+        "timestamp": 1788201899.312,
+        "type": "http",
+        "category": "fetch",
+        "level": "info",
+        "data": {
+          "__span": "999fe6d103de073b",
+          "method": "GET",
+          "status_code": 200,
+          "url": "https://m.soulstarapp.com/multiplayer-fishing/static/dopalive/yu_17-74d8a30a.atlas"
+        }
+      },
+      {
+        "timestamp": 1788201900.11,
+        "type": "http",
+        "category": "fetch",
+        "level": "info",
+        "data": {
+          "__span": "ab2da524425e7139",
+          "method": "GET",
+          "status_code": 200,
+          "url": "https://m.soulstarapp.com/multiplayer-fishing/static/dopalive/yu_20-fa7b8eb4.atlas"
+        }
+      },
+      {
+        "timestamp": 1788201900.413,
+        "type": "http",
+        "category": "fetch",
+        "level": "error",
+        "data": {
+          "__span": "9647ef30414ed75c",
+          "method": "GET",
+          "url": "https://m.soulstarapp.com/multiplayer-fishing/static/dopalive/yu_20-4eb0d985.json"
+        }
+      },
+      {
+        "timestamp": 1788201900.417,
+        "type": "http",
+        "category": "fetch",
+        "level": "error",
+        "data": {
+          "__span": "a93d713bccd6bc38",
+          "method": "GET",
+          "url": "https://m.soulstarapp.com/multiplayer-fishing/static/dopalive/yu_17-10c3a878.json"
+        }
+      },
+      {
+        "timestamp": 1788201900.418,
+        "type": "http",
+        "category": "fetch",
+        "level": "error",
+        "data": {
+          "__span": "89c9eb487c4e860f",
+          "method": "GET",
+          "url": "https://m.soulstarapp.com/multiplayer-fishing/static/dopalive/yu_26-7ab4039e.json"
+        }
+      },
+      {
+        "timestamp": 1788201900.42,
+        "type": "http",
+        "category": "fetch",
+        "level": "error",
+        "data": {
+          "__span": "887955b6ee1d323f",
+          "method": "GET",
+          "url": "https://m.soulstarapp.com/multiplayer-fishing/static/dopalive/yu_26-6cb738d9.atlas"
+        }
+      },
+      {
+        "timestamp": 1788201900.42,
+        "type": "http",
+        "category": "fetch",
+        "level": "error",
+        "data": {
+          "__span": "ad881c7d75ba5dab",
+          "method": "GET",
+          "url": "https://m.soulstarapp.com/multiplayer-fishing/static/dopalive/yu_18-8463c401.json"
+        }
+      },
+      {
+        "timestamp": 1788201900.421,
+        "type": "http",
+        "category": "fetch",
+        "level": "error",
+        "data": {
+          "__span": "8615a82ee066d0f4",
+          "method": "GET",
+          "url": "https://m.soulstarapp.com/multiplayer-fishing/static/dopalive/yu_19-2693a6eb.atlas"
+        }
+      },
+      {
+        "timestamp": 1788201900.421,
+        "type": "http",
+        "category": "fetch",
+        "level": "error",
+        "data": {
+          "__span": "81d82a4e4f520645",
+          "method": "GET",
+          "url": "https://m.soulstarapp.com/multiplayer-fishing/static/dopalive/yu_16-ffd5d48f.json"
+        }
+      },
+      {
+        "timestamp": 1788201900.421,
+        "type": "http",
+        "category": "fetch",
+        "level": "error",
+        "data": {
+          "__span": "86b64aa47fc0acda",
+          "method": "GET",
+          "url": "https://m.soulstarapp.com/multiplayer-fishing/static/dopalive/yu_15-89ade852.atlas"
+        }
+      },
+      {
+        "timestamp": 1788201900.421,
+        "type": "http",
+        "category": "fetch",
+        "level": "error",
+        "data": {
+          "__span": "bffbd6fce6cfb55e",
+          "method": "GET",
+          "url": "https://m.soulstarapp.com/multiplayer-fishing/static/dopalive/yu_15-f20445da.json"
+        }
+      },
+      {
+        "timestamp": 1788201900.423,
+        "type": "http",
+        "category": "xhr",
+        "level": "info",
+        "data": {
+          "method": "GET",
+          "status_code": 0,
+          "url": "https://m.soulstarapp.com/multiplayer-fishing/static/dopalive/money-3f84a418.mp3"
+        }
+      },
+      {
+        "timestamp": 1788201900.423,
+        "type": "http",
+        "category": "xhr",
+        "level": "info",
+        "data": {
+          "method": "GET",
+          "status_code": 0,
+          "url": "https://m.soulstarapp.com/multiplayer-fishing/static/dopalive/bg-5fd2bfb6.mp3"
+        }
+      },
+      {
+        "timestamp": 1788201900.423,
+        "type": "http",
+        "category": "xhr",
+        "level": "info",
+        "data": {
+          "method": "GET",
+          "status_code": 0,
+          "url": "https://m.soulstarapp.com/multiplayer-fishing/static/dopalive/bg-5fd2bfb6.mp3"
+        }
+      },
+      {
+        "timestamp": 1788201900.423,
+        "type": "http",
+        "category": "xhr",
+        "level": "info",
+        "data": {
+          "method": "POST",
+          "status_code": 0,
+          "url": "https://api.soulstarapp.com/v1/game/exit"
+        }
+      }
+    ]
+  },
+  "contexts": {
+    "Error": { "type": "Error" },
+    "appInfo": {
+      "currentUrl": "https://m.soulstarapp.com/multiplayer-fishing/index.html?urlType=3&lang=ar&name=Fishing&half=0&source=3&gameId=4&isBCGame=1&luckyDrop=1&reload_time=1788201889421",
+      "lang": "ar",
+      "locale": "ar_EG",
+      "roomId": "",
+      "timezone": "2",
+      "type": "appInfo",
+      "version": "2.45.0"
+    },
+    "browser": {
+      "browser": "Chrome Mobile WebView 151.0.7922",
+      "name": "Chrome Mobile WebView",
+      "version": "151.0.7922",
+      "type": "browser"
+    },
+    "device": {
+      "name": "HUAWEI nova 5T",
+      "model": "YAL-L21",
+      "cookieEnabled": true,
+      "did": "412c0f453ab2c45f",
+      "os": "2",
+      "os-version": "29_android-10-YAL-L21",
+      "platform": "Linux aarch64",
+      "userAgent": "Mozilla/5.0 (Linux; Android 10; YAL-L21 Build/HUAWEIYAL-L61; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/151.0.7922.199 Mobile Safari/537.36",
+      "type": "device"
+    },
+    "network": {
+      "downlink": 9.8,
+      "effectiveType": "4g",
+      "online": true,
+      "rtt": 0,
+      "saveData": false,
+      "type": "network",
+      "userAgent": "Mozilla/5.0 (Linux; Android 10; YAL-L21 Build/HUAWEIYAL-L61; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/151.0.7922.199 Mobile Safari/537.36"
+    },
+    "os": {
+      "os": "Android 10",
+      "name": "Android",
+      "version": "10",
+      "type": "os"
+    },
+    "trace": {
+      "trace_id": "a71b220722864b0e87d4e9e2d6b23c64",
+      "span_id": "9524588acaf23198",
+      "status": "unknown",
+      "client_sample_rate": 1.0,
+      "sampled": true,
+      "type": "trace"
+    },
+    "vue": {
+      "componentName": "<SceneLoading>",
+      "lifecycleHook": "https://vuejs.org/error-reference/#runtime-3",
+      "propsData": {},
+      "trace": "\n\n(found in <SceneLoading>)",
+      "type": "vue"
+    }
+  },
+  "culprit": "/multiplayer-fishing/index.html",
+  "environment": "Prod",
+  "exception": {
+    "values": [
+      {
+        "type": "Unknown Error",
+        "value": "[Loader.load] Failed to load /multiplayer-fishing/static/dopalive/yu_19-303643a1.json.\nTypeError: Failed to fetch",
+        "stacktrace": {
+          "frames": [
+            {
+              "module": "multiplayer-fishing/js/dopalive/index",
+              "filename": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "abs_path": "https://m.soulstarapp.com/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "lineno": 76,
+              "colno": 68480,
+              "pre_context": [
+                " * Compiled Mon, 27 May 2024 12:15:21 UTC",
+                " *",
+                " * @barvynkoa/particle-emitter is licensed under the MIT License.",
+                " * http://www.opensource.org/licenses/mit-license",
+                " */"
+              ],
+              "context_line": "{snip} =wt(0),i=as(()=>(250*n.value-20)*Z_+\"px\"),r=e=>{n.value=e};return Bi(()=>t.isInit,async e=>{if(e){VD.instance.load(),WD.instance.load(),GD.i {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "async kD",
+              "module": "multiplayer-fishing/js/dopalive/index",
+              "filename": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "abs_path": "https://m.soulstarapp.com/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "lineno": 47,
+              "colno": 275237,
+              "pre_context": [
+                "/*!",
+                "  * pinia v2.0.36",
+                "  * (c) 2023 Eduardo San Martin Morote",
+                "  * @license MIT",
+                "  */"
+              ],
+              "context_line": "{snip} 36f6f2a.js\"],import.meta.url),kD=async({resources:e,onProgress:t})=>{await vD.load(e,t);for(const n of e)if(n.isSheet){const e=new fL(vD.get {snip}",
+              "post_context": [
+                "/*!",
+                " *  howler.js v2.2.4",
+                " *  howlerjs.com",
+                " *",
+                " *  (c) 2013-2020, James Simpson of GoldFire Studios"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "async Object.load",
+              "module": "multiplayer-fishing/js/dopalive/index",
+              "filename": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "abs_path": "https://m.soulstarapp.com/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "lineno": 47,
+              "colno": 261175,
+              "pre_context": [
+                "/*!",
+                "  * pinia v2.0.36",
+                "  * (c) 2023 Eduardo San Martin Morote",
+                "  * @license MIT",
+                "  */"
+              ],
+              "context_line": "{snip} asKey(e)||this.add({alias:e,src:e}),e}),r=this.resolver.resolve(i),s=await this._mapLoadToResolve(r,t);return n?s[i[0]]:s}addBundle(e,t){thi {snip}",
+              "post_context": [
+                "/*!",
+                " *  howler.js v2.2.4",
+                " *  howlerjs.com",
+                " *",
+                " *  (c) 2013-2020, James Simpson of GoldFire Studios"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "async Object._mapLoadToResolve",
+              "module": "multiplayer-fishing/js/dopalive/index",
+              "filename": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "abs_path": "https://m.soulstarapp.com/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "lineno": 47,
+              "colno": 262310,
+              "pre_context": [
+                "/*!",
+                "  * pinia v2.0.36",
+                "  * (c) 2023 Eduardo San Martin Morote",
+                "  * @license MIT",
+                "  */"
+              ],
+              "context_line": "{snip} .new Set(Object.values(e))];this._backgroundLoader.active=!1;const i=await this.loader.load(n,t);this._backgroundLoader.active=!0;const r={} {snip}",
+              "post_context": [
+                "/*!",
+                " *  howler.js v2.2.4",
+                " *  howlerjs.com",
+                " *",
+                " *  (c) 2013-2020, James Simpson of GoldFire Studios"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "async $B.load",
+              "module": "multiplayer-fishing/js/dopalive/index",
+              "filename": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "abs_path": "https://m.soulstarapp.com/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "lineno": 47,
+              "colno": 249211,
+              "pre_context": [
+                "/*!",
+                "  * pinia v2.0.36",
+                "  * (c) 2023 Eduardo San Martin Morote",
+                "  * @license MIT",
+                "  */"
+              ],
+              "context_line": "{snip} rc],new Error(`[Loader.load] Failed to load ${r}.\\n${lh}`)}});return await Promise.all(a),r?i[s[0].src]:i}async unload(e){const t=eL(e,e=>({ {snip}",
+              "post_context": [
+                "/*!",
+                " *  howler.js v2.2.4",
+                " *  howlerjs.com",
+                " *",
+                " *  (c) 2013-2020, James Simpson of GoldFire Studios"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "async Promise.all",
+              "filename": "index 9",
+              "abs_path": "index 9",
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "module": "multiplayer-fishing/js/dopalive/index",
+              "filename": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "abs_path": "https://m.soulstarapp.com/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "lineno": 47,
+              "colno": 249146,
+              "pre_context": [
+                "/*!",
+                "  * pinia v2.0.36",
+                "  * (c) 2023 Eduardo San Martin Morote",
+                "  * @license MIT",
+                "  */"
+              ],
+              "context_line": "{snip} t(++n/o)}catch(lh){throw delete this.promiseCache[r],delete i[e.src],new Error(`[Loader.load] Failed to load ${r}.\\n${lh}`)}});return await  {snip}",
+              "post_context": [
+                "/*!",
+                " *  howler.js v2.2.4",
+                " *  howlerjs.com",
+                " *",
+                " *  (c) 2013-2020, James Simpson of GoldFire Studios"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            }
+          ]
+        },
+        "raw_stacktrace": {
+          "frames": [
+            {
+              "filename": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "abs_path": "https://m.soulstarapp.com/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "lineno": 76,
+              "colno": 68480,
+              "pre_context": [
+                " * Compiled Mon, 27 May 2024 12:15:21 UTC",
+                " *",
+                " * @barvynkoa/particle-emitter is licensed under the MIT License.",
+                " * http://www.opensource.org/licenses/mit-license",
+                " */"
+              ],
+              "context_line": "{snip} =wt(0),i=as(()=>(250*n.value-20)*Z_+\"px\"),r=e=>{n.value=e};return Bi(()=>t.isInit,async e=>{if(e){VD.instance.load(),WD.instance.load(),GD.i {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "async kD",
+              "filename": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "abs_path": "https://m.soulstarapp.com/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "lineno": 47,
+              "colno": 275237,
+              "pre_context": [
+                "/*!",
+                "  * pinia v2.0.36",
+                "  * (c) 2023 Eduardo San Martin Morote",
+                "  * @license MIT",
+                "  */"
+              ],
+              "context_line": "{snip} 36f6f2a.js\"],import.meta.url),kD=async({resources:e,onProgress:t})=>{await vD.load(e,t);for(const n of e)if(n.isSheet){const e=new fL(vD.get {snip}",
+              "post_context": [
+                "/*!",
+                " *  howler.js v2.2.4",
+                " *  howlerjs.com",
+                " *",
+                " *  (c) 2013-2020, James Simpson of GoldFire Studios"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "async Object.load",
+              "filename": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "abs_path": "https://m.soulstarapp.com/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "lineno": 47,
+              "colno": 261175,
+              "pre_context": [
+                "/*!",
+                "  * pinia v2.0.36",
+                "  * (c) 2023 Eduardo San Martin Morote",
+                "  * @license MIT",
+                "  */"
+              ],
+              "context_line": "{snip} asKey(e)||this.add({alias:e,src:e}),e}),r=this.resolver.resolve(i),s=await this._mapLoadToResolve(r,t);return n?s[i[0]]:s}addBundle(e,t){thi {snip}",
+              "post_context": [
+                "/*!",
+                " *  howler.js v2.2.4",
+                " *  howlerjs.com",
+                " *",
+                " *  (c) 2013-2020, James Simpson of GoldFire Studios"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "async Object._mapLoadToResolve",
+              "filename": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "abs_path": "https://m.soulstarapp.com/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "lineno": 47,
+              "colno": 262310,
+              "pre_context": [
+                "/*!",
+                "  * pinia v2.0.36",
+                "  * (c) 2023 Eduardo San Martin Morote",
+                "  * @license MIT",
+                "  */"
+              ],
+              "context_line": "{snip} .new Set(Object.values(e))];this._backgroundLoader.active=!1;const i=await this.loader.load(n,t);this._backgroundLoader.active=!0;const r={} {snip}",
+              "post_context": [
+                "/*!",
+                " *  howler.js v2.2.4",
+                " *  howlerjs.com",
+                " *",
+                " *  (c) 2013-2020, James Simpson of GoldFire Studios"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "async $B.load",
+              "filename": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "abs_path": "https://m.soulstarapp.com/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "lineno": 47,
+              "colno": 249211,
+              "pre_context": [
+                "/*!",
+                "  * pinia v2.0.36",
+                "  * (c) 2023 Eduardo San Martin Morote",
+                "  * @license MIT",
+                "  */"
+              ],
+              "context_line": "{snip} rc],new Error(`[Loader.load] Failed to load ${r}.\\n${lh}`)}});return await Promise.all(a),r?i[s[0].src]:i}async unload(e){const t=eL(e,e=>({ {snip}",
+              "post_context": [
+                "/*!",
+                " *  howler.js v2.2.4",
+                " *  howlerjs.com",
+                " *",
+                " *  (c) 2013-2020, James Simpson of GoldFire Studios"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "async Promise.all",
+              "filename": "index 9",
+              "abs_path": "index 9",
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "filename": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "abs_path": "https://m.soulstarapp.com/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "lineno": 47,
+              "colno": 249146,
+              "pre_context": [
+                "/*!",
+                "  * pinia v2.0.36",
+                "  * (c) 2023 Eduardo San Martin Morote",
+                "  * @license MIT",
+                "  */"
+              ],
+              "context_line": "{snip} t(++n/o)}catch(lh){throw delete this.promiseCache[r],delete i[e.src],new Error(`[Loader.load] Failed to load ${r}.\\n${lh}`)}});return await  {snip}",
+              "post_context": [
+                "/*!",
+                " *  howler.js v2.2.4",
+                " *  howlerjs.com",
+                " *",
+                " *  (c) 2013-2020, James Simpson of GoldFire Studios"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true }
+            }
+          ]
+        },
+        "mechanism": {
+          "type": "auto.function.vue.error_handler",
+          "handled": false
+        }
+      }
+    ]
+  },
+  "extra": {
+    "original_exception_value": "[Loader.load] Failed to load https://m.soulstarapp.com/multiplayer-fishing/static/dopalive/yu_19-303643a1.json.\nTypeError: Failed to fetch"
+  },
+  "fingerprint": [
+    "Unknown Error",
+    "[Loader.load] Failed to load /multiplayer-fishing/static/dopalive/yu_19-303643a1.json.\nTypeError: Failed to fetch",
+    "/multiplayer-fishing/index.html"
+  ],
+  "grouping_config": {
+    "enhancements": "KLUv_SAd6QAAkwORuGFsbC1wbGF0Zm9ybXM6MjAyNi0wMS0yMJA#KLUv_SAd6QAAkwORuGFsbC1wbGF0Zm9ybXM6MjAyNi0wMS0yMJA#KLUv_SAd6QAAkwORuGFsbC1wbGF0Zm9ybXM6MjAyNi0wMS0yMJA",
+    "id": "newstyle:2026-01-20"
+  },
+  "hashes": ["e8183387b4a7af90c80bd447b4f0ba55"],
+  "key_id": "64",
+  "level": "error",
+  "location": "index 9",
+  "logger": "",
+  "metadata": {
+    "filename": "index 9",
+    "function": "async Promise.all",
+    "in_app_frame_mix": "in-app-only",
+    "type": "Unknown Error",
+    "value": "[Loader.load] Failed to load /multiplayer-fishing/static/dopalive/yu_19-303643a1.json.\nTypeError: Failed to fetch"
+  },
+  "nodestore_insert": 1788201906.342348,
+  "received": 1788201902.156361,
+  "request": {
+    "url": "https://m.soulstarapp.com/multiplayer-fishing/index.html",
+    "query_string": [
+      ["urlType", "3"],
+      ["lang", "ar"],
+      ["name", "Fishing"],
+      ["half", "0"],
+      ["source", "3"],
+      ["gameId", "4"],
+      ["isBCGame", "1"],
+      ["luckyDrop", "1"],
+      ["reload_time", "1788201889421"]
+    ],
+    "headers": [
+      [
+        "Referer",
+        "https://m.soulstarapp.com/multiplayer-fishing/index.html?urlType=3&lang=ar&name=Fishing&half=0&source=3&gameId=4&isBCGame=1&luckyDrop=1"
+      ],
+      [
+        "User-Agent",
+        "Mozilla/5.0 (Linux; Android 10; YAL-L21 Build/HUAWEIYAL-L61; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/151.0.7922.199 Mobile Safari/537.36"
+      ]
+    ]
+  },
+  "scraping_attempts": [
+    {
+      "status": "success",
+      "url": "https://m.soulstarapp.com/multiplayer-fishing/js/dopalive/index-ebe06498.js"
+    }
+  ],
+  "sdk": {
+    "name": "sentry.javascript.vue",
+    "version": "10.37.0",
+    "integrations": [
+      "InboundFilters",
+      "FunctionToString",
+      "ConversationId",
+      "BrowserApiErrors",
+      "Breadcrumbs",
+      "GlobalHandlers",
+      "LinkedErrors",
+      "Dedupe",
+      "HttpContext",
+      "BrowserSession",
+      "Vue",
+      "BrowserTracing",
+      "CaptureConsole",
+      "ExtraErrorData"
+    ],
+    "packages": [{ "name": "npm:@sentry/vue", "version": "10.37.0" }],
+    "settings": { "infer_ip": "auto" }
+  },
+  "symbolicated_in_app": false,
+  "timestamp": 1788201900.426,
+  "title": "Unknown Error: [Loader.load] Failed to load /multiplayer-fishing/static/dopalive/yu_19-303643a1.json.",
+  "transaction": "/multiplayer-fishing/index.html",
+  "type": "error",
+  "user": {
+    "id": "552123005477120",
+    "ip_address": "196.219.205.226",
+    "username": "552123005477120",
+    "sentry_user": "id:552123005477120"
+  },
+  "version": "7"
+}

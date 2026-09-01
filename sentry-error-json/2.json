@@ -1,0 +1,765 @@
+{
+  "event_id": "800b2cef6eb4439d90735b857e2cc78b",
+  "project": 64,
+  "release": "maidocha-mobile-2.45.0",
+  "dist": null,
+  "platform": "javascript",
+  "message": "",
+  "datetime": "2026-09-01T05:47:59.981000+00:00",
+  "tags": [
+    ["_uid", "571197613584896"],
+    ["browser", "Chrome Mobile WebView 148.0.7778"],
+    ["browser.name", "Chrome Mobile WebView"],
+    ["device", "TECNO KL7"],
+    ["environment", "Prod"],
+    ["handled", "no"],
+    ["level", "error"],
+    ["mechanism", "auto.browser.browserapierrors.requestAnimationFrame"],
+    ["os", "Android 14"],
+    ["os.name", "Android"],
+    ["page_host", "m.dopalive.com"],
+    ["release", "maidocha-mobile-2.45.0"],
+    ["user", "id:571197613584896"],
+    ["subDomain", "maidocha-mobile"],
+    ["transaction", "/multiplayer-fishing/index.html"],
+    ["url", "https://m.dopalive.com/multiplayer-fishing/index.html"],
+    ["versionFromMicoPage", "not exist"]
+  ],
+  "_dsc": {
+    "environment": "Prod",
+    "public_key": "f90b5e23b7170bcc8163711600c82343",
+    "release": "maidocha-mobile-2.45.0",
+    "replay_id": null,
+    "sample_rand": "0.1145663201565924",
+    "sample_rate": "1.0",
+    "sampled": true,
+    "trace_id": "a8537782b5084982a788adb37469c700",
+    "transaction": null
+  },
+  "_fingerprint_info": {
+    "client_fingerprint": [
+      "Unknown Error",
+      "Cannot set properties of undefined (setting 'visible')",
+      "/multiplayer-fishing/index.html"
+    ]
+  },
+  "_metrics": { "bytes.ingested.event": 8918, "bytes.stored.event": 24693 },
+  "breadcrumbs": {
+    "values": [
+      {
+        "timestamp": 1788241616.894,
+        "type": "default",
+        "category": "sentry.transaction",
+        "level": "info",
+        "message": "e7f91c85d69b4b049918eaf3741bba43",
+        "event_id": "e7f91c85d69b4b049918eaf3741bba43"
+      },
+      {
+        "timestamp": 1788241636.865,
+        "type": "default",
+        "category": "sentry.event",
+        "level": "error",
+        "message": "Unknown Error: Cannot read properties of null (reading 'findRegion')",
+        "event_id": "673d2e6c02764985a3b5dd440e300888"
+      },
+      {
+        "timestamp": 1788241638.651,
+        "type": "default",
+        "category": "ui.click",
+        "level": "info",
+        "message": "div.dialog-recharge > div.content > div.btn-group > div.btn-cancel"
+      },
+      {
+        "timestamp": 1788241640.471,
+        "type": "default",
+        "category": "ui.click",
+        "level": "info",
+        "message": "body > div.dialogSt"
+      },
+      {
+        "timestamp": 1788241641.188,
+        "type": "default",
+        "category": "ui.click",
+        "level": "info",
+        "message": "div.dialog-recharge > div.content > div.btn-group > div.btn-cancel"
+      },
+      {
+        "timestamp": 1788241641.831,
+        "type": "default",
+        "category": "ui.click",
+        "level": "info",
+        "message": "body > div.dialogSt"
+      },
+      {
+        "timestamp": 1788241642.952,
+        "type": "default",
+        "category": "ui.click",
+        "level": "info",
+        "message": "div.dialog-recharge > div.content > div.btn-group > div.btn-cancel"
+      },
+      {
+        "timestamp": 1788241644.74,
+        "type": "http",
+        "category": "xhr",
+        "level": "info",
+        "data": {
+          "method": "POST",
+          "status_code": 200,
+          "url": "https://api.dopalive.com/v1/game/heartbeat"
+        }
+      },
+      {
+        "timestamp": 1788241645.976,
+        "type": "default",
+        "category": "ui.click",
+        "level": "info",
+        "message": "div.dialog-recharge > div.content > div.btn-group > div.btn-cancel"
+      },
+      {
+        "timestamp": 1788241647.557,
+        "type": "default",
+        "category": "ui.click",
+        "level": "info",
+        "message": "body > div.scene-game > div.view-canvas > div#canvas-node > canvas"
+      },
+      {
+        "timestamp": 1788241651.714,
+        "type": "default",
+        "category": "ui.click",
+        "level": "info",
+        "message": "body > div.scene-game > div.view-canvas > div#canvas-node > canvas"
+      },
+      {
+        "timestamp": 1788241654.489,
+        "type": "default",
+        "category": "ui.click",
+        "level": "info",
+        "message": "body > div.scene-game > div.view-canvas > div#canvas-node > canvas"
+      },
+      {
+        "timestamp": 1788241656.709,
+        "type": "default",
+        "category": "sentry.event",
+        "level": "error",
+        "message": "Unknown Error: Cannot set properties of undefined (setting 'visible')",
+        "event_id": "03b4952f318b48eca82364784b847f26"
+      },
+      {
+        "timestamp": 1788241660.411,
+        "type": "default",
+        "category": "ui.click",
+        "level": "info",
+        "message": "body > div.scene-game > div.view-canvas > div#canvas-node > canvas"
+      },
+      {
+        "timestamp": 1788241662.69,
+        "type": "default",
+        "category": "ui.click",
+        "level": "info",
+        "message": "body > div.scene-game > div.view-canvas > div#canvas-node > canvas"
+      },
+      {
+        "timestamp": 1788241663.009,
+        "type": "default",
+        "category": "sentry.event",
+        "level": "error",
+        "message": "Unknown Error: Cannot read properties of null (reading 'findRegion')",
+        "event_id": "74cd8cde391844cb9ea7293f199cdb49"
+      },
+      {
+        "timestamp": 1788241663.768,
+        "type": "default",
+        "category": "sentry.event",
+        "level": "error",
+        "message": "Unknown Error: Cannot set properties of undefined (setting 'visible')",
+        "event_id": "459089180a1646b186068c5c337fc737"
+      },
+      {
+        "timestamp": 1788241665.081,
+        "type": "default",
+        "category": "ui.click",
+        "level": "info",
+        "message": "body > div.scene-game > div.view-canvas > div#canvas-node > canvas"
+      },
+      {
+        "timestamp": 1788241666.232,
+        "type": "default",
+        "category": "sentry.event",
+        "level": "error",
+        "message": "Unknown Error: Cannot set properties of undefined (setting 'visible')",
+        "event_id": "2e1df94248834e9e8fdd325e6e6d53b3"
+      },
+      {
+        "timestamp": 1788241667.028,
+        "type": "default",
+        "category": "sentry.event",
+        "level": "error",
+        "message": "Unknown Error: Cannot set properties of undefined (setting 'visible')",
+        "event_id": "3f7d6ea163124134a9b1f5ab660c2071"
+      },
+      {
+        "timestamp": 1788241668.23,
+        "type": "default",
+        "category": "sentry.event",
+        "level": "error",
+        "message": "Unknown Error: Cannot set properties of undefined (setting 'visible')",
+        "event_id": "cbb9a633edd04fd1b90c228ea2837c93"
+      },
+      {
+        "timestamp": 1788241669.518,
+        "type": "default",
+        "category": "sentry.event",
+        "level": "error",
+        "message": "Unknown Error: Cannot set properties of undefined (setting 'visible')",
+        "event_id": "424348045ea94a378cc007362f92dbfd"
+      },
+      {
+        "timestamp": 1788241669.54,
+        "type": "default",
+        "category": "ui.click",
+        "level": "info",
+        "message": "body > div.scene-game > div.view-canvas > div#canvas-node > canvas"
+      },
+      {
+        "timestamp": 1788241670.576,
+        "type": "default",
+        "category": "sentry.event",
+        "level": "error",
+        "message": "Unknown Error: Cannot set properties of undefined (setting 'visible')",
+        "event_id": "dc567f96e6b5416f9fadd9c42fc15e9f"
+      },
+      {
+        "timestamp": 1788241671.736,
+        "type": "default",
+        "category": "sentry.event",
+        "level": "error",
+        "message": "Unknown Error: Cannot set properties of undefined (setting 'visible')",
+        "event_id": "bebda768ad43473fa9d342258ffcf7ca"
+      },
+      {
+        "timestamp": 1788241672.393,
+        "type": "default",
+        "category": "ui.click",
+        "level": "info",
+        "message": "body > div.scene-game > div.view-canvas > div#canvas-node > canvas"
+      },
+      {
+        "timestamp": 1788241672.821,
+        "type": "default",
+        "category": "sentry.event",
+        "level": "error",
+        "message": "Unknown Error: Cannot set properties of undefined (setting 'visible')",
+        "event_id": "9c52af057ea243f4870dc68aa10ec63a"
+      },
+      {
+        "timestamp": 1788241673.696,
+        "type": "http",
+        "category": "xhr",
+        "level": "info",
+        "data": {
+          "method": "POST",
+          "status_code": 200,
+          "url": "https://api.dopalive.com/v1/game/heartbeat"
+        }
+      },
+      {
+        "timestamp": 1788241674.022,
+        "type": "default",
+        "category": "sentry.event",
+        "level": "error",
+        "message": "Unknown Error: Cannot set properties of undefined (setting 'visible')",
+        "event_id": "00f98ab045d34e68a127af10c884378a"
+      },
+      {
+        "timestamp": 1788241674.656,
+        "type": "default",
+        "category": "sentry.event",
+        "level": "error",
+        "message": "Unknown Error: Cannot set properties of undefined (setting 'visible')",
+        "event_id": "2450dd933ac44478b01ce83222991b2f"
+      },
+      {
+        "timestamp": 1788241675.428,
+        "type": "default",
+        "category": "sentry.event",
+        "level": "error",
+        "message": "Unknown Error: Cannot set properties of undefined (setting 'visible')",
+        "event_id": "5c1de819efb2472e9a35d4a1987c1d95"
+      },
+      {
+        "timestamp": 1788241675.668,
+        "type": "default",
+        "category": "ui.click",
+        "level": "info",
+        "message": "body > div.scene-game > div.view-canvas > div#canvas-node > canvas"
+      },
+      {
+        "timestamp": 1788241676.459,
+        "type": "default",
+        "category": "sentry.event",
+        "level": "error",
+        "message": "Unknown Error: Cannot set properties of undefined (setting 'visible')",
+        "event_id": "44dbe952b54b459b84a0cf31c0104a8f"
+      }
+    ]
+  },
+  "contexts": {
+    "TypeError": { "type": "TypeError" },
+    "appInfo": {
+      "currentUrl": "https://m.dopalive.com/multiplayer-fishing/index.html?urlType=3&lang=ar&name=Fishing&half=1&source=1&gameId=4&isBCGame=1&roomId=97431040&luckyDrop=1",
+      "lang": "ar",
+      "locale": "ar_EG",
+      "roomId": "97431040",
+      "timezone": "3",
+      "type": "appInfo",
+      "version": "2.42.2"
+    },
+    "browser": {
+      "browser": "Chrome Mobile WebView 148.0.7778",
+      "name": "Chrome Mobile WebView",
+      "version": "148.0.7778",
+      "type": "browser"
+    },
+    "device": {
+      "model": "TECNO KL7",
+      "cookieEnabled": true,
+      "did": "5ad4cf4cbf5a3979",
+      "os": "2",
+      "os-version": "34_android-14-TECNO+KL7",
+      "platform": "Linux aarch64",
+      "userAgent": "Mozilla/5.0 (Linux; Android 14; TECNO KL7 Build/UP1A.231005.007; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/148.0.7778.178 Mobile Safari/537.36",
+      "type": "device"
+    },
+    "network": {
+      "downlink": 9.4,
+      "effectiveType": "4g",
+      "online": true,
+      "rtt": 0,
+      "saveData": false,
+      "type": "network",
+      "userAgent": "Mozilla/5.0 (Linux; Android 14; TECNO KL7 Build/UP1A.231005.007; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/148.0.7778.178 Mobile Safari/537.36"
+    },
+    "os": {
+      "os": "Android 14",
+      "name": "Android",
+      "version": "14",
+      "type": "os"
+    },
+    "trace": {
+      "trace_id": "a8537782b5084982a788adb37469c700",
+      "span_id": "887071afd7aadca8",
+      "status": "unknown",
+      "client_sample_rate": 1.0,
+      "sampled": false,
+      "type": "trace"
+    }
+  },
+  "culprit": "/multiplayer-fishing/index.html",
+  "environment": "Prod",
+  "exception": {
+    "values": [
+      {
+        "type": "Unknown Error",
+        "value": "Cannot set properties of undefined (setting 'visible')",
+        "stacktrace": {
+          "frames": [
+            {
+              "function": "n",
+              "module": "multiplayer-fishing/js/dopalive/index",
+              "filename": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "abs_path": "https://m.dopalive.com/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "lineno": 41,
+              "colno": 237683,
+              "pre_context": [
+                "{snip}  \"),Fa(l,e),l.deindent(o),l.push(\"}\"),delete e.helpers;const{code:c,map:u}=l.context();return{ast:e,code:c,map:u?u.toJSON():void 0}})(o,n))}",
+                "/*!",
+                "  * core-base v9.14.5",
+                "  * (c) 2025 kazuya kawaguchi",
+                "  * Released under the MIT License."
+              ],
+              "context_line": "{snip} P_CLIENT,http_status:String(e)}}:{shouldReport:!1}}(r,i):function(e,t){const n=null==e?void 0:e.config,i=Ik(Sk(n)||t||\"unknown\"),r=Ak(n);ret {snip}",
+              "post_context": [
+                "/*!",
+                "  * pinia v2.0.36",
+                "  * (c) 2023 Eduardo San Martin Morote",
+                "  * @license MIT",
+                "  */"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "_tick",
+              "module": "multiplayer-fishing/js/dopalive/index",
+              "filename": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "abs_path": "https://m.dopalive.com/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "lineno": 47,
+              "colno": 96234,
+              "pre_context": [
+                "/*!",
+                "  * pinia v2.0.36",
+                "  * (c) 2023 Eduardo San Martin Morote",
+                "  * @license MIT",
+                "  */"
+              ],
+              "context_line": "{snip} targetFPMS,this._tick=e=>{this._requestId=null,this.started&&(this.update(e),this.started&&null===this._requestId&&this._head.next&&(this._r {snip}",
+              "post_context": [
+                "/*!",
+                " *  howler.js v2.2.4",
+                " *  howlerjs.com",
+                " *",
+                " *  (c) 2013-2020, James Simpson of GoldFire Studios"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "e.update",
+              "module": "multiplayer-fishing/js/dopalive/index",
+              "filename": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "abs_path": "https://m.dopalive.com/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "lineno": 47,
+              "colno": 97880,
+              "pre_context": [
+                "/*!",
+                "  * pinia v2.0.36",
+                "  * (c) 2023 Eduardo San Martin Morote",
+                "  * @license MIT",
+                "  */"
+              ],
+              "context_line": "{snip} s.deltaMS*e.targetFPMS;const i=this._head;let r=i.next;for(;r;)r=r.emit(this);i.next||this._cancelIfNeeded()}else this.deltaTime=this.deltaM {snip}",
+              "post_context": [
+                "/*!",
+                " *  howler.js v2.2.4",
+                " *  howlerjs.com",
+                " *",
+                " *  (c) 2013-2020, James Simpson of GoldFire Studios"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "YM.emit",
+              "module": "multiplayer-fishing/js/dopalive/index",
+              "filename": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "abs_path": "https://m.dopalive.com/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "lineno": 47,
+              "colno": 95463,
+              "pre_context": [
+                "/*!",
+                "  * pinia v2.0.36",
+                "  * (c) 2023 Eduardo San Martin Morote",
+                "  * @license MIT",
+                "  */"
+              ],
+              "context_line": "{snip} it(e){this._fn&&(this._context?this._fn.call(this._context,e):this._fn(e));const t=this.next;return this._once&&this.destroy(!0),this._destr {snip}",
+              "post_context": [
+                "/*!",
+                " *  howler.js v2.2.4",
+                " *  howlerjs.com",
+                " *",
+                " *  (c) 2013-2020, James Simpson of GoldFire Studios"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "YM._fn",
+              "module": "multiplayer-fishing/js/dopalive/index",
+              "filename": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "abs_path": "https://m.dopalive.com/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "lineno": 76,
+              "colno": 49945,
+              "pre_context": [
+                " * Compiled Mon, 27 May 2024 12:15:21 UTC",
+                " *",
+                " * @barvynkoa/particle-emitter is licensed under the MIT License.",
+                " * http://www.opensource.org/licenses/mit-license",
+                " */"
+              ],
+              "context_line": "{snip} )}addTicker(){KM.shared.add(({deltaMS:e})=>{this.layerFish.update(e),this.layerBullet.update(e),this.layerCoin.update(e)})}getStageDiagnosti {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "eU.update",
+              "module": "multiplayer-fishing/js/dopalive/index",
+              "filename": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "abs_path": "https://m.dopalive.com/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "lineno": 76,
+              "colno": 39029,
+              "pre_context": [
+                " * Compiled Mon, 27 May 2024 12:15:21 UTC",
+                " *",
+                " * @barvynkoa/particle-emitter is licensed under the MIT License.",
+                " * http://www.opensource.org/licenses/mit-license",
+                " */"
+              ],
+              "context_line": "{snip} onst t=ug.fishList.values();for(const n of t){n.move(e)&&n.recycle()}}sortFishIndex(){const e=[...ug.fishList.values()];e.sort((e,t)=>e.zId- {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            },
+            {
+              "function": "Qj.recycle",
+              "module": "multiplayer-fishing/js/dopalive/index",
+              "filename": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "abs_path": "https://m.dopalive.com/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "lineno": 76,
+              "colno": 38380,
+              "pre_context": [
+                " * Compiled Mon, 27 May 2024 12:15:21 UTC",
+                " *",
+                " * @barvynkoa/particle-emitter is licensed under the MIT License.",
+                " * http://www.opensource.org/licenses/mit-license",
+                " */"
+              ],
+              "context_line": "{snip} ),this.fish.destroy(),this.fish=null),this.frozenSp.visible=!1,super.recycle()}}t(Qj,\"type\",\"ItemSpineFish\");class eU extends OM{constructor {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true, "symbolicated": false }
+            }
+          ]
+        },
+        "raw_stacktrace": {
+          "frames": [
+            {
+              "function": "n",
+              "filename": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "abs_path": "https://m.dopalive.com/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "lineno": 41,
+              "colno": 237683,
+              "pre_context": [
+                "{snip}  \"),Fa(l,e),l.deindent(o),l.push(\"}\"),delete e.helpers;const{code:c,map:u}=l.context();return{ast:e,code:c,map:u?u.toJSON():void 0}})(o,n))}",
+                "/*!",
+                "  * core-base v9.14.5",
+                "  * (c) 2025 kazuya kawaguchi",
+                "  * Released under the MIT License."
+              ],
+              "context_line": "{snip} P_CLIENT,http_status:String(e)}}:{shouldReport:!1}}(r,i):function(e,t){const n=null==e?void 0:e.config,i=Ik(Sk(n)||t||\"unknown\"),r=Ak(n);ret {snip}",
+              "post_context": [
+                "/*!",
+                "  * pinia v2.0.36",
+                "  * (c) 2023 Eduardo San Martin Morote",
+                "  * @license MIT",
+                "  */"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "_tick",
+              "filename": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "abs_path": "https://m.dopalive.com/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "lineno": 47,
+              "colno": 96234,
+              "pre_context": [
+                "/*!",
+                "  * pinia v2.0.36",
+                "  * (c) 2023 Eduardo San Martin Morote",
+                "  * @license MIT",
+                "  */"
+              ],
+              "context_line": "{snip} targetFPMS,this._tick=e=>{this._requestId=null,this.started&&(this.update(e),this.started&&null===this._requestId&&this._head.next&&(this._r {snip}",
+              "post_context": [
+                "/*!",
+                " *  howler.js v2.2.4",
+                " *  howlerjs.com",
+                " *",
+                " *  (c) 2013-2020, James Simpson of GoldFire Studios"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "e.update",
+              "filename": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "abs_path": "https://m.dopalive.com/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "lineno": 47,
+              "colno": 97880,
+              "pre_context": [
+                "/*!",
+                "  * pinia v2.0.36",
+                "  * (c) 2023 Eduardo San Martin Morote",
+                "  * @license MIT",
+                "  */"
+              ],
+              "context_line": "{snip} s.deltaMS*e.targetFPMS;const i=this._head;let r=i.next;for(;r;)r=r.emit(this);i.next||this._cancelIfNeeded()}else this.deltaTime=this.deltaM {snip}",
+              "post_context": [
+                "/*!",
+                " *  howler.js v2.2.4",
+                " *  howlerjs.com",
+                " *",
+                " *  (c) 2013-2020, James Simpson of GoldFire Studios"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "YM.emit",
+              "filename": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "abs_path": "https://m.dopalive.com/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "lineno": 47,
+              "colno": 95463,
+              "pre_context": [
+                "/*!",
+                "  * pinia v2.0.36",
+                "  * (c) 2023 Eduardo San Martin Morote",
+                "  * @license MIT",
+                "  */"
+              ],
+              "context_line": "{snip} it(e){this._fn&&(this._context?this._fn.call(this._context,e):this._fn(e));const t=this.next;return this._once&&this.destroy(!0),this._destr {snip}",
+              "post_context": [
+                "/*!",
+                " *  howler.js v2.2.4",
+                " *  howlerjs.com",
+                " *",
+                " *  (c) 2013-2020, James Simpson of GoldFire Studios"
+              ],
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "YM._fn",
+              "filename": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "abs_path": "https://m.dopalive.com/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "lineno": 76,
+              "colno": 49945,
+              "pre_context": [
+                " * Compiled Mon, 27 May 2024 12:15:21 UTC",
+                " *",
+                " * @barvynkoa/particle-emitter is licensed under the MIT License.",
+                " * http://www.opensource.org/licenses/mit-license",
+                " */"
+              ],
+              "context_line": "{snip} )}addTicker(){KM.shared.add(({deltaMS:e})=>{this.layerFish.update(e),this.layerBullet.update(e),this.layerCoin.update(e)})}getStageDiagnosti {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "eU.update",
+              "filename": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "abs_path": "https://m.dopalive.com/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "lineno": 76,
+              "colno": 39029,
+              "pre_context": [
+                " * Compiled Mon, 27 May 2024 12:15:21 UTC",
+                " *",
+                " * @barvynkoa/particle-emitter is licensed under the MIT License.",
+                " * http://www.opensource.org/licenses/mit-license",
+                " */"
+              ],
+              "context_line": "{snip} onst t=ug.fishList.values();for(const n of t){n.move(e)&&n.recycle()}}sortFishIndex(){const e=[...ug.fishList.values()];e.sort((e,t)=>e.zId- {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true }
+            },
+            {
+              "function": "Qj.recycle",
+              "filename": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "abs_path": "https://m.dopalive.com/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+              "lineno": 76,
+              "colno": 38380,
+              "pre_context": [
+                " * Compiled Mon, 27 May 2024 12:15:21 UTC",
+                " *",
+                " * @barvynkoa/particle-emitter is licensed under the MIT License.",
+                " * http://www.opensource.org/licenses/mit-license",
+                " */"
+              ],
+              "context_line": "{snip} ),this.fish.destroy(),this.fish=null),this.frozenSp.visible=!1,super.recycle()}}t(Qj,\"type\",\"ItemSpineFish\");class eU extends OM{constructor {snip}",
+              "in_app": true,
+              "data": { "client_in_app": true }
+            }
+          ]
+        },
+        "mechanism": {
+          "type": "auto.browser.browserapierrors.requestAnimationFrame",
+          "handled": false,
+          "data": { "handler": "requestAnimationFrame" }
+        }
+      }
+    ]
+  },
+  "extra": { "arguments": [75244.7] },
+  "fingerprint": [
+    "Unknown Error",
+    "Cannot set properties of undefined (setting 'visible')",
+    "/multiplayer-fishing/index.html"
+  ],
+  "grouping_config": {
+    "enhancements": "KLUv_SAd6QAAkwORuGFsbC1wbGF0Zm9ybXM6MjAyNi0wMS0yMJA#KLUv_SAd6QAAkwORuGFsbC1wbGF0Zm9ybXM6MjAyNi0wMS0yMJA#KLUv_SAd6QAAkwORuGFsbC1wbGF0Zm9ybXM6MjAyNi0wMS0yMJA",
+    "id": "newstyle:2026-01-20"
+  },
+  "hashes": ["3bbea9675cb8b4022b6246cc5271f1f4"],
+  "key_id": "64",
+  "level": "error",
+  "location": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+  "logger": "",
+  "metadata": {
+    "filename": "/multiplayer-fishing/js/dopalive/index-ebe06498.js",
+    "function": "Qj.recycle",
+    "in_app_frame_mix": "in-app-only",
+    "type": "Unknown Error",
+    "value": "Cannot set properties of undefined (setting 'visible')"
+  },
+  "nodestore_insert": 1788241684.738985,
+  "received": 1788241680.782661,
+  "request": {
+    "url": "https://m.dopalive.com/multiplayer-fishing/index.html",
+    "query_string": [
+      ["urlType", "3"],
+      ["lang", "ar"],
+      ["name", "Fishing"],
+      ["half", "1"],
+      ["source", "1"],
+      ["gameId", "4"],
+      ["isBCGame", "1"],
+      ["roomId", "97431040"],
+      ["luckyDrop", "1"]
+    ],
+    "headers": [
+      [
+        "User-Agent",
+        "Mozilla/5.0 (Linux; Android 14; TECNO KL7 Build/UP1A.231005.007; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/148.0.7778.178 Mobile Safari/537.36"
+      ]
+    ]
+  },
+  "scraping_attempts": [
+    {
+      "status": "success",
+      "url": "https://m.dopalive.com/multiplayer-fishing/js/dopalive/index-ebe06498.js"
+    }
+  ],
+  "sdk": {
+    "name": "sentry.javascript.vue",
+    "version": "10.37.0",
+    "integrations": [
+      "InboundFilters",
+      "FunctionToString",
+      "ConversationId",
+      "BrowserApiErrors",
+      "Breadcrumbs",
+      "GlobalHandlers",
+      "LinkedErrors",
+      "Dedupe",
+      "HttpContext",
+      "BrowserSession",
+      "Vue",
+      "BrowserTracing",
+      "CaptureConsole",
+      "ExtraErrorData"
+    ],
+    "packages": [{ "name": "npm:@sentry/vue", "version": "10.37.0" }],
+    "settings": { "infer_ip": "auto" }
+  },
+  "symbolicated_in_app": false,
+  "timestamp": 1788241679.981,
+  "title": "Unknown Error: Cannot set properties of undefined (setting 'visible')",
+  "transaction": "/multiplayer-fishing/index.html",
+  "type": "error",
+  "user": {
+    "id": "571197613584896",
+    "ip_address": "128.199.245.2",
+    "username": "571197613584896",
+    "sentry_user": "id:571197613584896"
+  },
+  "version": "7"
+}
