@@ -153,7 +153,7 @@ python3 skills/sentry-daily-top-issues/scripts/validate_feishu_card.py \
 }
 ```
 
-模板渲染后还必须执行以下机械规则：`event_count`、`user_count` 等载荷字段恢复为正确类型；`{{environment_prefix}}`、`{{route_suffix}}`、`{{release_suffix}}` 缺失时替换为空字符串，非空 `release_suffix` 自带前置 `·`；上下文块必须保持 `div + plain_text(default + notation) + blue info icon`。`resolution_enabled: true` 时，每增加一个候选块就在上一候选按钮后增加一个 `{"tag":"hr","margin":"4px 0px"}`；`false` 时移除候选块中的完整解决单按钮，并在上一候选内容后增加分隔线。两种模式的候选分隔线数量均严格为 `N - 1`；已存在解决单时只替换对应按钮对象；任何 `markdown` 元素不得出现 `text_color`。最后运行 validator，未返回 `status: valid` 和 `decision: ready-to-send` 时禁止发送。
+模板渲染后还必须执行以下机械规则：`event_count`、`user_count` 等载荷字段恢复为正确类型；启用影响趋势时，`impact_observation_snapshot` 必须恢复为 JSON 对象而不是 JSON 字符串，并保留 `sentry_impact_table_v1` 的 `columns` 与 `rows`；`{{environment_prefix}}`、`{{route_suffix}}`、`{{release_suffix}}` 缺失时替换为空字符串，非空 `release_suffix` 自带前置 `·`；上下文块必须保持 `div + plain_text(default + notation) + blue info icon`。`resolution_enabled: true` 时，每增加一个候选块就在上一候选按钮后增加一个 `{"tag":"hr","margin":"4px 0px"}`；`false` 时移除候选块中的完整解决单按钮，并在上一候选内容后增加分隔线。两种模式的候选分隔线数量均严格为 `N - 1`；已存在解决单时只替换对应按钮对象；任何 `markdown` 元素不得出现 `text_color`。最后运行 validator，未返回 `status: valid` 和 `decision: ready-to-send` 时禁止发送。
 
 紧凑布局：所有 `markdown`、`div` 和 `button` 元素显式设置 `margin:"0px"`；候选之间的独立 `hr` 分隔线设置 `margin:"4px 0px"`。指标、初判和建议连续展示，不额外插入空白元素制造间距。正文元素不得使用空内容、首尾空行或连续空行。
 
@@ -190,7 +190,7 @@ python3 skills/sentry-daily-top-issues/scripts/validate_feishu_card.py \
 
 仅 `resolution_enabled: true` 生成“创建解决单”按钮。每个“创建解决单”按钮的 `value` 必须包含 `action: create_sentry_resolution`、`sentry_org`、`project`、`issue_id`、`issue_title`、`issue_url`、`event_count`、`user_count`、`first_seen`、`last_seen`、`group`、`resolution_autopilot`、`target_assignee_type`、`target_assignee`、`resolution_config_version` 和按 `dedupe_key` 生成的去重键。`target_assignee_type` 和 `target_assignee` 必须来自当前 Autopilot 的已确认解决单配置；`target_assignee` 必须是对应 Agent 或 Squad 的 UUID。`event_count`、`user_count` 使用本次已按 Autopilot `time_window`、`filter` 和 `environment` 执行的 `search_issues` 返回值，统一记录为当前查询窗口统计；不要求返回字段重复携带 `24h` 或 `7d` 标记。`resolution_config_version` 固定为 `business_resolution_config_v1`。飞书自建应用补充 `actor` 后转发给 `resolution_autopilot`；来源巡检标识、目标、观测配置和可比性上下文不得丢失；“查看解决单”按钮只携带已存在解决单的 URL。
 
-为便于 Coordinator 建单时复核，创建按钮值应一并携带列表快照中可用的 `culprit`、`release`、`environment`、`fingerprint`、`risk_score`、`evidence_summary`、`evidence_source`、`snapshot_at`、`detail_snapshot`、`detail_fetched_at`、`analysis_summary` 和 `analysis_confidence`；不可用字段省略，不得填造。`evidence_summary` 只保留脱敏、短文本事实，不放完整堆栈、IP 或用户标识。快照只是触发上下文，不是已确认根因；Coordinator 仅在快照无效时使用自己的 Sentry MCP 对对应 Issue 读取详情/代表性事件后再写入解决单。详情不可用时保留快照并标记“证据不足”。
+为便于 Coordinator 建单时复核，创建按钮值应一并携带列表快照中可用的 `culprit`、`release`、`environment`、`fingerprint`、`risk_score`、`evidence_summary`、`evidence_source`、`snapshot_at`、`detail_snapshot`、`detail_fetched_at`、`analysis_summary` 和 `analysis_confidence`；影响趋势启用时还必须携带结构化 `impact_observation_snapshot`。不可用字段省略，不得填造。`evidence_summary` 只保留脱敏、短文本事实，不放完整堆栈、IP 或用户标识。快照只是触发上下文，不是已确认根因；Coordinator 仅在快照无效时使用自己的 Sentry MCP 对对应 Issue 读取详情/代表性事件后再写入解决单。详情不可用时保留快照并标记“证据不足”。
 
 ## 发送前一致性校验
 
@@ -221,4 +221,4 @@ lark-cli --profile <profile> im +messages-send \
 
 ## Callback 透传契约（与 Lark bridge 对齐）
 
-创建解决单 callback 的固定字段必须包括 `resolution_autopilot`、`resolution_config_version`、`target_assignee_type`、`target_assignee`、`source_inspection_autopilot_id`、`inspection_issue_id` 以及 Sentry 基础快照。启用影响趋势时追加 `impact_trend_observation`、`observation_timeout_days`、`post_fix_observation_days`；为保证后续同口径观测，同时追加 `time_window`、`filter`、`window_start`、`window_end`。Lark bridge 必须原样保留这些字段，缺失时阻断而不是只转发 Sentry 字段。
+创建解决单 callback 的固定字段必须包括 `resolution_autopilot`、`resolution_config_version`、`target_assignee_type`、`target_assignee`、`source_inspection_autopilot_id`、`inspection_issue_id` 以及 Sentry 基础快照。启用影响趋势时追加 `impact_trend_observation`、`observation_timeout_days`、`post_fix_observation_days`、`time_window`、`filter`、`window_start`、`window_end` 和结构化 `impact_observation_snapshot`；快照的 `schema` 必须为 `sentry_impact_table_v1`，且包含 `columns` 与 `rows`。Lark bridge 必须原样保留这些字段，缺失时阻断而不是只转发 Sentry 字段。

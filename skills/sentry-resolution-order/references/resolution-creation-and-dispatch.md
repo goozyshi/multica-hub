@@ -6,7 +6,7 @@
 
 callback 必须包含 `resolution_autopilot`、`target_assignee_type`、`target_assignee` 和 `resolution_config_version: business_resolution_config_v1`。先确认 `resolution_autopilot` 等于当前解决单 Autopilot ID，再校验飞书签名、目标 UUID 和 callback 结构。解析 Markdown 描述时允许先还原一层 `\_` 字段名转义；不得接受其他隐藏或改写后的配置。
 
-从已验证 callback 读取 `sentry_org`、`project`、`target_assignee_type`、`target_assignee`、优先级、快照和影响趋势观测配置。callback 直接携带的目标必须通过 UUID 格式、workspace 可指派性和飞书签名校验；配置缺失、配置不完整或解析失败时返回 `needs-info` 或 `dispatch blocked`，不得创建解决单。
+从已验证 callback 读取 `sentry_org`、`project`、`target_assignee_type`、`target_assignee`、优先级、快照和影响趋势观测配置。启用影响趋势时，必须同时读取并校验 `impact_observation_snapshot` 的 `sentry_impact_table_v1` schema、固定列和当前 Issue 行。callback 直接携带的目标必须通过 UUID 格式、workspace 可指派性和飞书签名校验；配置缺失、配置不完整或解析失败时返回 `needs-info` 或 `dispatch blocked`，不得创建解决单。
 
 ## 安全与去重
 
@@ -84,7 +84,7 @@ multica issue create ... --assignee-id <target_assignee>
 - `初步判断`
 - `解决要求`
 
-内容记录项目、Sentry Issue、优先级、链接、来源、去重键、事件数、影响用户数、发生时间、版本/环境、异常摘要、风险评分、推断原因、证据摘要、详情复核状态和置信度。
+内容记录项目、Sentry Issue、优先级、链接、来源、去重键、事件数、影响用户数、发生时间、版本/环境、异常摘要、风险评分、推断原因、证据摘要、详情复核状态和置信度。启用影响趋势时，同时写入“影响趋势观测”表格：保留 callback 的结构化基线行、查询窗口和过滤条件；后续观测只追加行并计算相对基线的事件数/影响用户变化，不覆盖原始基线。
 
 解决要求固定为：复核影响、定位根因、给出修复与验证方案、说明风险和回滚建议。
 

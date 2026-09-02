@@ -12,7 +12,7 @@ description: 处理 Sentry“创建解决单”回调，校验 callback 提供�
 
 当前解决单 Autopilot 负责通用入口和 Coordinator 派发。回调必须包含 `resolution_autopilot`、`target_assignee_type`、`target_assignee` 和 `resolution_config_version: business_resolution_config_v1`。服务端确认 `resolution_autopilot` 等于当前解决单 Autopilot ID，且 callback 已通过飞书签名校验、目标 UUID 有效并可指派。解析 Markdown 描述时允许还原一层 `\_` 字段名转义；不得接受其他隐藏或改写后的配置。
 
-从 callback 读取 `sentry_org`、`project`、`target_assignee_type`、`target_assignee` 和 Sentry 事实快照；目标必须是用户在日报 Autopilot 中确认的 Agent 或 Squad UUID。配置缺失、类型错误、目标不存在、目标不可指派或无法解析时返回 `needs-info` 或 `dispatch blocked`；不得使用 Skill 内置默认值。
+从 callback 读取 `sentry_org`、`project`、`target_assignee_type`、`target_assignee` 和 Sentry 事实快照；启用影响趋势时还读取结构化 `impact_observation_snapshot`。目标必须是用户在日报 Autopilot 中确认的 Agent 或 Squad UUID。配置缺失、类型错误、目标不存在、目标不可指派或无法解析时返回 `needs-info` 或 `dispatch blocked`；不得使用 Skill 内置默认值。
 
 ## 回调输入
 
@@ -30,7 +30,7 @@ description: 处理 Sentry“创建解决单”回调，校验 callback 提供�
 2. 按 Reference 完成协议版本、来源 Autopilot、签名、项目白名单、输入字段、当前 Issue 状态和幂等校验；失败时返回明确错误，不创建解决单。
 3. 按 callback 快照判断是否复用详情；必要时重新读取 Issue 详情。完成脱敏、证据归档和带目标 assignee 的解决单创建或复用。
 4. 按 Reference 通过平台级 Issue assignee 创建实际 Sentry 解决单：`create_issue` 模式必须同时使用当前 `runtime_issue_id` 作为 `--parent` 和 `target_assignee` 作为 `--assignee-id`；`run_only` 模式使用 `--assignee-id` 直接创建根单。创建后立即回读 `parent_issue_id`、`assignee_type`、`assignee_id`。正常流程禁止先建 Coordinator 单再调用 `issue assign`。
-5. 仅当 callback 明确携带有效观测配置时，读取并执行 [影响趋势基线 Reference](references/sentry-impact-baseline.md)；未启用时跳过附加观测。
+5. 仅当 callback 明确携带有效观测配置和结构化表格快照时，读取并执行 [影响趋势基线 Reference](references/sentry-impact-baseline.md)；未启用时跳过附加观测。
 
 ## 完成条件
 
@@ -40,7 +40,8 @@ description: 处理 Sentry“创建解决单”回调，校验 callback 提供�
 - `create_issue` 根流程完成：运行根单与实际解决单的 `parent_issue_id`、平台级目标 assignee 均已回读匹配，并返回用户可见根单链接；
 - `run_only` 根流程完成：实际解决单创建或复用、平台级目标 assignee 已回读，并返回解决单链接；
 - 目标绑定或回读失败：保留已创建解决单，返回 `dispatch blocked`，不得报告已派发或已触发执行；
-- callback 已携带有效影响趋势观测配置：同时记录基线或明确记录基线写入结果。
+- callback 已携带有效影响趋势观测配置：同时保留结构化表格基线，或明确记录基线写入结果；
+  后续采样必须在同一表格中追加并保留可比性字段。
 
 ## 边界
 
