@@ -11,9 +11,11 @@
    用于生成两套独立候选；Sentry 候选是主错误来源。
 2. 第 1 轮确认 scope 和通知渠道后，读取基础资源；复用第 1 步已取得的 `mico` Sentry
    project 列表。
-3. 第 2 轮确认 Sentry project 后，读取每个已选 project 的环境元数据。
-4. 仅当通知渠道为 `feishu_app` 且用户在后续轮次开启解决单时，读取所有可用 Agent、
-   Squad 和解决单 Autopilot 候选。
+3. 第 2 轮确认 Sentry project 后，读取每个已选 project 的环境值；优先使用环境元数据，
+   不可用时按 `sentry-environment.md` 执行环境探针和详情回退，仍无法唯一确认时请求用户
+   提供原始环境名。
+4. 仅当通知渠道为 `feishu_app` 且用户未明确要求只读时，读取所有可用 Agent、Squad
+   和解决单 Autopilot 候选；自建应用默认启用解决单。
 5. 仅当通知渠道为 `feishu_app` 时，读取飞书群。
 
 未启用的分支不查询、不展示候选、不询问分支字段。
@@ -107,14 +109,18 @@ Multica scope 确认后读取：
 
 ```bash
 multica repo list --output json
+multica project resource list <confirmed-project-id> --output json
 multica autopilot list --output json
 multica skill list --output json
 ```
 
 过滤规则：
 
-- Repo 只保留可确认属于目标 `project_id` 的资源。依据项目资源关联、Repo URL、描述和
-  scope 名称过滤。
+- `multica repo list` 只提供 workspace 级候选，不能证明 Repo 属于目标项目。
+- 已附加 Repo 只保留 `multica project resource list <confirmed-project-id>` 返回的
+  `resource_type: github_repo` 资源；以 `resource_ref.url` 的完整 URL 做精确匹配。
+- workspace 候选中与用户确认映射相关但尚未附加到项目的 Repo 标记为“待绑定”。用户
+  确认的每个 project-repo 映射在完成绑定前都不能当作已可用资源。
 - Autopilot 只保留绑定目标 `project_id`，或描述明确包含该 scope 的候选。
 - Skill 列表必须包含：
   `sentry-daily-top-issues` 和 `sentry-resolution-order`。
@@ -123,6 +129,29 @@ multica skill list --output json
 
 展示 Repo 和 Autopilot 时，优先使用名称、用途、归属和中文状态；URL、UUID 和内部状态值
 只作为确认所需的辅助信息。
+
+### 项目 Repo 资源绑定
+
+Autopilot 创建命令只有 `--project`，没有 `--repo`；Autopilot 可访问的代码仓库由
+Multica 项目的已绑定资源决定。项目资源列表是 Repo 归属的唯一事实源，workspace Repo
+注册表只是候选目录。
+
+如果用户确认的 Repo 尚未附加到目标项目：
+
+- 标记 `resource_discovery: partial`，列出 Repo 名称、完整 URL 和“待绑定”状态；
+- 方案中明确列出将要执行的资源绑定，不得把它隐藏在 Autopilot 创建步骤中；
+- 只有用户明确确认资源绑定后，才可执行：
+
+  ```bash
+  multica project resource add <confirmed-project-id> \
+    --type github_repo \
+    --url "<confirmed-repo-url>" \
+    --output json
+  ```
+
+- 绑定后重新读取项目资源列表；未回读确认前不得创建 Autopilot。
+
+如果用户不确认绑定，返回 `needs-info`，不得创建缺少代码资源的 Autopilot。
 
 ## Sentry project（主错误来源）
 
@@ -164,7 +193,7 @@ multica skill list --output json
 
 ## Agent 和 Squad 候选
 
-只有通知方式为 `feishu_app` 且用户开启解决单时执行：
+只有通知方式为 `feishu_app` 且用户未明确要求只读时执行；自建应用默认需要解决单目标：
 
 ```bash
 multica agent list --output json
@@ -220,8 +249,8 @@ profile: sentry-notify
 
 ## 解决单 Autopilot 候选
 
-只有通知方式为 `feishu_app` 且用户确认开启解决单时，才从 Autopilot 列表筛选候选，并对
-每个候选读取完整详情：
+只有通知方式为 `feishu_app` 且用户未明确要求只读时，才从 Autopilot 列表筛选候选，并对
+每个候选读取完整详情；自建应用默认启用解决单：
 
 ```bash
 multica autopilot get <autopilot-id> --output json
@@ -232,7 +261,8 @@ scope 相同或旧描述就直接复用。
 
 ## 状态定义
 
-- `resource_discovery: complete`：所需列表已取得，关联和归属可验证。
+- `resource_discovery: complete`：所需列表已取得，关联和归属可验证，所有确认 Repo 已附加
+  到目标 Multica 项目。
 - `resource_discovery: partial`：列表部分可用，仍可在用户提供明确标识后继续验证。
 - `needs-info`：缺少用户选择、输入或可验证的资源标识。
 - `blocked`：权限、工具或远端读取失败，无法安全验证。

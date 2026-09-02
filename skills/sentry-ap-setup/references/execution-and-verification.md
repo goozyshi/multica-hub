@@ -10,16 +10,44 @@
 ```bash
 multica project list --output json
 multica repo list --output json
+multica project resource list <confirmed-project-id> --output json
 multica autopilot list --output json
 multica skill list --output json
 ```
 
 重新确认 Sentry project 仍属于 `mico`，并按 `sentry-environment.md` 重新读取每个 project
 的生产环境实际名称；如果使用 `feishu_app`，另外验证已确认群仍为 `normal`。如果候选
-Autopilot、项目、Repo、
+Autopilot、项目、项目资源、Repo、
 Skill、群组或环境值状态变化，停止写入，重新展示完整方案并取得一次确认。
 
 用户确认只授权当前展示的方案。没有确认时不得执行 `create`、`trigger-add`、更新或发送。
+
+## 项目 Repo 资源门禁
+
+`multica autopilot create` 只有 `--project`，没有 `--repo`；创建后通过
+`project_id` 继承 Multica 项目已附加的资源。workspace 的 `repo list` 只能发现候选，
+不能替代项目资源绑定。
+
+将最新项目资源列表保存为：
+
+```bash
+multica project resource list <confirmed-project-id> --output json \
+  > /tmp/sentry-ap-setup/project-resources.json
+```
+
+每个已确认 Repo 的完整 URL 必须以 `resource_type: github_repo` 出现在该文件中。若缺少：
+
+1. 方案中必须明确显示“将 Repo 绑定到 Multica 项目”；
+2. 只有用户确认当前绑定动作后，才执行：
+
+   ```bash
+   multica project resource add <confirmed-project-id> \
+     --type github_repo \
+     --url "<confirmed-repo-url>" \
+     --output json
+   ```
+
+3. 重新读取项目资源列表并确认所有 Repo 已附加；绑定或回读失败时不得创建 Autopilot。
 
 ## Autopilot 描述强校验
 
@@ -35,6 +63,8 @@ python3 skills/sentry-ap-setup/scripts/validate_autopilot_description.py \
   --subscriber "<current-creator>" \
   --cron "<confirmed-cron>" \
   --timezone "<confirmed-iana-timezone>" \
+  --project-resources-file /tmp/sentry-ap-setup/project-resources.json \
+  --repo-url "<confirmed-repo-url>" \
   --output json
 ```
 
@@ -115,10 +145,11 @@ callback 携带。
 
 推荐顺序：
 
-1. 创建巡检 Autopilot。
-2. 添加巡检 schedule。
-3. 复用或初始化通用解决单路由。
-4. 添加解决单 webhook trigger（仅首次初始化分支）。
+1. 绑定并回读确认项目 Repo 资源。
+2. 创建巡检 Autopilot。
+3. 添加巡检 schedule。
+4. 复用或初始化通用解决单路由。
+5. 添加解决单 webhook trigger（仅首次初始化分支）。
 
 任一步骤失败，立即停止后续操作，记录已完成和未完成项，返回 `blocked`。保留已经成功
 创建的资源，不自动回滚、不重复创建、不静默修改旧实例。

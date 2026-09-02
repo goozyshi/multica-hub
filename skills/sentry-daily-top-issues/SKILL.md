@@ -7,7 +7,7 @@ description: 通过 Sentry MCP 列表查询生成按 Autopilot 分组配置汇�
 
 ## Autopilot 配置解析
 
-Autopilot 描述采用 Markdown 分组格式。固定系统字段位于“基本信息”，业务参数的规范分区为“巡检配置”“解决单配置（business_resolution_config_v1）”“发送配置”；执行逻辑位于 Skill。只解析规范分区中形如 `- key: value` 的键值，以及“项目分组”表格的三列 `分组`、`项目`、`Top N`；规范分区之外的配置一律视为未知并拒绝。表格的分隔线行不是数据。`Top N`、`display_top_n`、时间窗口和项目名称必须来自当前 Autopilot；Skill 不提供业务数量或名称默认值。读取 Markdown 描述中的 `inspection_url_template` 时，按原始 HTTPS 基础 URL 前缀解析，发送时拼接当前巡检 Issue ID；历史配置可兼容一个 `<Issue-ID>` 占位符，也可还原编辑器产生的同值 `[URL](URL)` 包装，但不得接受隐藏或改写后的目标。
+Autopilot 描述采用 Markdown 分组格式。固定系统字段位于“基本信息”，业务参数的规范分区为“巡检配置”“解决单配置（business_resolution_config_v1）”“发送配置”；执行逻辑位于 Skill。只解析规范分区中形如 `- key: value` 的键值，以及“项目分组”表格的四列 `分组`、`项目`、`Repo`、`Top N`；规范分区之外的配置一律视为未知并拒绝。表格的分隔线行不是数据。`Top N`、`display_top_n`、时间窗口、项目名称和 Repo 映射必须来自当前 Autopilot；Skill 不提供业务数量、名称或代码仓库默认值。Repo 必须是已确认 Multica project 资源的完整 URL，仅用于保留分组到代码仓库的映射，不参与 Sentry 项目查询。读取 Markdown 描述中的 `inspection_url_template` 时，按原始 HTTPS 基础 URL 前缀解析，发送时拼接当前巡检 Issue ID；历史配置可兼容一个 `<Issue-ID>` 占位符，也可还原编辑器产生的同值 `[URL](URL)` 包装，但不得接受隐藏或改写后的目标。
 
 `resolution_enabled: true` 时，Autopilot 必须包含有效 `resolution_autopilot` 和解决单配置；解决单配置中的 `target_assignee_type`、`target_assignee` 必须在生成卡片时原样传入 callback。
 

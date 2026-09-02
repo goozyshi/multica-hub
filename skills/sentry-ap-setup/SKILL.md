@@ -20,7 +20,8 @@ disable-model-invocation: true
 资源范围。两者独立匹配、分别确认，Multica 候选数量不得改变 Sentry 的优先级。
 
 业务差异只写入巡检 Autopilot 的描述、触发器和解决单 callback 配置，不创建新的业务
-Skill。配置阶段不分析 Sentry 结果、不触发巡检、不发送测试消息、不创建业务解决单。
+Skill。配置阶段不分析 Sentry 结果、不触发巡检、不发送测试消息、不创建业务解决单；仅在
+项目环境元数据不可读时，按环境 Reference 执行环境探针或详情回退，只提取环境字段。
 启用解决单时，`dedupe_key` 由系统默认写入 `project:issue_id`；用户不填写该字段，运行时
 再按实际 Sentry project 和 Issue ID 展开为精确去重键。
 
@@ -46,8 +47,9 @@ Skill。配置阶段不分析 Sentry 结果、不触发巡检、不发送测试�
 
 1. 同一轮问题的答案不得改变同轮其他问题的出现条件、候选集合或校验规则。
 2. 会打开或关闭分支的问题必须先问；分支字段和分支资源发现只能在下一阶段执行。
-3. 资源发现采用懒加载。未选 `feishu_app` 时不查询飞书群；未启用解决单时不查询
-   解决单候选或收集解决单配置。Webhook 只读分支固定不启用解决单动作。
+3. 资源发现采用懒加载。未选 `feishu_app` 时不查询飞书群；Webhook 固定为只读且不查询
+   解决单候选。自建应用默认启用解决单动作，因此选定该渠道后读取解决单候选并收集
+   解决单配置；用户明确要求只读时才关闭。
 4. 未得到明确的人类确认，不执行任何远端写操作。只读查询、规范化和方案展示不算写操作。
 5. `needs-info` 表示缺少用户选择或必填输入；`blocked` 表示权限、工具、写入或回读失败；
    `executed` 只表示配置创建或复用并完成验证。
@@ -63,16 +65,17 @@ Skill。配置阶段不分析 Sentry 结果、不触发巡检、不发送测试�
   `environment`、`resolution_enabled` 等英文键。
 - 选项使用“中文名称 + 一句话说明”。机器值只作为系统内部映射，不作为用户必须理解的
   参数。
-- 用户确认的是项目归属、通知方式、Sentry 项目与 Repo 映射、解决单开关和处理目标；
-  业务名称、执行时间、生产环境、`subscriber`、`dedupe_key` 及解决单细节使用默认值或
-  系统核验结果。
+- 用户确认的是项目归属、通知方式、Sentry 项目与 Repo 映射和处理目标；自建应用默认
+  开启解决单，只有用户明确要求只读时才关闭，Webhook 固定关闭；
+  业务名称、执行时间、`subscriber`、`dedupe_key` 及解决单细节使用默认值或系统核验结果；
+  生产环境优先由系统核验，自动路径无法得到唯一值时才请用户提供原始环境名。
 - 明确区分两个项目：`Multica 项目`决定 Autopilot、Repo 的资源范围；`Sentry project`
   是要巡检的错误来源项目，organization 固定为 `mico`。
 - 明确区分两个通知对象：`Multica 订阅人`自动设置为当前创建人，接收 Autopilot
   运行/状态通知；`飞书通知目标`接收 Sentry 巡检卡片。
 - 通知方式说明必须写清：机器人地址只发送只读卡片，用于查看错误摘要、指标、初判、建议
-  和 Sentry 链接；自建应用发送可交互卡片，可查看巡检单、跳转 Multica，并在开启后从
-  卡片点击“创建解决单”联动通用解决单流程。
+  和 Sentry 链接；自建应用默认发送可交互卡片，可查看巡检单、跳转 Multica，并从卡片
+  点击“创建解决单”联动通用解决单流程。
 - 首屏不展示原始 JSON、单独的完整 UUID 或凭据；资源 ID 必须保留在候选链接中，但不另行
   裸露展示。
 
@@ -133,8 +136,8 @@ Phase 0 完成条件：同一条首轮回复中已出现 Multica 和 Sentry 两�
 
 | 通知方式                  | 适合场景                                                                                                     | 用户需要提供                 |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------ | ---------------------------- |
-| 飞书机器人地址（Webhook） | 只读卡片：查看错误摘要、次数、影响用户、初判、建议和 Sentry 链接；不能从卡片操作或联动 Multica 创建解决单    | 下一轮提供 HTTPS 机器人地址  |
-| 飞书自建应用              | 可交互卡片：配置巡检单链接后，点击“查看巡检单”跳转 Multica；开启解决单后，点击“创建解决单”联动通用解决单流程 | 下一轮从应用已加入的群中选择 |
+| 飞书机器人地址（Webhook） | 只读卡片：查看错误摘要、次数、影响用户、初判、建议和 Sentry 链接；可点击“查看巡检单”跳转 Multica，但不能创建解决单    | 下一轮提供 HTTPS 机器人地址  |
+| 飞书自建应用              | 可交互卡片：系统默认配置巡检单链接，点击“查看巡检单”跳转 Multica；默认可点击“创建解决单”联动通用解决单流程 | 下一轮从应用已加入的群中选择，巡检单链接自动补全 |
 
 | 要确认的设置                 | 用途                                           | 回复方式                             |
 | ---------------------------- | ---------------------------------------------- | ------------------------------------ |
@@ -144,7 +147,7 @@ Phase 0 完成条件：同一条首轮回复中已出现 Multica 和 Sentry 两�
 
 业务名称默认使用“<Multica 项目名称> Sentry 巡检”，执行时间默认每天 10:00，Multica
 订阅人固定使用当前创建人；这些设置不询问，也不与飞书通知群混淆。这一轮不询问 Webhook
-地址、飞书群、是否提供解决单按钮、解决单处理目标、观测时长或代码仓库。代码仓库
+地址、飞书群、解决单按钮开关（自建应用默认开启）、解决单处理目标、观测时长或代码仓库。代码仓库
 和分组映射在 Sentry 主候选与 Multica 归属确认后再处理。
 
 完成条件：Sentry 主候选、Multica `project_id`、通知方式都有明确答案，当前创建人
@@ -161,12 +164,15 @@ Phase 0 完成条件：同一条首轮回复中已出现 Multica 和 Sentry 两�
 
 ```bash
 multica repo list --output json
+multica project resource list <confirmed-project-id> --output json
 multica autopilot list --output json
 multica skill list --output json
 ```
 
-只展示已确认 Multica project scope 下的 Repo 和相关 Autopilot。Repo 无法可靠关联时标记
-`resource_discovery: partial`，要求用户逐项选择。
+`multica repo list` 只提供 workspace 级候选；实际可供 Autopilot 使用的 Repo 以目标
+Multica project 的 `project resource list` 为准。展示已确认 scope 下已附加的 Repo
+和相关 Autopilot；workspace 候选中与已确认映射相关但尚未附加到项目的 Repo 也可展示，
+但必须标记 `resource_discovery: partial`，不得把它当成已可用资源。
 
 复用 Phase 0 已完整获取的 `mico` Sentry project 列表。Sentry project 只从该列表选择，
 不使用 Multica project、Repo 名称或描述推断。展示名称、用途、归属和可跳转链接，供用户
@@ -176,15 +182,15 @@ multica skill list --output json
 
 只有第 1 轮已确定分支后才执行：
 
-- `notification_channel=feishu_app`：使用固定 `profile=sentry-notify`，以 Bot 身份执行
+- `notification_channel=feishu_app`：默认启用解决单；使用固定 `profile=sentry-notify`，以 Bot 身份执行
   `lark-cli` 群聊枚举，只保留 `chat_status=normal` 的 `oc_...` 群。该分支发送可交互
-  卡片，配置巡检单链接后可点击“查看巡检单”跳转 Multica；开启解决单后可点击“创建
-  解决单”联动通用解决单流程。
+  卡片，默认配置巡检单链接，可点击“查看巡检单”跳转 Multica，并可点击“创建解决单”
+  联动通用解决单流程。用户明确要求只读时才关闭解决单动作。
 - `notification_channel=feishu_webhook`：不执行任何飞书群查询；下一轮直接收集
-  `webhook_url`。该分支只发送只读卡片，固定 `resolution_enabled=false`，不创建或绑定
-  解决单 Autopilot。
-- 只有 `notification_channel=feishu_app` 且后续选择开启解决单时，才读取解决单
-  Autopilot 候选的完整详情，并执行：
+  `webhook_url`。该分支发送只读卡片，包含可跳转 Multica 的“查看巡检单”链接，固定
+  `resolution_enabled=false`，不创建或绑定解决单 Autopilot。
+- 只有 `notification_channel=feishu_app` 且未明确要求只读时，才读取解决单 Autopilot
+  候选的完整详情，并执行：
 
   ```bash
   multica agent list --output json
@@ -215,33 +221,28 @@ Sentry 错误环境：默认生产环境；确认分组后，系统核验每个�
 根据第 1 轮选择的通知方式，只追加一个通知设置：
 
 ```text
-飞书机器人 Webhook：填写 HTTPS Webhook 地址
+飞书机器人 Webhook：填写 HTTPS Webhook 地址；巡检单链接使用系统默认值
 ```
 
 或：
 
 ```text
-飞书自建应用：从应用已加入且状态正常的群中选择目标群
+飞书自建应用：从应用已加入且状态正常的群中选择目标群，巡检单链接使用系统默认值
 ```
 
-只有第 1 轮选择“飞书自建应用”时，追加以下不改变其他问题候选的设置：
-
-| 要确认的设置             | 中文含义                                      | 回复方式           |
-| ------------------------ | --------------------------------------------- | ------------------ |
-| 是否提供“创建解决单”按钮 | 是否允许从可交互卡片跳转 Multica 并发起解决单 | 选择“开启”或“关闭” |
-
-只有选择开启后，才在下一轮询问解决单授权和处理目标。Webhook 分支不显示此项，因为它
-只发送只读卡片。
+自建应用默认提供“创建解决单”按钮，并在下一轮询问解决单授权和处理目标；用户明确要求
+只读时才关闭该按钮并跳过解决单配置。Webhook 分支不显示此项，因为它只发送只读卡片。
 
 ### 生产环境核验
 
 第 2 轮确认 Sentry project 后，读取 [Sentry 环境读取 Reference](references/sentry-environment.md)。
-按其中的 MCP 能力探测、只读调用、结果归一化和失败状态处理每个已选 project；不查询
-Issue 结果，不把环境读取失败直接描述成“Sentry 没有环境数据”。
+按其中的 MCP 能力探测、只读调用、环境探针、Issue 详情回退、结果归一化和失败状态处理
+每个已选 project；回退只提取环境字段，不做 Issue 分析。自动路径无法得到唯一值时请用户
+提供实际环境名；不要把环境读取失败直接描述成“Sentry 没有环境数据”。
 
 ### 第 3 轮：问已启用解决单分支的设置
 
-仅当通知方式为“飞书自建应用”且第 2 轮选择开启时，一次询问：
+仅当通知方式为“飞书自建应用”且未明确要求只读时，一次询问：
 
 | 要确认的设置         | 中文含义                       | 回复方式                                 |
 | -------------------- | ------------------------------ | ---------------------------------------- |
@@ -262,13 +263,13 @@ Issue 结果，不把环境读取失败直接描述成“Sentry 没有环境数�
 观察时默认最多观察 7 天、修复后继续观察 3 天。用户后续可直接修改 Autopilot 配置。
 
 所有询问卡片使用分段标题和 Markdown 表格。用户问题表使用中文业务表头；写入
-Autopilot 描述时，才转换为下游要求的 `| 分组 | 项目 | Top N |` 机器表头。表格不可
+Autopilot 描述时，才转换为下游要求的 `| 分组 | 项目 | Repo | Top N |` 机器表头。表格不可
 渲染时改用结构化字段，不使用连续编号列表或伪表格。
 
-完成条件：所有启用分支的字段齐全；Webhook 分支的 `resolution_enabled` 为 false；每个
-Sentry project 已由 `mico` 列表验证且按环境 Reference 得到 `resolved` 或完成歧义确认；
-解决单目标来自已读取的 Agent 或 Squad 候选；每个 Multica Repo 属于已确认 scope；每一项
-project-repo 映射均由用户确认。
+完成条件：所有启用分支的字段齐全且包含系统默认巡检单链接；Webhook 分支的 `resolution_enabled` 为 false；每个
+Sentry project 已由 `mico` 列表验证且按环境 Reference 得到 `resolved`，或完成歧义/自动读取失败后的用户确认；
+解决单目标来自已读取的 Agent 或 Squad 候选；每个 Multica Repo 已附加到已确认 scope
+或已在方案中列出待执行的绑定动作；每一项 project-repo 映射均由用户确认。
 
 ## Phase 2：规范化、校验与方案确认
 
@@ -277,16 +278,20 @@ project-repo 映射均由用户确认。
 
 执行以下顺序：
 
-1. 拒绝未知字段、缺失必填项、重复 Sentry project、空分组、未确认映射、非正整数、
-   非法枚举、无效 IANA 时区、非 HTTPS URL、非法 `chat_id` 和不一致的 Autopilot 引用。
-2. 校验所有 Sentry project 属于 `mico`，所有 Repo 属于已确认 Multica scope。
+1. 拒绝未知字段、缺失必填项、重复 Sentry project、空分组、未确认映射、未附加且未列入
+   待执行绑定的 Repo、非正整数、非法枚举、无效 IANA 时区、非 HTTPS URL、非法 `chat_id`
+   和不一致的 Autopilot 引用。
+2. 校验所有 Sentry project 属于 `mico`，并通过
+   `multica project resource list <confirmed-project-id> --output json` 验证每个 Repo 已
+   附加到已确认 Multica scope；未附加时把资源绑定列入待确认方案。
 3. 规范化发送配置和 Autopilot Markdown 描述，使其符合日报 Skill 的四个配置分区及字段
    契约。
-4. 将待写入的完整 Autopilot 描述写入临时文件，运行
+4. 将待写入的完整 Autopilot 描述写入临时文件，并将已确认项目资源列表写入临时文件，运行
    `scripts/validate_autopilot_description.py`。只有返回 `status: valid`、
    `decision: ready-to-create` 才允许展示“可创建”方案；校验结果必须同时显示
-   `dedupe_key=project:issue_id` 的系统默认值。
-   从 Webhook 切换到飞书自建应用并开启解决单时，必须重新生成完整四个配置分区，不能只
+   `dedupe_key=project:issue_id` 和通知分支
+   `inspection_url_template=https://multica.micoplatform.com/mico-fe/issues/` 的系统默认值。
+从 Webhook 切换到默认开启解决单的飞书自建应用时，必须重新生成完整四个配置分区，不能只
    增量修改 `channel`；应用群、解决单授权、处理目标和 `dedupe_key` 必须一起补齐并重新
    校验。
 5. 通知方式为自建应用且 `resolution_enabled=true` 时读取候选解决单 Autopilot 完整详情，
@@ -294,8 +299,9 @@ project-repo 映射均由用户确认。
    仅当 workspace 尚无兼容通用路由时，才制定一次性初始化方案；不得按业务重复创建或
    静默修改已有实例。
 6. 展示完整业务方案，明确显示巡检 AP 新建、通用解决单路由的复用/初始化/不启用、所有
-   分组映射、触发器、通知目标和解决单目标。Webhook URL 只显示“已配置”，不回显 URL；
-   同时说明 Webhook 为只读卡片，自建应用为可交互卡片，配置链接后可跳转 Multica。
+   分组映射、Repo 资源已附加/待绑定状态、触发器、通知目标和解决单目标。Webhook URL
+   只显示“已配置”，不回显 URL；同时说明 Webhook 为只读卡片，自建应用为可交互卡片，
+   两者都可通过配置链接跳转 Multica。
 
 方案只对业务字段要求明确确认。没有确认时返回 `needs-info`，不创建、更新、触发或发送。
 
@@ -305,13 +311,18 @@ project-repo 映射均由用户确认。
 
 读取 [执行与验证 Reference](references/execution-and-verification.md)。
 
-确认后重新读取 Multica project、Repo、Sentry project、Skill、群组和候选 Autopilot 状态。
+确认后重新读取 Multica project、项目资源、Repo、Sentry project、Skill、群组和候选
+Autopilot 状态，并将最新项目资源列表保存为校验输入。
 任一候选发生变化，重新展示方案并再次确认。
 
-写入前必须对重新生成的完整巡检 Autopilot 描述再次运行
+写入前必须使用最新项目资源列表和确认的 Repo URL，对重新生成的完整巡检 Autopilot 描述再次运行
 `scripts/validate_autopilot_description.py`。校验不是 `status: valid` 且
 `decision: ready-to-create` 时，停止所有写入并返回 `needs-info`；不得沿用上一轮
 “已校验”结论。
+
+如果确认的 Repo 尚未附加到目标 Multica project，只有当前方案已明确展示并获得绑定
+确认时，才先执行 `multica project resource add`；绑定后必须重新读取项目资源列表，
+确认所有 Repo 已存在，再创建 Autopilot。未完成绑定或回读失败时不得创建。
 
 创建规则：
 
@@ -326,6 +337,9 @@ project-repo 映射均由用户确认。
   ```
 
 - 巡检 schedule 使用已确认的 cron 和 IANA timezone。
+- `autopilot create` 没有 `--repo` 参数；代码仓库通过已绑定的 Multica project 资源
+  随 `--project` 继承。不得因为创建命令没有 Repo 参数而跳过项目资源核验，也不得把
+  未附加的 workspace Repo 当作已绑定资源。
 - 解决单复用时只保存现有 ID，不更新配置。
 - 解决单仅在 workspace 尚无兼容通用路由、且通知方式为自建应用时初始化，使用
   `profile_ref: skill:sentry-resolution-order`、通用 workspace scope、
@@ -346,7 +360,8 @@ multica autopilot get <autopilot-id> --output json
 ```
 
 验证 `status`、`assignee`、`execution_mode`、`project_id`、`profile_ref`、触发器、cron、
-timezone 和 subscriber；若启用解决单，还要验证描述中存在
+timezone 和 subscriber；再读取目标项目资源，确认方案中的每个 Git Repo 仍已附加到该
+Multica project；若启用解决单，还要验证描述中存在
 `dedupe_key: project:issue_id`，再读取：
 
 ```bash

@@ -10,7 +10,8 @@
 - Sentry project 不属于 `mico`，或没有来自 `mico` 列表的独立用户确认。
 - Sentry project 缺少已从 `mico` 列表验证的 `slug`，或候选链接不是由该 project 自身的
   `slug` 生成。
-- Multica Repo 不属于确认的 `project_id`，或 project-repo 映射未逐项确认。
+- Multica Repo 不属于确认的 `project_id`、未出现在该项目的
+  `project resource list`，或 project-repo 映射未逐项确认。
 - 非正整数、非法枚举、无效 IANA timezone 或无法解析的 cron。
 - `target_assignee_type` 不是 `agent` 或 `squad`，或 `target_assignee` 不是对应目标的
   UUID。
@@ -20,11 +21,16 @@
 - `resolution_enabled=true` 时缺失 `dedupe_key`，或其值不是系统默认模板
   `project:issue_id`。该字段不向用户提问，必须在生成 Autopilot 描述时自动补齐。
 - `feishu_app` 的 `chat_id` 不是已确认的 `normal` 群或不符合 `oc_...` 格式。
+- 任一通知分支缺少 `inspection_url_template`，或该值不是合法的 HTTPS 巡检单 URL 前缀；
+  该字段使用系统默认值，不向用户提问。
 - `feishu_webhook` 的 `webhook_url` 不是 HTTPS URL。
 - `feishu_webhook` 仍启用了解决单动作或携带解决单 callback 配置。
+- `feishu_app` 未明确要求只读却写入 `resolution_enabled=false`；自建应用默认必须为
+  `true` 并具备解决单配置。
 - `subscriber` 不是当前创建人的平台身份。
-- 生产环境值未按 `sentry-environment.md` 为每个 Sentry project 得到 `resolved`，或把
-  `prod`、`Prod`、`Production` 仅按大小写合并成一个查询值。
+- 生产环境值未按 `sentry-environment.md` 通过环境元数据、环境探针、详情回退或用户确认
+  为每个 Sentry project 得到 `resolved`，或把 `prod`、`Prod`、`Production` 仅按大小写
+  合并成一个查询值。
 - 分支字段与通知渠道、`resolution_enabled` 状态不一致。
 
 `sentry_org` 只能是固定值 `mico`。不使用名称相似度、slug、描述或旧 Autopilot 描述
@@ -45,6 +51,8 @@ python3 skills/sentry-ap-setup/scripts/validate_autopilot_description.py \
   --subscriber <current-creator> \
   --cron "0 10 * * *" \
   --timezone Asia/Shanghai \
+  --project-resources-file /tmp/sentry-ap-setup/project-resources.json \
+  --repo-url "<confirmed-repo-url>" \
   --output json
 ```
 
@@ -54,7 +62,8 @@ organization、项目分组、URL、IANA timezone，以及启用解决单时的
 `dedupe_key: project:issue_id`。脚本不得只校验通知字段后放行，也不得以“后续 callback
 再补齐”为理由跳过缺失字段。缺失的默认字段必须先由规范化步骤补全；缺失的用户确认
 字段必须返回 `needs-info` 并回到对应提问轮次；同时校验创建命令的标题、Agent、模式、
-Multica project、subscriber、cron 和 timezone。任何一种缺失都不能创建 Autopilot。
+Multica project、subscriber、cron、timezone，以及项目资源文件中的每个确认 Repo。
+任何一种缺失都不能创建 Autopilot。
 
 ## 发送配置矩阵
 
@@ -62,11 +71,11 @@ Multica project、subscriber、cron 和 timezone。任何一种缺失都不能�
 
 | channel | 必填配置 |
 | --- | --- |
-| `feishu_webhook` | `transport=curl`、只读卡片（查看错误摘要、指标、初判、建议和 Sentry 链接，不联动 Multica 创建解决单）、`resolution_enabled=false`、`msg_type=interactive`、`max_cards_per_run=1`、HTTPS `webhook_url` |
-| `feishu_app` | `transport=lark_cli`、可交互卡片（配置巡检单链接后可点击“查看巡检单”跳转 Multica；开启后可点击“创建解决单”联动通用解决单流程）、`as=bot`、`msg_type=interactive`、`max_cards_per_run=1`、`profile=sentry-notify`、`oc_... chat_id` |
+| `feishu_webhook` | `transport=curl`、只读卡片（查看错误摘要、指标、初判、建议和 Sentry 链接，可点击“查看巡检单”跳转 Multica，但不创建解决单）、`resolution_enabled=false`、`msg_type=interactive`、`max_cards_per_run=1`、默认 `inspection_url_template`、HTTPS `webhook_url` |
+| `feishu_app` | `transport=lark_cli`、可交互卡片（使用默认巡检单链接后可点击“查看巡检单”跳转 Multica；默认可点击“创建解决单”联动通用解决单流程）、`as=bot`、`msg_type=interactive`、`max_cards_per_run=1`、`profile=sentry-notify`、`oc_... chat_id`、默认 `inspection_url_template` |
 
 这里的 `msg_type=interactive` 是飞书卡片消息的封装类型；Webhook 分支仍然只读，不因该
-字段获得解决单按钮或其他交互动作。
+字段获得解决单回调或其他写操作；巡检单跳转由 `inspection_url_template` 提供。
 
 固定 App 绑定为 `app_id=cli_aa1a82ab6d785cc2`、`profile=sentry-notify`。调用方不能
 覆盖。App Secret 只保存在 profile 中，不写入 Autopilot 描述、Issue、卡片、方案或日志。
@@ -92,13 +101,16 @@ profile_ref: skill:sentry-resolution-order
 `layout=global_top_n_markdown_v1`、`display_top_n`、项目分组列和发送字段必须符合
 `sentry-daily-top-issues` Skill。仅在 `resolution_enabled=true` 时，解决单目标、版本和
 callback 字段必须符合 `sentry-resolution-order` Skill 及其 Reference。
+项目分组固定包含 `分组`、`项目`、`Repo`、`Top N` 四列；Repo URL 必须与已附加的
+Multica project 资源逐项一致。
 
 不要把 Card JSON、解决单幂等、验签或派发实现复制到方案描述；只写下游 Skill 能解析的
 配置字段。
 
 ## 解决单 Autopilot 复用
 
-只在通知方式为自建应用且 `resolution_enabled=true` 时判断复用。创建前必须读取每个候选的完整详情。候选
+只在通知方式为自建应用且 `resolution_enabled=true` 时判断复用；自建应用默认使用该值。
+创建前必须读取每个候选的完整详情。候选
 同时满足以下条件才可复用：
 
 - `profile_ref` 精确等于 `skill:sentry-resolution-order`。
@@ -144,13 +156,14 @@ Multica project scope 不是兼容条件。候选的项目范围或业务描述�
 | 执行时间 | 每天 10:00（默认，系统已自动转换执行计划） |
 | Multica 订阅人 | 当前创建人（自动接收 Autopilot 运行单或状态通知） |
 | Sentry 错误环境 | 生产环境（按项目使用已核验的 `prod` / `Prod` / `Production`） / 用户明确选择的全部环境 |
-| 通知方式 | 飞书机器人地址（只读查看，不联动 Multica 创建解决单） / 飞书自建应用（配置链接后可查看巡检单、跳转 Multica，并按配置创建解决单） |
+| 通知方式 | 飞书机器人地址（只读查看，可查看巡检单但不创建解决单） / 飞书自建应用（默认查看巡检单、跳转 Multica 并创建解决单） |
 | 通知目标 | 已配置（Webhook 不回显地址） / <正常群名> |
+| 巡检单链接 | 自建应用默认使用 `https://multica.micoplatform.com/mico-fe/issues/`，发送时拼接当前巡检 Issue ID |
 
 解决单
 | 配置项 | 当前设置 |
 | --- | --- |
-| 创建解决单按钮 | 开启 / 关闭 / 不适用（只读卡片） |
+| 创建解决单按钮 | 开启（自建应用默认） / 关闭（用户明确只读） / 不适用（Webhook） |
 | 允许创建解决单的项目 | <项目名称> |
 | 处理目标 | 单个 Agent / 小队：<目标名称>（平台标识已核验） |
 | 风险等级对应优先级 | 高风险 P1 / 中风险 P2 / 低风险 P3（默认） |

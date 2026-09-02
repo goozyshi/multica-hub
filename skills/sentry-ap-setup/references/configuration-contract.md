@@ -25,11 +25,16 @@ impact_trend_observation: enabled
 observation_timeout_days: 7
 post_fix_observation_days: 3
 dedupe_key: project:issue_id
+inspection_url_template: https://multica.micoplatform.com/mico-fe/issues/
 feishu_app_id: cli_aa1a82ab6d785cc2
 feishu_profile: sentry-notify
 ```
 
-这些是机械参数，不是项目、Repo、群组、解决单目标或权限决策。
+`inspection_url_template` 适用于两种通知方式，使用 Multica 巡检单地址默认值；Webhook
+仅提供查看跳转，不能创建解决单。其余值是机械参数，不是项目、Repo、群组、解决单目标
+或权限决策。
+`resolution_enabled` 按通知方式确定：飞书自建应用默认使用 `true`，Webhook 固定使用
+`false`。只有用户明确要求自建应用只读时才使用 `false`，不再为默认 App 路径单独提问。
 `subscriber` 自动使用当前创建人，不作为用户选择项。
 业务名称自动使用 `<scope-title> Sentry 巡检`，执行时间默认每天 10:00，均不作为首轮
 提问项。风险优先级、影响观察开关和观察时长使用上述默认值，用户后续可直接修改
@@ -38,13 +43,15 @@ Autopilot。
 每个 callback 必须将其展开为实际的 `<project>:<issue_id>`；不得使用固定 Issue ID 或按
 业务名称自造去重键。
 Sentry 环境的默认业务语义是“生产环境”，不直接把 `production` 写入查询字段；实际字段
-必须使用每个项目已核验的原始环境名称。
+必须使用每个项目经环境元数据、环境探针、详情回退或用户确认得到的原始环境名称，并记录
+核验来源。
 
 字段完整性分为三类：业务名称、执行时间、Top N、timezone、subscriber、风险优先级、
 影响观察参数和 `dedupe_key` 必须由系统默认补全；Sentry project、Multica 项目、通知方式、
-Webhook 地址或应用群、解决单开关、允许创建的项目和 Agent/Squad 目标必须由用户确认；
-环境、资源 ID、Skill 引用和权限状态必须由系统读取核验。三类字段任一缺失，都不得创建
-Autopilot。
+Webhook 地址或应用群、允许创建的项目和 Agent/Squad 目标必须由用户确认；解决单开关由
+通知方式确定，App 默认开启，只有用户明确要求只读时才允许关闭；
+环境优先由系统读取核验；自动读取无法得到唯一值时，允许用户确认原始环境名。资源 ID、
+Skill 引用和权限状态必须由系统读取核验。三类字段任一缺失，都不得创建 Autopilot。
 
 ## 面向用户的提问
 
@@ -55,6 +62,10 @@ Autopilot。
 - `Multica 项目`：巡检 Autopilot 的归属范围，决定可用 Repo 和 workspace 资源。
   两者不能按名称自动推断对应关系。
 
+Repo 的实际可用性以 `multica project resource list <project-id> --output json` 为准；
+`multica repo list` 只用于发现 workspace 候选。Autopilot 创建命令通过 `--project` 继承
+项目资源，没有单独的 `--repo` 参数。
+
 以下是用户名称与内部字段的映射：
 
 | 用户看到的名称 | 内部配置含义 |
@@ -64,10 +75,11 @@ Autopilot。
 | 执行时间 | `cron`，默认每天 10:00；用户后续可直接修改 Autopilot |
 | Multica 订阅人 | `subscriber`，自动使用当前创建人，接收 Autopilot 运行单或状态通知 |
 | 飞书通知目标 | Webhook 地址对应的固定群，或自建应用选择的目标群 |
-| Sentry 错误环境 | `environment`，默认生产环境；按每个项目实际名称使用 `Prod`、`prod` 或 `Production` 等精确值 |
+| 巡检单链接 | `inspection_url_template`，两种通知方式都默认使用 Multica 巡检单地址，运行时拼接当前巡检 Issue ID |
+| Sentry 错误环境 | `environment`，默认生产环境；优先自动核验，必要时由用户确认 `Prod`、`prod` 或 `Production` 等精确值 |
 | 每组最多展示 | `Top N`，每个 Sentry 项目取多少条错误 |
 | 最终展示条数 | `display_top_n`，所有分组汇总后最终展示多少条 |
-| 是否提供创建解决单按钮 | `resolution_enabled` |
+| 创建解决单按钮 | `resolution_enabled`；自建应用默认开启，Webhook 固定关闭，用户明确要求只读时才关闭 |
 | 允许创建解决单的项目 | `allowed_projects` |
 | 解决单处理目标类型 | `target_assignee_type`，指定单个 Agent 或小队 |
 | 解决单处理目标 | `target_assignee`，指定 Agent 或小队的平台唯一 ID |
@@ -81,19 +93,20 @@ Autopilot。
 
 | 通知方式 | 它是什么 | 适合场景 | 用户需要准备 |
 | --- | --- | --- | --- |
-| 飞书机器人地址（Webhook） | 只读卡片：查看错误摘要、次数、影响用户、初判、建议和 Sentry 链接；不能从卡片操作或联动 Multica 创建解决单 | 只需要查看巡检结果 | 下一轮提供 HTTPS 机器人地址 |
-| 飞书自建应用 | 可交互卡片：配置巡检单链接后，点击“查看巡检单”跳转 Multica；开启解决单后，点击“创建解决单”联动通用解决单流程 | 需要查看 Multica 巡检单或发起解决单 | 下一轮选择应用已加入的目标群 |
+| 飞书机器人地址（Webhook） | 只读卡片：查看错误摘要、次数、影响用户、初判、建议和 Sentry 链接；可点击“查看巡检单”跳转 Multica，但不能创建解决单 | 只需要查看巡检结果 | 下一轮提供 HTTPS 机器人地址，巡检单链接自动补全 |
+| 飞书自建应用 | 可交互卡片：默认配置巡检单链接，点击“查看巡检单”跳转 Multica；默认可点击“创建解决单”联动通用解决单流程 | 需要查看 Multica 巡检单或发起解决单 | 下一轮选择应用已加入的目标群，巡检单链接自动补全 |
 
 选择后的行为：
 
 - 机器人地址方式通过 `curl` 发送只读卡片，用户可查看错误摘要、指标、初判、建议和
-  Sentry 链接；不查询飞书群，也不提供卡片操作或联动 Multica 创建解决单。
-- 自建应用方式通过已绑定的 `sentry-notify` profile 以 Bot 身份发送可交互卡片，配置巡检
-  单链接后，用户可点击“查看巡检单”跳转 Multica；开启解决单后，点击“创建解决单”
-  即可联动通用解决单流程。
+  Sentry 链接，并点击“查看巡检单”跳转 Multica；不查询飞书群，也不提供创建解决单
+  回调或其他写操作。
+- 自建应用方式通过已绑定的 `sentry-notify` profile 以 Bot 身份发送可交互卡片，系统默认配置巡检
+  单链接，用户可点击“查看巡检单”跳转 Multica；默认启用解决单时，点击“创建解决单”
+  即可联动通用解决单流程。用户明确要求只读时不生成该按钮。
   只展示应用已加入且状态正常的群，不展示或询问 App Secret。
 - 选择通知方式后，另一种方式的字段、资源查询和候选全部不出现。
-- 从 Webhook 切换为飞书自建应用并开启解决单时，视为一次完整分支切换：重新生成发送
+- 从 Webhook 切换为默认开启解决单的飞书自建应用时，视为一次完整分支切换：重新生成发送
   配置和解决单配置，补齐应用群、授权目标与 `dedupe_key`，不得只修改 `channel` 后直接
   保存。
 
@@ -145,12 +158,13 @@ Sentry 项目入口，不额外请求项目详情。
 | 巡检分组 | 每个业务分组对应哪个 Sentry 项目和代码仓库 | 逐项选择并确认 |
 | 每组最多展示 | 每个 Sentry 项目取多少条错误；默认 3 条 | 使用默认值，无需填写 |
 | 通知设置 | 根据上一轮选择，填写机器人地址或选择通知群 | 选定渠道后必须填写或选择 |
-| 是否提供创建解决单按钮 | 仅自建应用卡片可跳转 Multica 并发起解决单；选择“开启”或“关闭” | 仅自建应用确认 |
-
-Webhook 固定为只读卡片，不显示或询问创建解决单按钮；自建应用才显示该项，并允许开启
+Webhook 固定为只读卡片，不显示或询问创建解决单按钮；自建应用默认显示该按钮并允许
 跳转 Multica 和创建解决单动作。`feishu_webhook` 和 `feishu_app` 只出现其中一个分支。
-发送配置中的 `msg_type=interactive` 只是飞书卡片封装格式，不表示 Webhook 卡片包含可交互
-动作。
+两种通知方式的巡检单链接都使用机械默认值，不作为用户输入；发送时将当前巡检 Issue ID
+拼接到 `https://multica.micoplatform.com/mico-fe/issues/` 后。只有自建应用且未明确要求
+只读时，才额外生成“创建解决单”回调按钮。
+发送配置中的 `msg_type=interactive` 只是飞书卡片封装格式，不表示 Webhook 卡片包含解决单
+回调或其他写操作；Webhook 仍可通过 `inspection_url_template` 提供只读的巡检单跳转。
 
 ### 生产环境值
 
@@ -160,7 +174,7 @@ Webhook 固定为只读卡片，不显示或询问创建解决单按钮；自建
 
 ### 第 3 轮：解决单设置
 
-仅当通知方式为自建应用且第 2 轮选择开启解决单按钮时，一次询问：
+仅当通知方式为自建应用且未明确要求只读时，一次询问：
 
 | 要确认的设置 | 用户需要理解什么 | 回复方式 |
 | --- | --- | --- |
@@ -201,7 +215,10 @@ P1、中风险 P2、低风险 P3；修复后影响观察默认开启，最多观
 
 巡检 Autopilot 的 `description` 必须包含固定系统字段和以下规范分区。该段只用于生成
 机器配置，不直接展示给用户。字段使用
-`- key: value`，项目分组只使用三列表格；未知区块和字段会被日报 Skill 拒绝。
+`- key: value`，项目分组固定使用四列表格；未知区块和字段会被日报 Skill 拒绝。
+项目分组必须保留每个已确认的 Repo URL，供日报 Skill 按分组读取；同时它通过已确认
+Multica project 的项目资源绑定提供实际代码访问。创建前必须先完成项目资源绑定并回读
+确认，描述中的 Repo URL 必须与项目资源列表完全一致。
 
 ```text
 ## 基本信息
@@ -220,9 +237,9 @@ P1、中风险 P2、低风险 P3；修复后影响观察默认开启，最多观
 - sort: freq
 
 ### 项目分组
-| 分组 | 项目 | Top N |
-| --- | --- | --- |
-| <group> | <verified-sentry-project> | <positive-integer> |
+| 分组 | 项目 | Repo | Top N |
+| --- | --- | --- | --- |
+| <group> | <verified-sentry-project> | <verified-repo-url> | <positive-integer> |
 
 - display_top_n: 3
 - layout: global_top_n_markdown_v1
@@ -248,6 +265,7 @@ P1、中风险 P2、低风险 P3；修复后影响观察默认开启，最多观
 - profile: sentry-notify
 - as: bot
 - chat_id: <normal-oc-id>
+- inspection_url_template: https://multica.micoplatform.com/mico-fe/issues/
 - webhook_url: <confirmed-https-url>
 ```
 
@@ -259,7 +277,8 @@ P1、中风险 P2、低风险 P3；修复后影响观察默认开启，最多观
 `webhook_url`。`resolution_enabled=false` 时不绑定 `resolution_autopilot`，不写业务目标
 或观测字段或 `dedupe_key`。`resolution_enabled=true` 时必须写入
 `dedupe_key: project:issue_id`，它由系统默认生成，不进入用户提问。Webhook URL 不能出现在
-方案或日志中。
+方案或日志中。通知方式决定默认值：App 为 `resolution_enabled=true`，Webhook 为
+`resolution_enabled=false`；只有用户明确要求 App 只读时才覆盖默认值。
 
 解决单 callback 的完整字段、Card JSON、按钮状态和发送流程，按需读取日报 Skill 的
 `feishu-card-delivery` Reference，以及解决单 Skill 的 `resolution-creation-and-dispatch`

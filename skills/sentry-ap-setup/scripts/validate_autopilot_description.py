@@ -64,6 +64,7 @@ ALLOWED_FIELDS = {
         "profile",
         "as",
         "chat_id",
+        "inspection_url_template",
         "webhook_url",
     },
 }
@@ -99,6 +100,7 @@ UUID_RE = re.compile(
 CHAT_ID_RE = re.compile(r"^oc_[A-Za-z0-9]+$")
 PLACEHOLDER_RE = re.compile(r"<[^>]+>|\{\{[^}]+\}\}")
 CRON_FIELD_RANGES = ((0, 59), (0, 23), (1, 31), (1, 12), (0, 7))
+DEFAULT_INSPECTION_URL_TEMPLATE = "https://multica.micoplatform.com/mico-fe/issues/"
 
 
 class Validation:
@@ -120,9 +122,9 @@ def section_for_heading(heading: str) -> str | None:
 def parse_description(
     description: str,
     validator: Validation,
-) -> tuple[dict[str, dict[str, str]], list[tuple[str, str, str]]]:
+) -> tuple[dict[str, dict[str, str]], list[tuple[str, str, str, str]]]:
     fields = {section: {} for section in ALLOWED_FIELDS}
-    groups: list[tuple[str, str, str]] = []
+    groups: list[tuple[str, str, str, str]] = []
     section: str | None = None
     in_group_table = False
 
@@ -148,19 +150,19 @@ def parse_description(
 
         if in_group_table and line.startswith("|"):
             cells = [cell.strip() for cell in line.strip("|").split("|")]
-            if len(cells) != 3:
+            if len(cells) != 4:
                 if not all(set(cell) <= {"-", ":", " "} for cell in cells):
                     validator.add(
                         "invalid_project_group_row",
-                        "项目分组表格必须包含分组、项目、Top N 三列",
+                        "项目分组表格必须包含分组、项目、Repo、Top N 四列",
                         f"line:{line_number}",
                     )
                 continue
-            if cells == ["分组", "项目", "Top N"] or all(
+            if cells == ["分组", "项目", "Repo", "Top N"] or all(
                 set(cell) <= {"-", ":", " "} for cell in cells
             ):
                 continue
-            groups.append((cells[0], cells[1], cells[2]))
+            groups.append((cells[0], cells[1], cells[2], cells[3]))
             continue
 
         match = FIELD_RE.fullmatch(line)
@@ -260,6 +262,18 @@ def valid_https_url(value: str | None) -> bool:
     return parsed.scheme == "https" and bool(parsed.netloc)
 
 
+def valid_inspection_url_template(value: str | None) -> bool:
+    if not valid_https_url(value):
+        return False
+    parsed = urlparse(value or "")
+    return (
+        bool(parsed.path)
+        and parsed.path.endswith("/")
+        and not parsed.query
+        and not parsed.fragment
+    )
+
+
 def valid_cron_field(value: str, minimum: int, maximum: int) -> bool:
     for term in value.split(","):
         if not term:
@@ -293,7 +307,7 @@ def valid_cron(value: str | None) -> bool:
 
 
 def validate_groups(
-    groups: list[tuple[str, str, str]],
+    groups: list[tuple[str, str, str, str]],
     validator: Validation,
 ) -> None:
     if not groups:
@@ -303,12 +317,12 @@ def validate_groups(
             "inspection.project_groups",
         )
         return
-    for index, (group, project, top_n) in enumerate(groups):
+    for index, (group, project, repo, top_n) in enumerate(groups):
         path = f"inspection.project_groups[{index}]"
-        if not group or not project:
+        if not group or not project or not repo:
             validator.add(
                 "empty_project_group",
-                "项目分组的分组名和 Sentry project 不能为空",
+                "项目分组的分组名、Sentry project 和 Repo 不能为空",
                 path,
             )
         if not top_n.isdigit() or int(top_n) <= 0:
@@ -318,11 +332,18 @@ def validate_groups(
                 f"{path}.top_n",
             )
         validate_concrete_value(project, f"{path}.project", validator)
+        validate_concrete_value(repo, f"{path}.repo", validator)
+        if repo and not valid_https_url(repo):
+            validator.add(
+                "invalid_group_repo",
+                "项目分组 Repo 必须是 HTTPS URL",
+                f"{path}.repo",
+            )
 
 
 def validate_branch_contract(
     fields: dict[str, dict[str, str]],
-    groups: list[tuple[str, str, str]],
+    groups: list[tuple[str, str, str, str]],
     validator: Validation,
 ) -> None:
     basic = fields["basic"]
@@ -442,6 +463,22 @@ def validate_branch_contract(
             "send.channel",
         )
 
+    if channel in {"feishu_webhook", "feishu_app"}:
+        inspection_url_template = send.get("inspection_url_template")
+        if not inspection_url_template:
+            validator.add(
+                "missing_branch_field",
+                "通知分支缺少必填字段 inspection_url_template；系统默认值为 "
+                f"{DEFAULT_INSPECTION_URL_TEMPLATE}",
+                "send.inspection_url_template",
+            )
+        elif not valid_inspection_url_template(inspection_url_template):
+            validator.add(
+                "invalid_inspection_url_template",
+                "inspection_url_template 必须是以 / 结尾且不含 query 或 fragment 的 HTTPS 前缀",
+                "send.inspection_url_template",
+            )
+
     resolution_required = {
         "resolution_autopilot",
         "allowed_projects",
@@ -535,15 +572,93 @@ def validate_branch_contract(
         ("resolution", "target_assignee"),
         ("send", "profile"),
         ("send", "chat_id"),
+        ("send", "inspection_url_template"),
         ("send", "webhook_url"),
     )
     for section, key in concrete_fields:
         validate_concrete_value(fields[section].get(key), f"{section}.{key}", validator)
 
 
+def validate_project_resources(
+    resources_file: str | None,
+    project_id: str | None,
+    repo_urls: list[str],
+    validator: Validation,
+) -> None:
+    if not repo_urls:
+        return
+    if not resources_file:
+        validator.add(
+            "missing_project_resources_file",
+            "已确认 Repo 必须提供最新的项目资源列表",
+            "create.project_resources_file",
+        )
+        return
+
+    try:
+        payload = json.loads(Path(resources_file).read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        validator.add(
+            "missing_project_resources_file",
+            "项目资源列表文件不存在",
+            resources_file,
+        )
+        return
+    except (json.JSONDecodeError, OSError):
+        validator.add(
+            "invalid_project_resources_file",
+            "项目资源列表文件不是可读取的 JSON",
+            resources_file,
+        )
+        return
+
+    resources = payload.get("resources") if isinstance(payload, dict) else payload
+    if not isinstance(resources, list):
+        validator.add(
+            "invalid_project_resources",
+            "项目资源列表必须是数组",
+            resources_file,
+        )
+        return
+
+    attached_urls: set[str] = set()
+    for index, resource in enumerate(resources):
+        if not isinstance(resource, dict):
+            continue
+        resource_project_id = resource.get("project_id")
+        if resource_project_id and project_id and resource_project_id != project_id:
+            validator.add(
+                "project_resource_scope_mismatch",
+                "项目资源列表包含不属于当前 Multica project 的资源",
+                f"resources[{index}].project_id",
+            )
+        if resource.get("resource_type") != "github_repo":
+            continue
+        resource_ref = resource.get("resource_ref")
+        if isinstance(resource_ref, dict) and isinstance(resource_ref.get("url"), str):
+            attached_urls.add(resource_ref["url"])
+
+    for index, repo_url in enumerate(repo_urls):
+        validate_concrete_value(repo_url, f"create.repo_urls[{index}]", validator)
+        if not valid_https_url(repo_url):
+            validator.add(
+                "invalid_repo_url",
+                "确认 Repo 必须是 HTTPS URL",
+                f"create.repo_urls[{index}]",
+            )
+        elif repo_url not in attached_urls:
+            validator.add(
+                "missing_project_repo",
+                "确认的 Repo 尚未附加到目标 Multica project",
+                f"create.repo_urls[{index}]",
+            )
+
+
 def validate_create_arguments(
     fields: dict[str, dict[str, str]],
     arguments: dict[str, str | None],
+    project_resources_file: str | None,
+    repo_urls: list[str],
     validator: Validation,
 ) -> None:
     for key in ("title", "agent", "mode", "project_id", "subscriber", "cron", "timezone"):
@@ -593,25 +708,52 @@ def validate_create_arguments(
             "创建参数 timezone 必须与 Autopilot 描述中的 timezone 一致",
             "create.timezone",
         )
+    validate_project_resources(
+        project_resources_file,
+        arguments.get("project_id"),
+        repo_urls,
+        validator,
+    )
 
 
 def validate_description(
     description: str,
     create_arguments: dict[str, str | None],
+    project_resources_file: str | None = None,
+    repo_urls: list[str] | None = None,
 ) -> dict[str, Any]:
     validator = Validation()
     fields, groups = parse_description(description, validator)
     required_fields(fields, validator)
     validate_branch_contract(fields, groups, validator)
-    validate_create_arguments(fields, create_arguments, validator)
+    group_repo_urls = [repo for _, _, repo, _ in groups if repo]
+    if repo_urls and set(repo_urls) != set(group_repo_urls):
+        validator.add(
+            "repo_mapping_mismatch",
+            "命令中的 Repo URL 必须与 Autopilot 项目分组中的 Repo 完全一致",
+            "create.repo_urls",
+        )
+    validate_create_arguments(
+        fields,
+        create_arguments,
+        project_resources_file,
+        group_repo_urls,
+        validator,
+    )
     resolution_enabled = fields["resolution"].get("resolution_enabled") == "true"
+    normalized_defaults = (
+        {"dedupe_key": "project:issue_id"} if resolution_enabled else {}
+    )
+    if fields["send"].get("channel") in {"feishu_webhook", "feishu_app"}:
+        normalized_defaults["inspection_url_template"] = fields["send"].get(
+            "inspection_url_template",
+            DEFAULT_INSPECTION_URL_TEMPLATE,
+        )
     report: dict[str, Any] = {
         "status": "valid" if not validator.errors else "invalid",
         "decision": "ready-to-create" if not validator.errors else "needs-info",
         "errors": validator.errors,
-        "normalized_defaults": (
-            {"dedupe_key": "project:issue_id"} if resolution_enabled else {}
-        ),
+        "normalized_defaults": normalized_defaults,
     }
     return report
 
@@ -628,6 +770,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--subscriber", help="Autopilot 订阅人")
     parser.add_argument("--cron", help="Autopilot schedule cron")
     parser.add_argument("--timezone", help="Autopilot schedule timezone")
+    parser.add_argument(
+        "--project-resources-file",
+        help="确认的 Multica project 资源列表 JSON 文件",
+    )
+    parser.add_argument(
+        "--repo-url",
+        action="append",
+        default=[],
+        help="确认并应附加到项目的 Repo URL；可重复传入",
+    )
     parser.add_argument("--output", choices=("json",), default="json")
     return parser
 
@@ -678,6 +830,8 @@ def main(argv: list[str] | None = None) -> int:
             "cron": args.cron,
             "timezone": args.timezone,
         },
+        project_resources_file=args.project_resources_file,
+        repo_urls=args.repo_url,
     )
     print(json.dumps(report, ensure_ascii=False, separators=(",", ":")))
     return 0 if report["status"] == "valid" else 1
