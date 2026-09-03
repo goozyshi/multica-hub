@@ -11,7 +11,7 @@ Autopilot 描述采用 Markdown 分组格式。固定系统字段位于“基本
 
 `resolution_enabled: true` 时，Autopilot 必须包含有效 `resolution_autopilot` 和解决单配置；解决单配置中的 `target_assignee_type`、`target_assignee` 必须在生成卡片时原样传入 callback。
 
-规范配置关系固定为：`巡检配置 -> Sentry 查询` 提供查询参数，`解决单配置 -> 解决单授权与目标` 提供本次巡检的解决单动作参数；卡片必须传递 Sentry 事实快照、来源巡检标识、用户确认的派发目标和影响趋势观测参数，禁止由 Lark bridge 裁剪。影响趋势启用时，还必须保留 `sentry_impact_table_v1` 结构化表格快照，供解决单基线和后续观测按同一窗口逐行对比。
+规范配置关系固定为：`巡检配置 -> Sentry 查询` 提供查询参数，`解决单配置 -> 解决单授权与目标` 提供本次巡检的解决单动作参数；卡片必须传递 Sentry 事实快照、来源巡检标识、用户确认的派发目标和影响趋势观测参数，禁止由 Lark bridge 裁剪。
 
 执行前严格校验：拒绝未知区块或未知字段；拒绝缺失必填项、重复项目、空分组、非正整数、非法枚举和无效 IANA 时区。`display_top_n` 是最终展示数量；各组 `Top N` 只用于组内候选数，二者不可混用。`resolution_enabled: true` 时必须有有效 `resolution_autopilot`、`dedupe_key` 和 `business_resolution_config_v1`。发送配置的通道校验见 [飞书卡片与发送 Reference](references/feishu-card-delivery.md)。模板配置阶段不要求预先存在具体巡检 Issue ID；发送前必须取得当前巡检 Issue ID，并按 Reference 将其传入 validator 完成最终 URL 解析。校验失败时输出字段级错误，结果为 `needs-info`，不得发起 Sentry 查询或发送消息。
 
@@ -42,13 +42,6 @@ Autopilot 描述采用 Markdown 分组格式。固定系统字段位于“基本
 ## 详情快照与传递
 
 详情读取成功后，为每条最终候选生成脱敏 `detail_snapshot`，至少包含异常类型、代表性堆栈位置、路由/接口、`culprit`、版本、环境、详情读取时间 `detail_fetched_at`、证据来源 `evidence_source: sentry_detail` 和简短事实摘要。完整堆栈、IP、用户标识和原始标签不得进入快照。
-
-影响趋势启用时，为每个最终候选同时生成 `impact_observation_snapshot`，包含
-`schema: sentry_impact_table_v1`、`time_window`、`filter`、`window_start`、
-`window_end`、固定 `columns` 和 `rows`。每个 row 至少保留 `group`、`project`、
-`issue_id`、`issue_title`、`event_count`、`user_count`、`first_seen`、`last_seen`、
-`release` 和 `environment`。这是结构化的当前窗口表格数据，不是截图或文案摘要；未知
-字段保持为空或省略，不得填充为零。
 
 需要生成飞书动作时，读取 [飞书卡片与发送 Reference](references/feishu-card-delivery.md)，按其中的载荷规则携带 Sentry 事实快照、`detail_snapshot`、`detail_fetched_at`、`evidence_source`、`analysis_summary` 和 `analysis_confidence`。快照用于解决单内容复核，派发目标和授权配置由解决单 Autopilot 自身读取。
 
@@ -85,6 +78,5 @@ Autopilot 描述采用 Markdown 分组格式。固定系统字段位于“基本
 - `target_assignee_type`、`target_assignee`
 - `source_inspection_autopilot_id`、`inspection_issue_id`
 - `impact_trend_observation`、`observation_timeout_days`、`post_fix_observation_days`（配置启用时必填）
-- `impact_observation_snapshot`（影响趋势启用时必填，结构为 `sentry_impact_table_v1`）
 
-Sentry 事实和可比性上下文至少保留 `sentry_org`、`project`、`issue_id`、`issue_title`、`issue_url`、`event_count`、`user_count`、`first_seen`、`last_seen`、`group`、`dedupe_key`、`environment`、`release`、`time_window`、`filter`、`window_start`、`window_end`；启用影响趋势时还必须保留 `impact_observation_snapshot`，其 `schema` 为 `sentry_impact_table_v1`，并包含 `columns` 和 `rows`。详情证据字段按可用性传递。旧卡片缺少固定字段时不得静默降级转发，应阻断并提示重新生成日报卡片。
+Sentry 事实和可比性上下文至少保留 `sentry_org`、`project`、`issue_id`、`issue_title`、`issue_url`、`event_count`、`user_count`、`first_seen`、`last_seen`、`group`、`dedupe_key`、`environment`、`release`、`time_window`、`filter`、`window_start`、`window_end`；详情证据字段按可用性传递。旧卡片缺少固定字段时不得静默降级转发，应阻断并提示重新生成日报卡片。

@@ -58,20 +58,6 @@ REQUIRED_CALLBACK_FIELDS = (
     "window_end",
 )
 
-OBSERVATION_SNAPSHOT_SCHEMA = "sentry_impact_table_v1"
-OBSERVATION_TABLE_COLUMNS = (
-    "group",
-    "project",
-    "issue_id",
-    "issue_title",
-    "event_count",
-    "user_count",
-    "first_seen",
-    "last_seen",
-    "release",
-    "environment",
-)
-
 SENSITIVE_KEYS = {
     "ip",
     "uid",
@@ -643,88 +629,6 @@ def validate_send_config(
     return send_config, resolved_url
 
 
-def validate_observation_snapshot(
-    value: dict[str, Any],
-    validator: CardValidation,
-    path: str,
-) -> None:
-    snapshot = value.get("impact_observation_snapshot")
-    snapshot_path = f"{path}.impact_observation_snapshot"
-    if not isinstance(snapshot, dict):
-        validator.add(
-            "missing_observation_snapshot",
-            "启用影响趋势观测时必须携带结构化表格快照",
-            snapshot_path,
-        )
-        return
-    if snapshot.get("schema") != OBSERVATION_SNAPSHOT_SCHEMA:
-        validator.add(
-            "invalid_observation_snapshot",
-            f"表格快照 schema 必须是 {OBSERVATION_SNAPSHOT_SCHEMA}",
-            f"{snapshot_path}.schema",
-        )
-    if snapshot.get("columns") != list(OBSERVATION_TABLE_COLUMNS):
-        validator.add(
-            "invalid_observation_snapshot",
-            "表格快照 columns 必须使用固定影响观测列",
-            f"{snapshot_path}.columns",
-        )
-    for field in ("time_window", "filter", "window_start", "window_end"):
-        if snapshot.get(field) != value.get(field):
-            validator.add(
-                "observation_snapshot_context_mismatch",
-                f"表格快照的 {field} 必须与 callback 保持一致",
-                f"{snapshot_path}.{field}",
-            )
-
-    rows = snapshot.get("rows")
-    if not isinstance(rows, list) or not rows:
-        validator.add(
-            "invalid_observation_snapshot",
-            "表格快照必须包含至少一行数据",
-            f"{snapshot_path}.rows",
-        )
-        return
-    required_row_fields = set(OBSERVATION_TABLE_COLUMNS)
-    for index, row in enumerate(rows):
-        row_path = f"{snapshot_path}.rows[{index}]"
-        if not isinstance(row, dict):
-            validator.add(
-                "invalid_observation_row",
-                "表格快照行必须是对象",
-                row_path,
-            )
-            continue
-        missing_fields = sorted(required_row_fields - row.keys())
-        if missing_fields:
-            validator.add(
-                "missing_observation_row_field",
-                f"表格快照行缺少字段：{', '.join(missing_fields)}",
-                row_path,
-            )
-        for field in ("group", "project", "issue_id", "issue_title", "first_seen", "last_seen"):
-            if field in row and not isinstance(row[field], str):
-                validator.add(
-                    "invalid_observation_row_field",
-                    f"表格快照行的 {field} 必须是字符串",
-                    f"{row_path}.{field}",
-                )
-        for field in ("event_count", "user_count"):
-            raw = row.get(field)
-            if not isinstance(raw, int) or isinstance(raw, bool) or raw < 0:
-                validator.add(
-                    "invalid_observation_row_field",
-                    f"表格快照行的 {field} 必须是非负整数",
-                    f"{row_path}.{field}",
-                )
-        if row.get("project") != value.get("project") or row.get("issue_id") != value.get("issue_id"):
-            validator.add(
-                "observation_row_mismatch",
-                "表格快照行必须对应当前 callback 的 project 和 issue_id",
-                row_path,
-            )
-
-
 def validate_callback_payload(
     button: dict[str, Any],
     validator: CardValidation,
@@ -782,11 +686,6 @@ def validate_callback_payload(
                     f"{field} 必须是正整数（影响趋势观测已启用）",
                     f"{path}.behaviors[0].value.{field}",
                 )
-        validate_observation_snapshot(
-            value,
-            validator,
-            f"{path}.behaviors[0].value",
-        )
     elif observation == "disabled" and any(
         value.get(field) not in ("", None, [])
         for field in ("observation_timeout_days", "post_fix_observation_days")

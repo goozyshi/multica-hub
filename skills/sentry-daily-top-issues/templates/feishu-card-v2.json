@@ -85,7 +85,6 @@
               "filter": "{{filter}}",
               "window_start": "{{window_start}}",
               "window_end": "{{window_end}}",
-              "impact_observation_snapshot": "{{impact_observation_snapshot}}",
               "culprit": "{{culprit}}",
               "fingerprint": "{{fingerprint}}",
               "risk_score": "{{risk_score}}",

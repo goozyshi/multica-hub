@@ -7,14 +7,11 @@
 - 解决单 Autopilot 设置 `impact_trend_observation: enabled` 时，用户点击创建或复用解决单后建立基线；字段缺失或值不是 `enabled` 时跳过基线。
 - `observation_timeout_days` 必须是正整数，用于限制未出现修复信号或人工确认时的最长自动采样周期；必须由当前解决单 Autopilot 提供。出现修复信号后，仍按 `post_fix_observation_days` 完成观察。
 - `post_fix_observation_days` 必须由当前解决单 Autopilot 提供，且为正整数。
-- 影响趋势启用时，callback 必须携带 `impact_observation_snapshot`；其
-  `schema` 为 `sentry_impact_table_v1`，并包含固定列定义和至少一行当前窗口数据。
 - 这些字段属于解决单 Autopilot 配置，不属于日报 Autopilot 的 `resolution_enabled`；仅写入 `observation_timeout_days` 不会启用基线。
 
 ## 目标与边界
 
-- 记录用户点击创建/复用解决单时的 Issue 影响基线，并在后续固定窗口保留同结构表格，
-  对事件数量和影响用户变化进行逐行比较。
+- 记录用户点击创建/复用解决单时的 Issue 影响基线，并在后续固定窗口观察事件数量变化。
 - 该数据只能作为“趋势下降/持续回归”等辅助证据，不能单独证明根因已修复、解决单可关闭或 Sentry Issue 可关闭。
 - 不因基线写入失败阻塞已经成功的解决单创建或复用；应标记为待补齐并保留原始触发快照。
 - 没有用户点击创建或复用解决单时，不创建基线记录。
@@ -23,8 +20,6 @@
 
 - 唯一关联键：`project:issue_id`，与既有 `sentry_dedupe_key` 完全一致。
 - 优先复用已验证卡片快照中的 `project`、`issue_id`、`event_count`、`user_count`、`first_seen`、`last_seen`、`release`、`environment`、`snapshot_at`、`evidence_source` 和 `detail_fetched_at`。
-- `impact_observation_snapshot` 是本轮表格数据的唯一结构化来源；必须保留其
-  `schema`、`columns`、`rows`、查询窗口和过滤条件，不能只从卡片上的格式化文本恢复。
 - 基线必须记录精确的 `window_start`、`window_end`、查询条件和采集时间，不能只记录“当天”。
 - 建议增加 `baseline_source: card_snapshot`；若因快照过期而重新查询，改为 `baseline_source: fresh_query` 并同时保留卡片快照时间。
 
@@ -33,13 +28,12 @@
 ### 新建解决单
 
 1. 通过验签、项目白名单、当前 Issue 状态和幂等校验。
-2. 解决单创建成功后，原子地写入一次不可覆盖的基线表格快照。
-3. 基线写入失败时记录 `baseline_status: pending`，不得伪造已记录状态；同时保留 callback
-   中的原始结构化快照，便于补采。
+2. 解决单创建成功后，原子地写入一次不可覆盖的基线。
+3. 基线写入失败时记录 `baseline_status: pending`，不得伪造已记录状态。
 
 ### 复用解决单
 
-- 已存在基线时禁止覆盖；只更新 `last_reused_at` 或追加一行观测表数据。
+- 已存在基线时禁止覆盖；只更新 `last_reused_at` 或追加一次观测。
 - 历史解决单没有基线时，可以补采，但必须标记 `baseline_source: backfilled` 和 `baseline_captured_at`，不能冒充首次创建基线。
 - 解决单为 `done` 或 `cancelled` 后重新创建时，开启新的 `baseline_generation`，并保留旧周期关联。
 
@@ -55,9 +49,6 @@
 ```text
 sentry_baseline_event_count
 sentry_baseline_user_count
-sentry_baseline_table_schema
-sentry_baseline_table_columns
-sentry_baseline_table_json
 sentry_baseline_captured_at
 sentry_baseline_window_start
 sentry_baseline_window_end
@@ -72,7 +63,6 @@ sentry_repair_signal_detail
 sentry_post_fix_observation_started_at
 sentry_post_fix_observation_until
 sentry_observation_sample_count
-sentry_observation_table_json
 sentry_observation_result
 sentry_observation_stopped_at
 sentry_observation_stop_reason
@@ -85,27 +75,21 @@ sentry_observation_stop_reason
 
 结论：<趋势结论>。该结论不等同于已解决。
 
-| 类型 | 采集时间 | 查询窗口 | 分组 | 项目 / Issue | 环境 | Release | 事件数 | 影响用户 | 相对基线 | 可能修复节点 |
-| --- | --- | --- | --- | --- | --- | --- | ---: | ---: | --- | --- |
-| 创建基线 | <timestamp> | <start> ~ <end> | <group> | <project> / <issue-id> | <env> | <release> | <count> | <count> | — | — |
-| 后续观测 | <timestamp> | <start> ~ <end> | <group> | <project> / <issue-id> | <env> | <release> | <count> | <count> | <delta / percentage> | <signal> |
+| 类型     | 采集时间    | 查询窗口        | 环境  | Release   |  事件数 | 影响用户 | 来源     | 可能修复节点 | 节点来源                           |
+| -------- | ----------- | --------------- | ----- | --------- | ------: | -------: | -------- | ------------ | ---------------------------------- |
+| 创建基线 | <timestamp> | <start> ~ <end> | <env> | <release> | <count> |  <count> | <source> | —            | —                                  |
+| 后续观测 | <timestamp> | <start> ~ <end> | <env> | <release> | <count> |  <count> | <source> | <signal>     | <user_report / ci_release / other> |
 ```
 
-表格每次追加一行，不覆盖创建基线；`sentry_baseline_table_json` 保存不可变基线，
-`sentry_observation_table_json` 保存按时间追加的结构化行。解决单正文可展示基线和
-全部已采样行，若平台正文有长度限制，则正文展示基线与最新窗口，完整行仍必须保留在
-独立观测记录中，不能丢弃或改写。
+完整的每日观测明细优先留在对应巡检结果或独立观测记录中；解决单只保留基线、最新观测和趋势摘要，避免正文无限增长。
 
 ## 后续观测规则
 
 - 只观测已经存在活动解决单且具备基线的 `project:issue_id`；没有用户动作形成的解决单不产生基线，也不生成“解决后趋势”。
-- 使用与基线相同的项目、时间窗口、filter、environment、Sentry 分组和计数口径。当前日报为 `24h` 时，观测也必须是同口径滚动窗口；每次采样追加一行与基线相同列结构的数据。
+- 使用与基线相同的项目、时间窗口、filter、environment、Sentry 分组和计数口径。当前日报为 `24h` 时，观测也必须是同口径滚动窗口。
 - 至少记录 `observed_at`、`window_start`、`window_end`、`event_count`、`user_count`、`release`、`sentry_status` 和 `resolution_issue_id`。
 - 修复发布信息（如 `fix_release` / `fix_release_at`）是可选的修复节点信号；缺失时仍可记录观测，但不得声称已发布或已修复。
-- 按 `project:issue_id` 对齐行后，事件数下降可计算为 `(baseline - current) / baseline`，
-  影响用户同样保留绝对差值和变化比例；基线为 0 时不计算比例。
-- 后续窗口未返回某 Issue 时标记“本窗口未返回”，不得直接当作 0；只有 Sentry 明确
-  返回 0 才写入 0。
+- 事件数下降可计算为 `(baseline - current) / baseline`，但同时参考影响用户数、最近活跃时间、release 和回归状态。
 - 查询窗口、过滤条件、Issue fingerprint、release 或分组发生变化时标记“数据不可比”，不得直接计算下降率。
 
 ## 修复节点记录（不新增状态机）
