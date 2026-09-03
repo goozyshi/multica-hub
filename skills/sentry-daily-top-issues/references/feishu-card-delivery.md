@@ -62,7 +62,7 @@ python3 skills/sentry-daily-top-issues/scripts/validate_feishu_card.py \
 
 ### 固定 Card 2.0 模板
 
-渲染器必须直接读取仓库模板 `templates/feishu-card-v2.json` 生成卡片。下方 JSON 是同一模板的可读预览；文件是唯一事实源，文件与本文不一致时以文件为准。`{{...}}` 仅表示内容占位符，不是飞书语法；发送前必须全部替换。禁止让模型自由重建 Card JSON、增加字段或改变元素顺序。候选数量变化时，只复制完整的“候选块”；候选块内部结构和字段保持不变。`查看巡检单`按钮按配置决定是否追加到卡片末尾。
+渲染器必须直接读取仓库模板 `templates/feishu-card-v2.json` 生成卡片。下方 JSON 是同一模板的可读预览；文件是唯一事实源，文件与本文不一致时以文件为准。`{{...}}` 仅表示内容占位符，不是飞书语法；发送前必须全部替换。`resolution_enabled: true` 时，`resolution_autopilot` 缺失必须补为 `4833c3e9-b19b-4ace-bea2-bca87e4f2a01`，存在时也必须精确等于该 UUID；任何未渲染占位符、旧 ID、名称或带后缀字段都必须被 validator 拒绝。禁止让模型自由重建 Card JSON、增加字段或改变元素顺序。候选数量变化时，只复制完整的“候选块”；候选块内部结构和字段保持不变。`查看巡检单`按钮按配置决定是否追加到卡片末尾。
 
 ```json
 {
@@ -221,4 +221,4 @@ lark-cli --profile <profile> im +messages-send \
 
 ## Callback 透传契约（与 Lark bridge 对齐）
 
-创建解决单 callback 的固定字段必须包括 `resolution_autopilot`、`resolution_config_version`、`target_assignee_type`、`target_assignee`、`source_inspection_autopilot_id`、`inspection_issue_id` 以及 Sentry 基础快照。启用影响趋势时追加 `impact_trend_observation`、`observation_timeout_days`、`post_fix_observation_days`；为保证后续同口径观测，同时追加 `time_window`、`filter`、`window_start`、`window_end`。Lark bridge 必须原样保留这些字段，缺失时阻断而不是只转发 Sentry 字段。
+创建解决单 callback 的固定字段必须包括 `resolution_autopilot`、`resolution_config_version`、`target_assignee_type`、`target_assignee`、`source_inspection_autopilot_id`、`inspection_issue_id` 以及 Sentry 基础快照。`resolution_autopilot` 必须是精确 UUID `4833c3e9-b19b-4ace-bea2-bca87e4f2a01`，不能使用 `resolution_autopilot_Xx` 等变体。启用影响趋势时追加 `impact_trend_observation`、`observation_timeout_days`、`post_fix_observation_days`；为保证后续同口径观测，同时追加 `time_window`、`filter`、`window_start`、`window_end`。Lark bridge 必须原样保留这些字段，缺失或值不匹配时阻断而不是只转发 Sentry 字段。

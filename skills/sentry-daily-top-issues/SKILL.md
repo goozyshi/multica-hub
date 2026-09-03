@@ -9,13 +9,13 @@ description: 通过 Sentry MCP 列表查询生成按 Autopilot 分组配置汇�
 
 Autopilot 描述采用 Markdown 分组格式。固定系统字段位于“基本信息”，业务参数的规范分区为“巡检配置”“解决单配置（business_resolution_config_v1）”“发送配置”；执行逻辑位于 Skill。只解析规范分区中形如 `- key: value` 的键值，以及“项目分组”表格的四列 `分组`、`项目`、`Repo`、`Top N`；规范分区之外的配置一律视为未知并拒绝。表格的分隔线行不是数据。`Top N`、`display_top_n`、时间窗口、项目名称和 Repo 映射必须来自当前 Autopilot；Skill 不提供业务数量、名称或代码仓库默认值。Repo 必须是已确认 Multica project 资源的完整 URL，仅用于保留分组到代码仓库的映射，不参与 Sentry 项目查询。读取 Markdown 描述中的 `inspection_url_template` 时，按原始 HTTPS 基础 URL 前缀解析，发送时拼接当前巡检 Issue ID；历史配置可兼容一个 `<Issue-ID>` 占位符，也可还原编辑器产生的同值 `[URL](URL)` 包装，但不得接受隐藏或改写后的目标。
 
-`resolution_enabled: true` 时，Autopilot 必须包含有效 `resolution_autopilot` 和解决单配置；解决单配置中的 `target_assignee_type`、`target_assignee` 必须在生成卡片时原样传入 callback。
+`resolution_enabled: true` 时，Autopilot 必须包含有效 `resolution_autopilot` 和解决单配置；如果解决单配置未提供 `resolution_autopilot`，规范化时必须补为固定默认值 `4833c3e9-b19b-4ace-bea2-bca87e4f2a01`；如果提供了该字段，值也必须精确等于这个 UUID，不得使用名称、旧 ID、占位符或其他后缀字段。解决单配置中的 `target_assignee_type`、`target_assignee` 必须在生成卡片时原样传入 callback。
 
 规范配置关系固定为：`巡检配置 -> Sentry 查询` 提供查询参数，`解决单配置 -> 解决单授权与目标` 提供本次巡检的解决单动作参数；卡片必须传递 Sentry 事实快照、来源巡检标识、用户确认的派发目标和影响趋势观测参数，禁止由 Lark bridge 裁剪。
 
 执行前严格校验：拒绝未知区块或未知字段；拒绝缺失必填项、重复项目、空分组、非正整数、非法枚举和无效 IANA 时区。`display_top_n` 是最终展示数量；各组 `Top N` 只用于组内候选数，二者不可混用。`resolution_enabled: true` 时必须有有效 `resolution_autopilot`、`dedupe_key` 和 `business_resolution_config_v1`。发送配置的通道校验见 [飞书卡片与发送 Reference](references/feishu-card-delivery.md)。模板配置阶段不要求预先存在具体巡检 Issue ID；发送前必须取得当前巡检 Issue ID，并按 Reference 将其传入 validator 完成最终 URL 解析。校验失败时输出字段级错误，结果为 `needs-info`，不得发起 Sentry 查询或发送消息。
 
-解决单配置允许的业务字段为：`sentry_org`、`allowed_projects`、`priority_mapping`、`target_assignee_type`、`target_assignee`、`snapshot_max_age`、`impact_trend_observation`、`observation_timeout_days`、`post_fix_observation_days`。其中 `target_assignee_type`、`target_assignee`、`source_inspection_autopilot_id` 和 `inspection_issue_id` 必须进入 callback；启用影响趋势时，`impact_trend_observation`、`observation_timeout_days`、`post_fix_observation_days` 也必须原样进入 callback。解决单 Autopilot 只消费已验证 callback，不使用 Skill 内置默认值。
+解决单配置允许的业务字段为：`sentry_org`、`allowed_projects`、`priority_mapping`、`target_assignee_type`、`target_assignee`、`snapshot_max_age`、`impact_trend_observation`、`observation_timeout_days`、`post_fix_observation_days`。其中 `resolution_autopilot` 规范化后固定为 `4833c3e9-b19b-4ace-bea2-bca87e4f2a01`；`target_assignee_type`、`target_assignee`、`source_inspection_autopilot_id` 和 `inspection_issue_id` 必须进入 callback；启用影响趋势时，`impact_trend_observation`、`observation_timeout_days`、`post_fix_observation_days` 也必须原样进入 callback。解决单 Autopilot 只消费已验证 callback，不使用 Skill 内置默认值。
 
 触发器、订阅者、Autopilot agent、执行模式和项目范围由 Multica Autopilot 字段管理，不复制到人工配置区；修改周报频率只调整 schedule trigger，不修改 Skill。
 

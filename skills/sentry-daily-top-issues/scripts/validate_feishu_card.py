@@ -28,9 +28,11 @@ UUID_RE = re.compile(
     re.IGNORECASE,
 )
 PLACEHOLDER_RE = re.compile(r"<[^>]+>")
+UNRESOLVED_TEMPLATE_RE = re.compile(r"\{\{[^{}]+\}\}")
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\([^)]+\)")
 RAW_HTML_TAG_RE = re.compile(r"</?[A-Za-z][^>]*>")
 IPV4_RE = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
+DEFAULT_RESOLUTION_AUTOPILOT_ID = "4833c3e9-b19b-4ace-bea2-bca87e4f2a01"
 
 REQUIRED_CALLBACK_FIELDS = (
     "action",
@@ -667,6 +669,26 @@ def validate_callback_payload(
                 f"创建解决单 payload 缺少 {field}",
                 f"{path}.behaviors[0].value.{field}",
             )
+    for field, raw in value.items():
+        if isinstance(raw, str) and UNRESOLVED_TEMPLATE_RE.search(raw):
+            validator.add(
+                "unresolved_callback_placeholder",
+                "callback value 不得包含未渲染的模板占位符",
+                f"{path}.behaviors[0].value.{field}",
+            )
+    resolution_autopilot = value.get("resolution_autopilot")
+    if not UUID_RE.fullmatch(str(resolution_autopilot or "")):
+        validator.add(
+            "invalid_resolution_autopilot",
+            "resolution_autopilot 必须是合法 UUID",
+            f"{path}.behaviors[0].value.resolution_autopilot",
+        )
+    elif resolution_autopilot != DEFAULT_RESOLUTION_AUTOPILOT_ID:
+        validator.add(
+            "unexpected_resolution_autopilot",
+            f"resolution_autopilot 必须精确等于 {DEFAULT_RESOLUTION_AUTOPILOT_ID}",
+            f"{path}.behaviors[0].value.resolution_autopilot",
+        )
     observation = value.get("impact_trend_observation")
     if observation == "enabled":
         for field in ("observation_timeout_days", "post_fix_observation_days"):
