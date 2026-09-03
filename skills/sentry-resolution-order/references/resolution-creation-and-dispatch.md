@@ -27,12 +27,14 @@ callback 必须包含 `resolution_autopilot`、`target_assignee_type`、`target_
 
 ## `create_issue` 运行单根父单
 
-`execution_mode=create_issue` 时，Autopilot 平台会在 Skill 开始执行前创建当前运行 Issue。该 Issue 是本次流程的根父单，通常由 Autopilot 配置的 Coordinator Agent 执行；它不是需要再次创建的解决单，也不要求通过后置 `issue assign` 改派给目标 Squad。
+`execution_mode=create_issue` 时，Autopilot 平台会在 Skill 开始执行前创建当前运行 Issue。该 Issue 是本次流程的根父单，通常由 Autopilot 配置的 Coordinator Agent 执行；它不是需要再次创建的解决单，也不要求通过后置 `issue assign` 改派给目标 Squad。实际解决单的项目必须取来源巡检 Autopilot 的 `project_id`，不能取目标 Agent/Squad 或当前运行根单的项目。
 
-创建实际 Sentry 解决单时，必须把当前运行单 UUID 作为 `parent`，并在同一个创建请求中绑定 callback 提供的目标：
+创建实际 Sentry 解决单时，必须把来源巡检 Autopilot 的 `project_id` 作为
+`project`、当前运行单 UUID 作为 `parent`，并在同一个创建请求中绑定 callback 提供的目标：
 
 ```bash
 multica issue create ... \
+  --project <source_inspection_project_id> \
   --parent <runtime_issue_id> \
   --assignee-id <target_assignee>
 ```
@@ -40,16 +42,23 @@ multica issue create ... \
 创建后必须同时回读：
 
 - 实际解决单 `parent_issue_id == runtime_issue_id`；
+- 实际解决单 `project_id == source_inspection_project_id`；
 - 实际解决单 `assignee_type == target_assignee_type`；
 - 实际解决单 `assignee_id == target_assignee`。
 
-三项任一不匹配时，保留已创建单并返回 `dispatch blocked`；不得创建第二个无 `parent` 的顶层解决单，也不得把运行根单误报为已派发给目标。
+四项任一不匹配时，保留已创建单并返回 `dispatch blocked`；不得创建第二个无
+`parent` 的顶层解决单，也不得把运行根单误报为已派发给目标。
 
 `execution_mode=run_only` 没有平台预创建运行单，实际解决单才直接作为根单创建：
 
 ```bash
-multica issue create ... --assignee-id <target_assignee>
+multica issue create ... \
+  --project <source_inspection_project_id> \
+  --assignee-id <target_assignee>
 ```
+
+`run_only` 模式同样必须传入 `--project <source_inspection_project_id>`；目标
+Agent/Squad 只决定 `--assignee-id`，不能决定 Issue 的项目归属。
 
 如果 `create_issue` 模式无法取得当前 `runtime_issue_id`，停止创建并返回 `dispatch blocked`。
 

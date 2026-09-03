@@ -47,7 +47,15 @@ Autopilot 描述采用 Markdown 分组格式。固定系统字段位于“基本
 
 ## 解决单状态与页面定位
 
-输出状态前，以 `project:issue_id` 查询 `resolution_autopilot` 已创建的解决单状态，优先使用解决单元数据 `sentry_dedupe_key`；历史单据无元数据时，使用描述中的去重键精确匹配并回填。未关闭状态包括 `todo`、`in_progress`、`in_review`、`blocked`；`done`、`cancelled` 视为可再次创建。查询失败时不阻塞巡检结果，标记“状态待校验”，由回调 Autopilot 做最终幂等判断。飞书按钮状态和动作见 [飞书卡片与发送 Reference](references/feishu-card-delivery.md)。
+输出状态前，必须对每条候选执行一次与回调相同的最终幂等预检：在
+`resolution_autopilot` 的项目范围内分页查询 `sentry_dedupe_key =
+project:issue_id`，未命中元数据时再对解决单描述中的去重键做精确匹配；不得只看当前
+卡片候选或当前运行 Issue。历史单据命中后回填可查询元数据，并保留原解决单 ID。
+未关闭状态包括 `todo`、`in_progress`、`in_review`、`blocked`；`done`、`cancelled`
+视为可再次创建。活动解决单命中时，首发卡片必须直接展示“查看解决单”及其 URL，
+不得展示“创建解决单”。任何状态查询、分页或 URL 解析失败时，不得降级为创建按钮；
+保留巡检结果并返回 `needs-info`，待状态确认后再发送卡片。飞书按钮状态和动作见
+[飞书卡片与发送 Reference](references/feishu-card-delivery.md)。
 
 - 页面定位优先取详情中的路由/页面字段；没有详情时取列表 `culprit` 中可读的页面路径。无定位信息时省略该字段，不填造路径。
 

@@ -157,7 +157,7 @@ python3 skills/sentry-daily-top-issues/scripts/validate_feishu_card.py \
 
 紧凑布局：所有 `markdown`、`div` 和 `button` 元素显式设置 `margin:"0px"`；候选之间的独立 `hr` 分隔线设置 `margin:"4px 0px"`。指标、初判和建议连续展示，不额外插入空白元素制造间距。正文元素不得使用空内容、首尾空行或连续空行。
 
-状态更新必须基于已发送的规范化 Card JSON：先持久化发送成功的完整 Card JSON，更新时复制原卡片，只替换发生状态变化的按钮对象，保留所有非按钮元素及其顺序、标签和视觉字段。处理中、成功和幂等复用等按钮状态更新必须使用 `--operation update`，并将更新前 Card JSON 作为 `--previous-card` 传给 validator；缺少旧卡片、按钮数量或位置变化、非按钮结构变化或视觉字段变化均为 `blocked`，不得调用 Lark 更新接口。失败提示若需要更新正文，也必须通过同一规范化渲染路径生成并保留上下文结构。
+状态更新必须基于已发送的规范化 Card JSON：先持久化发送成功的完整 Card JSON，更新时复制原卡片，只替换发生状态变化的按钮对象，保留所有非按钮元素及其顺序、标签和视觉字段。首发卡片在渲染“创建解决单”前必须完成解决单 Autopilot 项目范围内的最终幂等预检，按 `project:issue_id` 分页查元数据并对历史描述执行精确去重键兜底；命中活动解决单时首发即展示“查看解决单”，不得先展示创建按钮。状态查询失败时不得安全降级为创建按钮，应返回 `needs-info` 并暂缓发送。处理中、成功和幂等复用等按钮状态更新必须使用 `--operation update`，并将更新前 Card JSON 作为 `--previous-card` 传给 validator；缺少旧卡片、按钮数量或位置变化、非按钮结构变化或视觉字段变化均为 `blocked`，不得调用 Lark 更新接口。失败提示若需要更新正文，也必须通过同一规范化渲染路径生成并保留上下文结构。
 
 1. 红色标题栏：`【<scope>】Sentry 错误巡检 · <frequency> Top <display_top_n>`；`frequency` 根据 `time_window` 推导（`24h` 为“每日”，`7d` 为“每周”，其他值直接显示时间窗），不得写死业务名或周期。
 2. 一行摘要：`<environment> · 近 <time_window> · <总 Error Issue 数> 条未解决`；环境缺失时省略，不重复展示 Top 数量。
