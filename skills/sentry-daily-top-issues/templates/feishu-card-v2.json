@@ -11,7 +11,7 @@
     "elements": [
       {
         "tag": "markdown",
-        "content": "{{environment_prefix}}近 {{time_window}} · {{unresolved_count}} 条未解决",
+        "content": "{{environment_prefix}}Sentry 查询 · 近 {{time_window}} · {{query_filter_summary}} · {{unresolved_count}} 条",
         "margin": "0px"
       },
       {

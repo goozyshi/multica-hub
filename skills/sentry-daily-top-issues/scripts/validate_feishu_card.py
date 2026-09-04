@@ -418,6 +418,29 @@ def validate_sensitive_content(
                 )
 
 
+def validate_query_summary(elements: list[Any], validator: CardValidation) -> None:
+    summary = next(
+        (
+            text_content(element)
+            for element in elements
+            if isinstance(element, dict) and element.get("tag") == "markdown"
+        ),
+        "",
+    )
+    if "Sentry 查询" not in summary or "近 " not in summary or " 条" not in summary:
+        validator.add(
+            "incomplete_query_summary",
+            "卡片摘要必须说明 Sentry 查询、查询窗口和结果数量",
+            "$.body.elements[0]",
+        )
+    if "query_filter_summary" in summary or "{{" in summary:
+        validator.add(
+            "unresolved_query_summary",
+            "卡片摘要中的查询条件必须由实际 filter 渲染",
+            "$.body.elements[0]",
+        )
+
+
 def resolve_inspection_url(
     template: Any,
     inspection_issue_id: str | None,
@@ -1226,6 +1249,7 @@ def validate_card(
             "$.body.elements",
         )
 
+    validate_query_summary(elements, validator)
     validate_sensitive_content(card, validator)
 
     title_indexes = [

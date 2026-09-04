@@ -17,7 +17,7 @@ Autopilot 描述采用 Markdown 分组格式。固定系统字段位于“基本
 
 解决单配置允许的业务字段为：`sentry_org`、`allowed_projects`、`priority_mapping`、`target_assignee_type`、`target_assignee`、`snapshot_max_age`、`impact_trend_observation`、`observation_timeout_days`、`post_fix_observation_days`。其中 `resolution_autopilot` 规范化后固定为 `4833c3e9-b19b-4ace-bea2-bca87e4f2a01`；`target_assignee_type`、`target_assignee`、`source_inspection_autopilot_id` 和 `inspection_issue_id` 必须进入 callback。字段语义固定为：`source_inspection_autopilot_id` = 来源每日巡检 Autopilot UUID，`inspection_issue_id` = 本次巡检运行 Issue UUID；二者不得互换，来源 Autopilot UUID 不得从运行 Issue 推断。`impact_trend_observation: enabled` 只表示在创建/复用解决单时记录一次基线；旧配置中的 `observation_timeout_days`、`post_fix_observation_days` 允许兼容读取但不再要求、不再启动后续观测。解决单 Autopilot 只消费已验证 callback，不使用 Skill 内置默认值。
 
-触发器、订阅者、Autopilot agent、执行模式和项目范围由 Multica Autopilot 字段管理，不复制到人工配置区；修改周报频率只调整 schedule trigger，不修改 Skill。
+触发器、订阅者、Autopilot agent、执行模式和项目范围由 Multica Autopilot 字段管理，不复制到人工配置区；修改巡检频率只调整 schedule trigger，不修改 `time_window`。
 
 ## 查询与排序
 
@@ -25,7 +25,7 @@ Autopilot 描述采用 Markdown 分组格式。固定系统字段位于“基本
 
 对每个 Issue，将本次 `search_issues` 查询返回的 Events / Users 规范化为 `event_count` / `user_count`，并记录 `stats_scope: query_window`。只要查询已按 Autopilot 的 `time_window`、`filter` 和 `environment` 执行，就按该查询窗口解释返回数值；不要求 MCP 在字段名中重复标注 `24h` 或 `7d`，也不因缺少额外窗口标签阻断。不得脱离本次查询直接读取其他累计统计接口或混用不同窗口数据。
 
-每组按当前窗口 `event_count` 降序取 `Top N`，并把全部分组结果写入巡检 Issue。然后从所有组的候选项按当前窗口事件数、当前窗口影响用户数、最近活跃度取 `display_top_n` 条全局结果；卡片只展示这些结果，不再同时展示各组列表，避免重复。
+每组按当前窗口 `event_count` 降序取 `Top N`，并把全部分组结果写入巡检 Issue。然后从所有组的候选项按当前窗口事件数、当前窗口影响用户数、最近活跃度取 `display_top_n` 条全局结果；卡片只展示这些结果，不再同时展示各组列表，避免重复。卡片标题中的 `frequency` 必须读取当前 Autopilot 的 schedule/cron 实际触发频率；不得从 `time_window` 推导。无法可靠解析 schedule 时显示“定时巡检”，不得猜测“每日”或“每周”。
 
 ## 初步研判
 

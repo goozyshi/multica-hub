@@ -82,7 +82,7 @@ python3 skills/sentry-daily-top-issues/scripts/validate_feishu_card.py \
     "elements": [
       {
         "tag": "markdown",
-        "content": "{{environment_prefix}}近 {{time_window}} · {{unresolved_count}} 条未解决",
+        "content": "{{environment_prefix}}Sentry 查询 · 近 {{time_window}} · {{query_filter_summary}} · {{unresolved_count}} 条",
         "margin": "0px"
       },
       {
@@ -163,8 +163,8 @@ python3 skills/sentry-daily-top-issues/scripts/validate_feishu_card.py \
 
 状态更新必须基于已发送的规范化 Card JSON：先持久化发送成功的完整 Card JSON，更新时复制原卡片，只替换发生状态变化的按钮对象，保留所有非按钮元素及其顺序、标签和视觉字段。首发卡片在渲染“创建解决单”前必须完成两个项目范围的最终幂等预检：同时读取解决单 Autopilot 的固定项目（如 `sentry-inspect`）和当前来源巡检 Autopilot 的业务项目，对两个项目范围去重后按 `project:issue_id` 分页查 metadata，并对历史描述执行精确去重键兜底；命中任一范围的活动解决单时首发即展示“查看解决单”，不得先展示创建按钮。任一范围读取失败时不得安全降级为创建按钮，应返回 `needs-info` 并暂缓发送。处理中、成功和幂等复用等按钮状态更新必须使用 `--operation update`，并将更新前 Card JSON 作为 `--previous-card` 传给 validator；缺少旧卡片、按钮数量或位置变化、非按钮结构变化或视觉字段变化均为 `blocked`，不得调用 Lark 更新接口。失败提示若需要更新正文，也必须通过同一规范化渲染路径生成并保留上下文结构。
 
-1. 红色标题栏：`【<scope>】Sentry 错误巡检 · <frequency> Top <display_top_n>`；`frequency` 根据 `time_window` 推导（`24h` 为“每日”，`7d` 为“每周”，其他值直接显示时间窗），不得写死业务名或周期。
-2. 一行摘要：`<environment> · 近 <time_window> · <总 Error Issue 数> 条未解决`；环境缺失时省略，不重复展示 Top 数量。
+1. 红色标题栏：`【<scope>】Sentry 错误巡检 · <frequency> Top <display_top_n>`；`frequency` 必须根据当前 Autopilot 的 schedule/cron 实际触发频率生成（例如 schedule 每周触发则为“每周”），不得根据 `time_window` 推导。`time_window` 只用于正文中的“近 <time_window>”；schedule 无法可靠解析时显示“定时巡检”，不得猜测“每日”或“每周”。
+2. 一行摘要：`<environment> · Sentry 查询 · 近 <time_window> · <query_filter_summary> · <总数量> 条`；其中 `query_filter_summary` 必须由本次实际 `filter` 生成，例如 `未解决 Error`，不得脱离查询条件写死或省略；环境缺失时省略，不重复展示 Top 数量。
 3. 按全局排名展示 `display_top_n` 条，每条使用独立的文本块，不重复展示各组 Top N。相邻候选之间必须插入一个独立顶层 `{"tag":"hr"}` 元素；`N` 条候选必须恰好有 `N - 1` 个候选分隔符。启用解决单时，分隔符紧跟上一条候选的解决单按钮；Webhook 只读模式下，分隔符紧跟上一条候选内容并紧邻下一条候选标题。最后一条之后不得添加候选分隔符。
 4. 每条按示例使用独立文本块（按钮作为独立元素，不计入正文行数），顺序固定：
    - `**[<错误摘要>](<issue_url>)**`，标题加粗并直接链接 Sentry Issue；不展示 `issue_id`、项目短码或其他机器标识。错误摘要字段提取、优先级和 `resolved_issue_title` 一致性以“错误摘要字段提取”为唯一规则，绝不渲染内部字段名。
