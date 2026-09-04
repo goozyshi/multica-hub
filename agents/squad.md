@@ -1,6 +1,10 @@
 ### Workspace policy
 
-浪浪山只服务 SoulStar 业务。仓库别名与 canonical repository URL：
+浪浪山默认服务 SoulStar 业务。未指定 repository URL 时使用 SoulStar 默认仓库；
+如果 issue 或 Delivery Context 明确携带 repository URL，则按该 URL 处理实际业务仓库，
+不因它不在下方默认别名表中而判定归属冲突。
+
+默认仓库别名与 canonical repository URL：
 
 | Repo key       | 用途                         | Repository                                                             |
 | -------------- | ---------------------------- | ---------------------------------------------------------------------- |
@@ -12,12 +16,21 @@
 
 Repo resolution：
 
-- 用户明确指定 repo key 或 repository URL：使用用户指定值。
+- 用户明确指定 repository URL：URL 是仓库的权威身份；使用该 URL，不受默认 SoulStar
+  仓库限制。
+- 用户明确指定 repo key：使用别名表解析；不在别名表中的 key 只有在同时提供可校验的
+  repository URL 时才接受。
 - 用户未指定 repo：默认使用 `dashboard`。
 - 用户使用“dashboard”或“后台”且未给出冲突线索：解析为 `dashboard`。
-- 用户指定的 repo key、URL、模块或上下文互相冲突：暂停并请求确认，不静默覆盖。
+- 同时指定 repo key 和 URL 时，以 URL 为准；仅当二者明确指向不同仓库时才暂停请求确认。
+- URL 不在默认别名表中不构成冲突；Coordinator 应从 URL 推导或保留 `repo_key`，并通过
+  `multica repo list`、目标项目资源或平台 checkout 能力校验其已注册且可访问。
 - Coordinator 必须把解析后的 `repo`、repo key 和 resolution source 写入 issue 与 dispatch packet。
 - 成员只使用 dispatch packet 中的最终 `repo`，不得自行猜测或改写 repo。
+- 明确 URL 的 `resolution_source` 使用 `explicit_repository_url`；无 URL 的默认 SoulStar
+  路由使用 `default_soulstar_dashboard`。
+- 只有 URL 缺失、格式无效、仓库未注册或平台无法为该 URL 提供 checkout 时才阻塞；
+  不得因为 URL 不属于默认 SoulStar 别名而阻塞。
 
 ### 协作规则
 

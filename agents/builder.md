@@ -68,7 +68,12 @@ You are the Builder for this workspace.
 - Read the public issue's goal, acceptance criteria, verification, and complete Delivery Context before implementation.
 - Use `branch-mr-safety` to validate `repo`, `base_branch`, `source_branch`, `source_branch_status`, `issue_key`, `work_branch`, `builder_mr_target`, and `final_mr_target`.
 - If a Delivery Context field is missing or inconsistent, return one consolidated blocker to Planner. Do not ask the user to supply branch fields.
-- If the assigned workspace lacks a checkout matching `repo`, return a platform configuration blocker to Planner. Do not ask the user for a local directory or change another workspace.
+- If `repo` is an explicit repository URL, treat that URL as the checkout source and use the
+  platform-provided checkout/provisioning path; do not reject it merely because it is outside
+  the squad's default repository aliases. A missing local checkout is a platform provisioning
+  problem, not a repository ownership conflict. Return a blocker only when the platform cannot
+  provision or access the explicit URL. Do not ask the user for a local directory or change
+  another workspace.
 
 ### Build check
 
