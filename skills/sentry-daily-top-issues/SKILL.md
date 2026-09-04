@@ -47,10 +47,13 @@ Autopilot 描述采用 Markdown 分组格式。固定系统字段位于“基本
 
 ## 解决单状态与页面定位
 
-输出状态前，必须对每条候选执行一次与回调相同的最终幂等预检：在
-`resolution_autopilot` 的项目范围内分页查询 `sentry_dedupe_key =
-project:issue_id`，未命中元数据时再对解决单描述中的去重键做精确匹配；不得只看当前
-卡片候选或当前运行 Issue。历史单据命中后回填可查询元数据，并保留原解决单 ID。
+输出状态前，必须对每条候选执行一次与回调相同的最终幂等预检：读取当前解决单
+Autopilot 的固定项目（如 `sentry-inspect`）和当前来源巡检 Autopilot 的业务项目，
+对两个项目范围去重后分页查询 `sentry_dedupe_key = project:issue_id`；未命中
+metadata 时，再在两个项目的解决单描述中对去重键做精确匹配。固定项目用于查找
+Coordinator 父运行单，业务项目用于查找实际修复解决单，不能只查询其中一个，也不能
+只看当前卡片候选或当前运行 Issue。任一项目范围读取失败时返回 `needs-info`，不得
+安全降级为“创建解决单”。历史单据命中后回填可查询 metadata，并保留原解决单 ID。
 未关闭状态包括 `todo`、`in_progress`、`in_review`、`blocked`；`done`、`cancelled`
 视为可再次创建。活动解决单命中时，首发卡片必须直接展示“查看解决单”及其 URL，
 不得展示“创建解决单”。任何状态查询、分页或 URL 解析失败时，不得降级为创建按钮；

@@ -27,7 +27,7 @@ description: 处理 Sentry“创建解决单”回调，校验 callback 提供�
 ## 执行流程
 
 1. 读取当前回调 Autopilot 配置和已验证的飞书回调，先校验 `source_inspection_autopilot_id` 与 `inspection_issue_id` 的字段语义，并根据前者读取来源业务 `project_id`。
-2. 按 Reference 完成协议版本、来源 Autopilot、来源项目、签名、项目白名单、输入字段、当前 Issue 状态和幂等校验；来源项目缺失、读取失败或无法确认时返回明确错误，不创建解决单。
+2. 按 Reference 完成协议版本、来源 Autopilot、来源项目、签名、项目白名单、输入字段、当前 Issue 状态和幂等校验；幂等查询同时覆盖解决单 Autopilot 固定项目与来源业务项目，任一项目缺失、读取失败或无法确认时返回明确错误，不创建解决单。
 3. 按 callback 快照判断是否复用详情；必要时重新读取 Issue 详情。完成脱敏、证据归档和带目标 assignee 的解决单创建或复用。
 4. 按 Reference 通过平台级 Issue assignee 创建实际 Sentry 解决单：`create_issue` 模式必须使用来源 `project_id` 作为 `--project`、当前 `runtime_issue_id` 作为 `--parent`，以及 `target_assignee` 作为 `--assignee-id`；`run_only` 模式使用来源 `project_id` 作为 `--project`，并使用 `--assignee-id` 直接创建根单。创建后立即回读 `project_id`、`parent_issue_id`、`assignee_type`、`assignee_id`。正常流程禁止先建 Coordinator 单再调用 `issue assign`。
 5. 仅当 callback 明确携带有效观测配置时，读取并执行 [影响趋势基线 Reference](references/sentry-impact-baseline.md)；未启用时跳过附加观测。

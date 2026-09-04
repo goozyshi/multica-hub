@@ -11,7 +11,10 @@ callback 必须包含 `resolution_autopilot`、`target_assignee_type`、`target_
 ## 安全与去重
 
 - 仅接受通过飞书回调签名校验、且 callback 的目标类型和目标 UUID 通过校验的请求。
-- 以 `project + sentry_issue_id` 为去重键；存在未关闭解决单时不得重复创建，返回已有单据。
+- 以 `project + sentry_issue_id` 生成 `sentry_dedupe_key`；幂等查询必须覆盖当前解决单
+  Autopilot 的固定项目（如 `sentry-inspect`）和 `source_inspection_autopilot_id`
+  对应的来源业务项目。前者可能只有 Coordinator 父运行单，后者通常承载实际修复解决
+  单；两个项目范围都要查，存在未关闭解决单时不得重复创建，返回已有单据。
 - 不得把完整堆栈、IP、用户标识写入单据。
 - 新建解决单必须写入可查询元数据：`sentry_dedupe_key`、`sentry_project`、`sentry_issue_id`。
 - 历史单据缺少元数据时，可通过描述中的去重键精确匹配并在确认后补齐元数据，避免同一问题重复建单。
@@ -68,7 +71,8 @@ Agent/Squad 只决定 `--assignee-id`，不能决定 Issue 的项目归属。
 
 - `detail_snapshot` 完整、`detail_fetched_at` 在当前解决单 Autopilot 配置的有效时间内、Issue 状态未变化且 `sentry_issue_id` / fingerprint 一致时，直接复用详情证据和 `analysis_summary`；
 - 快照缺失、超过有效时间、Issue 状态变化、fingerprint 不一致或 `analysis_confidence` 为低时，才使用自身已配置的 Sentry MCP（`get_sentry_resource`）重新读取 Issue 详情及代表性事件；
-- 无论是否复用，都要在建单前校验 Issue 当前状态和去重键；快照不能替代幂等校验；
+- 无论是否复用，都要在建单前校验 Issue 当前状态和去重键；幂等查询覆盖固定项目和
+  来源业务项目两个范围，快照不能替代幂等校验；
 - 详情读取失败或权限不足：仍可基于已验证快照建单，但明确记录“证据不足，需人工在 Sentry 复核”，不得编造根因或代码位置；
 - 写入前对堆栈、标签和事件上下文做脱敏，只保留定位解决问题所需的最小信息。`detail_snapshot` 只允许包含异常类型、代表性堆栈位置、路由/接口、`culprit`、版本、环境、读取时间和简短事实摘要。
 
