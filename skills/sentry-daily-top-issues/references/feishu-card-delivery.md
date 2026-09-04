@@ -18,6 +18,9 @@
 - `analysis`、`recommendation`、摘要和其他动态 Markdown 文本遵守同一规则；不要在发送前再次 `html.unescape`，避免转义结果重新变成 HTML 标签。
 - `div` 的 `plain_text` 不经过 Markdown 解析，但其内容仍必须保持普通文本，不得借此写入 Markdown 语法。
 - validator 必须拒绝 Markdown 内容中的未转义 HTML 标签，例如 `<object>`、`<script>`；拒绝后不得发送卡片。
+- validator 必须拒绝独立出现的 IPv4 地址；User-Agent 中紧邻浏览器标识的版本号（例如
+  `Chrome/150.0.0.0`、`Version 150.0.0.0`）属于版本信息，不按 IP 暴露处理。其他位置
+  的相同数字仍按 IP 检查，不能通过改写文案绕过。
 
 ```bash
 python3 skills/sentry-daily-top-issues/scripts/validate_feishu_card.py \

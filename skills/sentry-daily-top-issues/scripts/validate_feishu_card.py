@@ -36,6 +36,11 @@ UNRESOLVED_TEMPLATE_RE = re.compile(r"\{\{[^{}]+\}\}")
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\([^)]+\)")
 RAW_HTML_TAG_RE = re.compile(r"</?[A-Za-z][^>]*>")
 IPV4_RE = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
+UA_VERSION_RE = re.compile(
+    r"(?:Chrome(?: Mobile WebView| Mobile)?|CriOS|Firefox|FxiOS|Edg|Edge|OPR|"
+    r"Version|AppleWebKit|SamsungBrowser)[ /]\s*$",
+    re.IGNORECASE,
+)
 DEFAULT_RESOLUTION_AUTOPILOT_ID = "4833c3e9-b19b-4ace-bea2-bca87e4f2a01"
 
 REQUIRED_CALLBACK_FIELDS = (
@@ -130,6 +135,16 @@ def read_json(path: str, validator: CardValidation, label: str) -> Any:
 
 def non_empty_string(value: Any) -> bool:
     return isinstance(value, str) and bool(value.strip())
+
+
+def contains_exposed_ipv4(value: str) -> bool:
+    """Reject standalone IPv4 values but allow browser UA version tokens."""
+    for match in IPV4_RE.finditer(value):
+        prefix = value[max(0, match.start() - 32) : match.start()]
+        if UA_VERSION_RE.search(prefix):
+            continue
+        return True
+    return False
 
 
 def valid_https_url(value: Any) -> bool:
@@ -380,7 +395,7 @@ def validate_sensitive_content(
                     "Card JSON 不得包含字面量 \\\\n",
                     path,
                 )
-            if IPV4_RE.search(value):
+            if contains_exposed_ipv4(value):
                 validator.add(
                     "ip_exposure",
                     "卡片不得包含 IP 地址",
