@@ -6,7 +6,7 @@
 
 callback 必须包含 `resolution_autopilot`、`target_assignee_type`、`target_assignee` 和 `resolution_config_version: business_resolution_config_v1`。先确认 `resolution_autopilot` 等于当前解决单 Autopilot ID，再校验飞书签名、目标 UUID 和 callback 结构。解析 Markdown 描述时允许先还原一层 `\_` 字段名转义；不得接受其他隐藏或改写后的配置。
 
-从已验证 callback 读取 `sentry_org`、`project`、`target_assignee_type`、`target_assignee`、优先级、快照和影响趋势观测配置。callback 直接携带的目标必须通过 UUID 格式、workspace 可指派性和飞书签名校验；配置缺失、配置不完整或解析失败时返回 `needs-info` 或 `dispatch blocked`，不得创建解决单。
+从已验证 callback 读取 `sentry_org`、`project`、`target_assignee_type`、`target_assignee`、优先级、快照和影响观测配置。`impact_trend_observation: enabled` 只触发一次创建/复用基线；旧的持续观测天数配置不参与本流程。callback 直接携带的目标必须通过 UUID 格式、workspace 可指派性和飞书签名校验；配置缺失、配置不完整或解析失败时返回 `needs-info` 或 `dispatch blocked`，不得创建解决单。
 
 ## 安全与去重
 

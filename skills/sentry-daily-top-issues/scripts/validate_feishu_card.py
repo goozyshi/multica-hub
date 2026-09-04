@@ -27,6 +27,10 @@ UUID_RE = re.compile(
     r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
     re.IGNORECASE,
 )
+ENTITY_UUID_RE = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+    re.IGNORECASE,
+)
 PLACEHOLDER_RE = re.compile(r"<[^>]+>")
 UNRESOLVED_TEMPLATE_RE = re.compile(r"\{\{[^{}]+\}\}")
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\([^)]+\)")
@@ -690,25 +694,7 @@ def validate_callback_payload(
             f"{path}.behaviors[0].value.resolution_autopilot",
         )
     observation = value.get("impact_trend_observation")
-    if observation == "enabled":
-        for field in ("observation_timeout_days", "post_fix_observation_days"):
-            raw = value.get(field)
-            valid_positive = (
-                isinstance(raw, int)
-                and not isinstance(raw, bool)
-                and raw > 0
-            ) or (
-                isinstance(raw, str)
-                and raw.isdigit()
-                and int(raw) > 0
-            )
-            if not valid_positive:
-                validator.add(
-                    "invalid_observation_field",
-                    f"{field} 必须是正整数（影响趋势观测已启用）",
-                    f"{path}.behaviors[0].value.{field}",
-                )
-    elif observation == "disabled" and any(
+    if observation == "disabled" and any(
         value.get(field) not in ("", None, [])
         for field in ("observation_timeout_days", "post_fix_observation_days")
     ):
@@ -770,6 +756,80 @@ def validate_callback_payload(
             "issue_url 必须是合法 HTTPS URL",
             f"{path}.behaviors[0].value.issue_url",
         )
+
+
+def validate_source_callback_identity(
+    card: Any,
+    validator: CardValidation,
+    expected_source_autopilot_id: str | None,
+    expected_inspection_issue_id: str | None,
+) -> None:
+    if not expected_source_autopilot_id:
+        validator.add(
+            "missing_expected_source_autopilot",
+            "启用解决单时必须传入当前来源巡检 Autopilot UUID",
+            "$.source_inspection_autopilot_id",
+            decision="needs-info",
+        )
+    if not expected_inspection_issue_id:
+        validator.add(
+            "missing_expected_inspection_issue",
+            "启用解决单时必须传入当前巡检 Issue UUID",
+            "$.inspection_issue_id",
+            decision="needs-info",
+        )
+
+    body = card.get("body") if isinstance(card, dict) else None
+    elements = body.get("elements") if isinstance(body, dict) else None
+    if not isinstance(elements, list):
+        return
+    for index, element in enumerate(elements):
+        if not isinstance(element, dict) or element.get("tag") != "button":
+            continue
+        behaviors = element.get("behaviors")
+        if not isinstance(behaviors, list) or len(behaviors) != 1:
+            continue
+        behavior = behaviors[0]
+        value = behavior.get("value") if isinstance(behavior, dict) else None
+        if (
+            not isinstance(behavior, dict)
+            or behavior.get("type") != "callback"
+            or not isinstance(value, dict)
+        ):
+            continue
+        path = f"$.body.elements[{index}].behaviors[0].value"
+        source_id = value.get("source_inspection_autopilot_id")
+        inspection_id = value.get("inspection_issue_id")
+        if not ENTITY_UUID_RE.fullmatch(str(source_id or "")):
+            validator.add(
+                "invalid_source_inspection_autopilot_id",
+                "source_inspection_autopilot_id 必须是来源巡检 Autopilot UUID",
+                f"{path}.source_inspection_autopilot_id",
+            )
+        elif expected_source_autopilot_id and source_id != expected_source_autopilot_id:
+            validator.add(
+                "source_inspection_autopilot_mismatch",
+                "source_inspection_autopilot_id 必须精确等于当前来源巡检 Autopilot UUID",
+                f"{path}.source_inspection_autopilot_id",
+            )
+        if not ENTITY_UUID_RE.fullmatch(str(inspection_id or "")):
+            validator.add(
+                "invalid_inspection_issue_id",
+                "inspection_issue_id 必须是本次巡检运行 Issue UUID",
+                f"{path}.inspection_issue_id",
+            )
+        elif expected_inspection_issue_id and inspection_id != expected_inspection_issue_id:
+            validator.add(
+                "inspection_issue_mismatch",
+                "inspection_issue_id 必须精确等于当前巡检运行 Issue UUID",
+                f"{path}.inspection_issue_id",
+            )
+        if source_id == inspection_id:
+            validator.add(
+                "ambiguous_source_callback_identity",
+                "source_inspection_autopilot_id 与 inspection_issue_id 不得使用同一个 ID",
+                path,
+            )
 
 
 def validate_title_callback_consistency(
@@ -1399,6 +1459,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--resolution-enabled", required=True, type=parse_bool)
     parser.add_argument("--inspection-issue-id")
     parser.add_argument(
+        "--source-inspection-autopilot-id",
+        help="当前来源巡检 Autopilot UUID；启用解决单时必传",
+    )
+    parser.add_argument(
         "--previous-card",
         help="状态更新前的 Card JSON；传入后只允许按钮状态变化",
     )
@@ -1472,6 +1536,13 @@ def main(argv: list[str] | None = None) -> int:
             expected_url,
             require_create_visual_style=args.operation == "create",
         )
+        if args.resolution_enabled:
+            validate_source_callback_identity(
+                card,
+                validator,
+                args.source_inspection_autopilot_id,
+                args.inspection_issue_id,
+            )
         if args.previous_card and previous_card is not None:
             validate_card_update(previous_card, card, validator)
 

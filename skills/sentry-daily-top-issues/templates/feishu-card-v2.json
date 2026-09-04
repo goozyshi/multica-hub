@@ -79,8 +79,6 @@
               "source_inspection_autopilot_id": "{{source_inspection_autopilot_id}}",
               "inspection_issue_id": "{{inspection_issue_id}}",
               "impact_trend_observation": "{{impact_trend_observation}}",
-              "observation_timeout_days": "{{observation_timeout_days}}",
-              "post_fix_observation_days": "{{post_fix_observation_days}}",
               "time_window": "{{time_window}}",
               "filter": "{{filter}}",
               "window_start": "{{window_start}}",

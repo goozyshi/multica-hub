@@ -22,8 +22,6 @@ sentry_org: mico
 subscriber: current_creator
 priority_mapping: high=P1;medium=P2;low=P3
 impact_trend_observation: enabled
-observation_timeout_days: 7
-post_fix_observation_days: 3
 dedupe_key: project:issue_id
 inspection_url_template: https://multica.micoplatform.com/mico-fe/issues/
 feishu_app_id: cli_aa1a82ab6d785cc2
@@ -37,8 +35,7 @@ feishu_profile: sentry-notify
 `false`。只有用户明确要求自建应用只读时才使用 `false`，不再为默认 App 路径单独提问。
 `subscriber` 自动使用当前创建人，不作为用户选择项。
 业务名称自动使用 `<scope-title> Sentry 巡检`，执行时间默认每天 10:00，均不作为首轮
-提问项。风险优先级、影响观察开关和观察时长使用上述默认值，用户后续可直接修改
-Autopilot。
+提问项。风险优先级和影响观察开关使用上述默认值，用户后续可直接修改 Autopilot。
 `dedupe_key` 不是用户输入项。启用解决单时固定写入 `project:issue_id` 作为运行时模板，
 每个 callback 必须将其展开为实际的 `<project>:<issue_id>`；不得使用固定 Issue ID 或按
 业务名称自造去重键。
@@ -85,7 +82,7 @@ Repo 的实际可用性以 `multica project resource list <project-id> --output 
 | 解决单处理目标 | `target_assignee`，指定 Agent 或小队的平台唯一 ID |
 | 风险等级对应优先级 | `priority_mapping`，默认高风险 P1、中风险 P2、低风险 P3 |
 | 修复后影响观察 | `impact_trend_observation`，默认开启 |
-| 观察时长 | `observation_timeout_days` 默认 7 天；`post_fix_observation_days` 默认 3 天 |
+| 影响观测 | `impact_trend_observation` 默认开启；仅在创建/复用解决单时记录一次基线 |
 
 ### 通知方式说明
 
@@ -194,7 +191,7 @@ P1、中风险 P2、低风险 P3；修复后影响观察默认开启，最多观
 | --- | --- |
 | 处理目标类型已确定 | 从已读取的 Agent 或 Squad 候选中选择名称和用途；系统自动写入平台唯一 ID |
 
-因此不得要求用户输入或记忆目标 UUID。观察开关和观察时长使用默认值，不再追加条件问题。
+因此不得要求用户输入或记忆目标 UUID。影响观测只使用默认开关，不追加持续观测时长问题。
 
 目标权限和项目白名单没有默认值。目标直接写入巡检配置，并在生成 Card callback 时原样
 传给解决单 Autopilot；不把目标写成解决单 Autopilot 的默认配置。
@@ -254,8 +251,6 @@ Multica project 的项目资源绑定提供实际代码访问。创建前必须�
 - target_assignee: <uuid>
 - priority_mapping: <confirmed-mapping>
 - impact_trend_observation: <enabled-or-disabled>
-- observation_timeout_days: <positive-integer>
-- post_fix_observation_days: <positive-integer>
 
 ## 发送配置
 - channel: <feishu_webhook-or-feishu_app>

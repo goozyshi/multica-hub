@@ -53,8 +53,6 @@ ALLOWED_FIELDS = {
         "target_assignee",
         "priority_mapping",
         "impact_trend_observation",
-        "observation_timeout_days",
-        "post_fix_observation_days",
     },
     "send": {
         "channel",
@@ -487,8 +485,6 @@ def validate_branch_contract(
         "target_assignee",
         "priority_mapping",
         "impact_trend_observation",
-        "observation_timeout_days",
-        "post_fix_observation_days",
     }
     if resolution_enabled:
         for key in sorted(resolution_required):
@@ -527,28 +523,6 @@ def validate_branch_contract(
             validator.add(
                 "invalid_observation_config",
                 "impact_trend_observation 必须是 enabled 或 disabled",
-                "resolution.impact_trend_observation",
-            )
-        if observation == "enabled":
-            validate_positive_integer(
-                resolution,
-                "resolution",
-                "observation_timeout_days",
-                validator,
-            )
-            validate_positive_integer(
-                resolution,
-                "resolution",
-                "post_fix_observation_days",
-                validator,
-            )
-        elif observation == "disabled" and any(
-            resolution.get(key)
-            for key in ("observation_timeout_days", "post_fix_observation_days")
-        ):
-            validator.add(
-                "invalid_observation_config",
-                "未启用影响趋势观测时不得携带观测窗口字段",
                 "resolution.impact_trend_observation",
             )
     else:

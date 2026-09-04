@@ -26,6 +26,7 @@ python3 skills/sentry-daily-top-issues/scripts/validate_feishu_card.py \
   --operation create \
   --candidate-count <N> \
   --resolution-enabled <true|false> \
+  --source-inspection-autopilot-id <来源巡检Autopilot-UUID> \
   --inspection-issue-id <巡检Issue-ID>
 ```
 
@@ -221,4 +222,4 @@ lark-cli --profile <profile> im +messages-send \
 
 ## Callback 透传契约（与 Lark bridge 对齐）
 
-创建解决单 callback 的固定字段必须包括 `resolution_autopilot`、`resolution_config_version`、`target_assignee_type`、`target_assignee`、`source_inspection_autopilot_id`、`inspection_issue_id` 以及 Sentry 基础快照。`resolution_autopilot` 必须是精确 UUID `4833c3e9-b19b-4ace-bea2-bca87e4f2a01`，不能使用 `resolution_autopilot_Xx` 等变体。启用影响趋势时追加 `impact_trend_observation`、`observation_timeout_days`、`post_fix_observation_days`；为保证后续同口径观测，同时追加 `time_window`、`filter`、`window_start`、`window_end`。Lark bridge 必须原样保留这些字段，缺失或值不匹配时阻断而不是只转发 Sentry 字段。
+创建解决单 callback 的固定字段必须包括 `resolution_autopilot`、`resolution_config_version`、`target_assignee_type`、`target_assignee`、`source_inspection_autopilot_id`、`inspection_issue_id` 以及 Sentry 基础快照。`resolution_autopilot` 必须是精确 UUID `4833c3e9-b19b-4ace-bea2-bca87e4f2a01`，不能使用 `resolution_autopilot_Xx` 等变体。`source_inspection_autopilot_id` 必须精确等于当前巡检 Autopilot UUID，`inspection_issue_id` 必须精确等于当前巡检运行 Issue UUID；两者不得互换。启用影响观测时追加 `impact_trend_observation` 和创建基线所需的窗口字段 `time_window`、`filter`、`window_start`、`window_end`；`observation_timeout_days`、`post_fix_observation_days` 仅作为历史字段兼容读取，不参与基线判断或后续触发。Lark bridge 必须原样保留这些字段，缺失或值不匹配时阻断而不是只转发 Sentry 字段。

@@ -11,11 +11,11 @@ Autopilot 描述采用 Markdown 分组格式。固定系统字段位于“基本
 
 `resolution_enabled: true` 时，Autopilot 必须包含有效 `resolution_autopilot` 和解决单配置；如果解决单配置未提供 `resolution_autopilot`，规范化时必须补为固定默认值 `4833c3e9-b19b-4ace-bea2-bca87e4f2a01`；如果提供了该字段，值也必须精确等于这个 UUID，不得使用名称、旧 ID、占位符或其他后缀字段。解决单配置中的 `target_assignee_type`、`target_assignee` 必须在生成卡片时原样传入 callback。
 
-规范配置关系固定为：`巡检配置 -> Sentry 查询` 提供查询参数，`解决单配置 -> 解决单授权与目标` 提供本次巡检的解决单动作参数；卡片必须传递 Sentry 事实快照、来源巡检标识、用户确认的派发目标和影响趋势观测参数，禁止由 Lark bridge 裁剪。
+规范配置关系固定为：`巡检配置 -> Sentry 查询` 提供查询参数，`解决单配置 -> 解决单授权与目标` 提供本次巡检的解决单动作参数；卡片必须传递 Sentry 事实快照、来源巡检标识、用户确认的派发目标和影响观测开关，禁止由 Lark bridge 裁剪。
 
 执行前严格校验：拒绝未知区块或未知字段；拒绝缺失必填项、重复项目、空分组、非正整数、非法枚举和无效 IANA 时区。`display_top_n` 是最终展示数量；各组 `Top N` 只用于组内候选数，二者不可混用。`resolution_enabled: true` 时必须有有效 `resolution_autopilot`、`dedupe_key` 和 `business_resolution_config_v1`。发送配置的通道校验见 [飞书卡片与发送 Reference](references/feishu-card-delivery.md)。模板配置阶段不要求预先存在具体巡检 Issue ID；发送前必须取得当前巡检 Issue ID，并按 Reference 将其传入 validator 完成最终 URL 解析。校验失败时输出字段级错误，结果为 `needs-info`，不得发起 Sentry 查询或发送消息。
 
-解决单配置允许的业务字段为：`sentry_org`、`allowed_projects`、`priority_mapping`、`target_assignee_type`、`target_assignee`、`snapshot_max_age`、`impact_trend_observation`、`observation_timeout_days`、`post_fix_observation_days`。其中 `resolution_autopilot` 规范化后固定为 `4833c3e9-b19b-4ace-bea2-bca87e4f2a01`；`target_assignee_type`、`target_assignee`、`source_inspection_autopilot_id` 和 `inspection_issue_id` 必须进入 callback；启用影响趋势时，`impact_trend_observation`、`observation_timeout_days`、`post_fix_observation_days` 也必须原样进入 callback。解决单 Autopilot 只消费已验证 callback，不使用 Skill 内置默认值。
+解决单配置允许的业务字段为：`sentry_org`、`allowed_projects`、`priority_mapping`、`target_assignee_type`、`target_assignee`、`snapshot_max_age`、`impact_trend_observation`、`observation_timeout_days`、`post_fix_observation_days`。其中 `resolution_autopilot` 规范化后固定为 `4833c3e9-b19b-4ace-bea2-bca87e4f2a01`；`target_assignee_type`、`target_assignee`、`source_inspection_autopilot_id` 和 `inspection_issue_id` 必须进入 callback。字段语义固定为：`source_inspection_autopilot_id` = 来源每日巡检 Autopilot UUID，`inspection_issue_id` = 本次巡检运行 Issue UUID；二者不得互换，来源 Autopilot UUID 不得从运行 Issue 推断。`impact_trend_observation: enabled` 只表示在创建/复用解决单时记录一次基线；旧配置中的 `observation_timeout_days`、`post_fix_observation_days` 允许兼容读取但不再要求、不再启动后续观测。解决单 Autopilot 只消费已验证 callback，不使用 Skill 内置默认值。
 
 触发器、订阅者、Autopilot agent、执行模式和项目范围由 Multica Autopilot 字段管理，不复制到人工配置区；修改周报频率只调整 schedule trigger，不修改 Skill。
 
@@ -31,7 +31,7 @@ Autopilot 描述采用 Markdown 分组格式。固定系统字段位于“基本
 
 列表查询完成后，先按所有分组结果选出最终 `display_top_n` 条，再仅对这些条目调用 Sentry MCP `get_sentry_resource` 读取 Issue 详情及代表性事件；不得为全部候选逐条读取详情。详情调用失败不影响排序，但必须标记“证据不足”。读取详情后，必须按 [飞书卡片与发送 Reference](references/feishu-card-delivery.md) 的“错误摘要字段提取”规则解析唯一的 `resolved_issue_title`，不得直接把 Sentry 返回的顶层 `title` 当作卡片标题。
 
-每条 Issue 优先使用详情中的异常信息、代表性堆栈位置、路由/接口、`culprit`、`release`、环境、状态、事件数、影响用户数和最近活跃时间，生成一句“可能原因”和一句“建议处理”；详情不可用时回退到列表字段并明确标记“证据不足”。两句均为初步研判，不得写成已确认根因。卡片标题和创建解决单 callback 的 `issue_title` 必须使用同一个 `resolved_issue_title`；展示副本单独生成 `issue_title_markdown`，不得由 `title`、`culprit` 或 `metadata.value` 覆盖。
+每条 Issue 优先使用详情中的异常信息、代表性堆栈位置、路由/接口、`culprit`、`release`、环境、状态、事件数、影响用户数和最近活跃时间，生成一句“可能原因”和一句“建议处理”；详情不可用时回退到列表字段并明确标记“证据不足”。两句均为初步研判，不得写成已确认根因。卡片标题和创建解决单 callback 的 `issue_title` 必须使用同一个 `resolved_issue_title`；展示副本单独生成 `issue_title_markdown`，不得由 `title`、`culprit` 或 `metadata.value` 覆盖。生成 callback 前必须从当前 Autopilot 上下文分别填入来源巡检 Autopilot UUID 和本次巡检 Issue UUID，禁止把当前运行 Issue ID 写入 `source_inspection_autopilot_id`。
 
 - 有明确异常类型、模块、路由或 HTTP 状态时，才可据此归类；例如网络/请求失败可建议核查接口可用性、状态码、超时和网络路径。
 - 标题或定位不足以支撑判断时，写“证据不足，需查看 Sentry 事件详情”，并建议进入 Sentry 核对首个异常、最近发布与上下文。
@@ -85,6 +85,6 @@ project:issue_id`，未命中元数据时再对解决单描述中的去重键做
 - `resolution_config_version: business_resolution_config_v1`
 - `target_assignee_type`、`target_assignee`
 - `source_inspection_autopilot_id`、`inspection_issue_id`
-- `impact_trend_observation`、`observation_timeout_days`、`post_fix_observation_days`（配置启用时必填）
+- `impact_trend_observation`（启用时记录一次基线）
 
 Sentry 事实和可比性上下文至少保留 `sentry_org`、`project`、`issue_id`、`issue_title`、`issue_url`、`event_count`、`user_count`、`first_seen`、`last_seen`、`group`、`dedupe_key`、`environment`、`release`、`time_window`、`filter`、`window_start`、`window_end`；详情证据字段按可用性传递。旧卡片缺少固定字段时不得静默降级转发，应阻断并提示重新生成日报卡片。
